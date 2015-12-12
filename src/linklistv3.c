@@ -230,14 +230,14 @@ void mcmc(Node_type *list,
       new_node = list->succ;
 
       while (new_node != NULL) {
-        fRprintf(parm, "%d %d %d %lf %lf %lf\n", 
+        Rprintf(parm, "%d %d %d %lf %lf %lf\n", 
                 i/NN, num_node2, num_node, new_node->time, 
                 new_node->theta[0], new_node->theta[1]);
         num_node++;
         new_node = new_node->succ;
       }
 
-      fRprintf(common, "%d %lf %lf %lf %lf %lf %lf %lf \n", 
+      Rprintf(common, "%d %lf %lf %lf %lf %lf %lf %lf \n", 
               num_node2, parms->md[0], parms->theta[0], parms->theta[1],
               parms->md[1], parms->sigma, parms->re_sd[0], parms->re_sd[1]);
     }
@@ -262,6 +262,11 @@ void mcmc(Node_type *list,
              (double)arevw/(double)nrevw);
       fflush(stdout);
     }
+
+    //----------------------------------------
+    // Check for R user interrupt
+    //----------------------------------------
+    R_CheckUserInterrupt() 
 
 
     //------------------------------------------------------

@@ -66,7 +66,8 @@ double fitend;   // Last time a pulse can occur (10 min. increments).
 /// 
 ///-----------------------------------------------------------------------------
 
-int main(int argc, char *argv[]) {
+//int main(int argc, char *argv[]) {
+int decon() {
 
 
   // Declarations ---------------------
@@ -135,7 +136,7 @@ int main(int argc, char *argv[]) {
     finput = fopen(argv[1], "r");
     if (finput == NULL) {
       perror("Argument error");
-      fRprintf(stderr, "Value of argument: %s\n", argv[1]);
+      Rprintf(stderr, "Value of argument: %s\n", argv[1]);
       exit(EXIT_FAILURE);
     }
 
@@ -144,6 +145,7 @@ int main(int argc, char *argv[]) {
     placeholder = fscanf(finput, "%s \n", common1);
     placeholder = fscanf(finput, "%s \n", parm1);
     placeholder = fscanf(finput, "%lu %lu %lu\n", &seed[0], &seed[1], &seed[2]);
+
     placeholder = fscanf(finput, "%d \n", &iter);
     placeholder = fscanf(finput, "%lf %lf\n", &priormu1, &priorvar1);
     placeholder = fscanf(finput, "%lf %lf\n", &priormu2, &priorvar2);
