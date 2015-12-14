@@ -20,6 +20,8 @@
 /// 
 ///-----------------------------------------------------------------------------
 
+#include <R.h>
+#include <Rinternals.h>
 #include "cholesky.h"
 #include "randgen.h"
 #include "deconvolution_main.h"

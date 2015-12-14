@@ -41,8 +41,8 @@ typedef struct {
     double *fe_mean;     // array of prior mean for mean pulse mass and width
     double *fe_variance; // variance of prior for mean pulse mass
     double *re_sdmax;    // 'b' on uniform prior for random effects standard deviation
-    double alpha;        // alpha: prior parameters for model error (inverse gamma)
-    double beta;         // beta : ""
+    double err_alpha;    // alpha: prior parameters for model error (inverse gamma)
+    double err_beta;     // beta : ""
     double gamma;        // Gamma, repulsion parameter for Strauss prior
     double range;        // Range parameter for Strauss prior
 } Priors;

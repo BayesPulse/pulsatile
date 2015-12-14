@@ -58,16 +58,27 @@ double fitstart; // First time a pulse can occur (10 min. increments).
 double fitend;   // Last time a pulse can occur (10 min. increments).
 
 
+///-----------------------------------------------------------------------------
+/// 
+///  Call function for main program decon
+/// 
+/// int main(int argc, char *argv[]) {
+///-----------------------------------------------------------------------------
+//decon_call
 
 
 ///-----------------------------------------------------------------------------
 /// 
 ///  Main program starts here
 /// 
+/// int main(int argc, char *argv[]) {
 ///-----------------------------------------------------------------------------
-
-//int main(int argc, char *argv[]) {
-int decon() {
+SEXP decon(SEXP dataset, 
+           SEXP thin, 
+           SEXP prior_parms, 
+           SEXP starting_vals, 
+           SEXP proposal_vars, 
+           SEXP seeds) {
 
 
   // Declarations ---------------------
@@ -76,7 +87,7 @@ int decon() {
   int iter;            // number of iterations to run mcmc (args file)
   int a;               // Generic counter
   int placeholder = 0; // For return value on fscanf's (ignoring them)
-  char datafile[90];   // File path to datafile
+  //char datafile[90];   // File path to datafile
   char common1[100];   // File path to save common parameters
   char parm1[100];     // File path to save pulse-specific parameters
   unsigned long *seed; // Pointer to seeds (args file)
@@ -108,7 +119,7 @@ int decon() {
   double mass[9];      // Starting values for pulse masses
   double width[9];     // Starting values for pulse widths
 
-  FILE *finput;        // Arguments file
+  //FILE *finput;        // Arguments file
   Common_parms *parms; // Common parameters data structure
   Priors *priors;      // Prior parameters data structure
   Node_type *list;     // Linked list of nodes/pulses
@@ -120,9 +131,9 @@ int decon() {
 
     // Print decon version based on git commits 
     // remove these lines if you aren't  using git to manage the source code
-    Rprintf("Welcome to decon.\n");
-    Rprintf("You are using version %s\n", VERSION);
-    Rprintf("\n\n");
+    //Rprintf("Welcome to decon.\n");
+    //Rprintf("You are using version %s\n", VERSION);
+    //Rprintf("\n\n");
 
 
     //--------------------------------------------
@@ -133,69 +144,70 @@ int decon() {
     seed  = (unsigned long *)calloc(3, sizeof(unsigned long));
 
     // Open arguments file for reading
-    finput = fopen(argv[1], "r");
-    if (finput == NULL) {
-      perror("Argument error");
-      Rprintf(stderr, "Value of argument: %s\n", argv[1]);
-      exit(EXIT_FAILURE);
-    }
+    //finput = fopen(argv[1], "r");
+    //if (finput == NULL) {
+    //  perror("Argument error");
+    //  Rprintf(stderr, "Value of argument: %s\n", argv[1]);
+    //  exit(EXIT_FAILURE);
+    //}
+
 
     // Read arguments file line by line
-    placeholder = fscanf(finput, "%s \n", datafile);
-    placeholder = fscanf(finput, "%s \n", common1);
-    placeholder = fscanf(finput, "%s \n", parm1);
-    placeholder = fscanf(finput, "%lu %lu %lu\n", &seed[0], &seed[1], &seed[2]);
+    //placeholder = fscanf(finput, "%s \n", datafile);
+    //placeholder = fscanf(finput, "%s \n", common1);
+    //placeholder = fscanf(finput, "%s \n", parm1);
+    //placeholder = fscanf(finput, "%lu %lu %lu\n", &seed[0], &seed[1], &seed[2]);
 
-    placeholder = fscanf(finput, "%d \n", &iter);
-    placeholder = fscanf(finput, "%lf %lf\n", &priormu1, &priorvar1);
-    placeholder = fscanf(finput, "%lf %lf\n", &priormu2, &priorvar2);
-    placeholder = fscanf(finput, "%lf %lf\n", &priormub, &priorvarb);
-    placeholder = fscanf(finput, "%lf %lf\n", &priormuh, &priorvarh);
-    placeholder = fscanf(finput, "%lf %lf\n", &prioralpha, &priorbeta);
-    placeholder = fscanf(finput, "%lf %lf\n", &priorgamma, &priorrange);
-    placeholder = fscanf(finput, "%lf %lf\n", &priora1, &priora2);
-    placeholder = fscanf(finput, "%lf\n",  &priorr);
-    placeholder = fscanf(finput, "%lf %lf\n", &svmu1, &svmu2);
-    placeholder = fscanf(finput, "%lf %lf\n", &svbase, &svhalf);
-    placeholder = fscanf(finput, "%lf\n", &svevar);
-    placeholder = fscanf(finput, "%lf %lf\n", &svsig1, &svsig2);
-    placeholder = fscanf(finput, "%lf %lf\n", &propvar[0], &propvar[1]);
-    placeholder = fscanf(finput, "%lf %lf\n", &propvar[2], &propvar[3]);
-    placeholder = fscanf(finput, "%lf %lf %lf\n", &propvar[4], &propvar[5], &propvar[6]);
-    fclose(finput);
+    //placeholder = fscanf(finput, "%d \n", &iter);
+    //placeholder = fscanf(finput, "%lf %lf\n", &priormu1, &priorvar1);
+    //placeholder = fscanf(finput, "%lf %lf\n", &priormu2, &priorvar2);
+    //placeholder = fscanf(finput, "%lf %lf\n", &priormub, &priorvarb);
+    //placeholder = fscanf(finput, "%lf %lf\n", &priormuh, &priorvarh);
+    //placeholder = fscanf(finput, "%lf %lf\n", &prioralpha, &priorbeta);
+    //placeholder = fscanf(finput, "%lf %lf\n", &priorgamma, &priorrange);
+    //placeholder = fscanf(finput, "%lf %lf\n", &priora1, &priora2);
+    //placeholder = fscanf(finput, "%lf\n",  &priorr);
+    //placeholder = fscanf(finput, "%lf %lf\n", &svmu1, &svmu2);
+    //placeholder = fscanf(finput, "%lf %lf\n", &svbase, &svhalf);
+    //placeholder = fscanf(finput, "%lf\n", &svevar);
+    //placeholder = fscanf(finput, "%lf %lf\n", &svsig1, &svsig2);
+    //placeholder = fscanf(finput, "%lf %lf\n", &propvar[0], &propvar[1]);
+    //placeholder = fscanf(finput, "%lf %lf\n", &propvar[2], &propvar[3]);
+    //placeholder = fscanf(finput, "%lf %lf %lf\n", &propvar[4], &propvar[5], &propvar[6]);
+    //fclose(finput);
 
     // Print arguments to log for confirming what was used
-    Rprintf("Argument file used:\n");
-    Rprintf("%s \n", argv[1]);
-    Rprintf("Contents of argument file:\n");
-    Rprintf("%s \n", datafile);
-    Rprintf("%s \n", common1);
-    Rprintf("%s \n", parm1);
-    Rprintf("%lu %lu %lu\n", seed[0], seed[1], seed[2]);
-    Rprintf("%d \n", iter);
-    Rprintf("%lf %lf\n",  priormu1,  priorvar1);
-    Rprintf("%lf %lf\n",  priormu2,  priorvar2);
-    Rprintf("%lf %lf\n",  priormub,  priorvarb);
-    Rprintf("%lf %lf\n",  priormuh,  priorvarh);
-    Rprintf("%lf %lf\n",  prioralpha,  priorbeta);
-    Rprintf("%lf %lf\n",  priorgamma, priorrange);
-    Rprintf("%lf %lf\n",  priora1,  priora2);
-    Rprintf("%lf\n",  priorr);
-    Rprintf("%lf %lf\n", svmu1, svmu2);
-    Rprintf("%lf %lf\n", svbase, svhalf);
-    Rprintf("%lf\n", svevar);
-    Rprintf("%lf %lf\n", svsig1, svsig2);
-    Rprintf("%lf %lf\n", propvar[0], propvar[1]);
-    Rprintf("%lf %lf\n", propvar[2], propvar[3]);
-    Rprintf("%lf %lf %lf\n\n\n", propvar[4], propvar[5], propvar[6]);
+    //Rprintf("Argument file used:\n");
+    //Rprintf("%s \n", argv[1]);
+    //Rprintf("Contents of argument file:\n");
+    //Rprintf("%s \n", datafile);
+    //Rprintf("%s \n", common1);
+    //Rprintf("%s \n", parm1);
+    //Rprintf("%lu %lu %lu\n", seed[0], seed[1], seed[2]);
+    //Rprintf("%d \n", iter);
+    //Rprintf("%lf %lf\n",  priormu1,  priorvar1);
+    //Rprintf("%lf %lf\n",  priormu2,  priorvar2);
+    //Rprintf("%lf %lf\n",  priormub,  priorvarb);
+    //Rprintf("%lf %lf\n",  priormuh,  priorvarh);
+    //Rprintf("%lf %lf\n",  prioralpha,  priorbeta);
+    //Rprintf("%lf %lf\n",  priorgamma, priorrange);
+    //Rprintf("%lf %lf\n",  priora1,  priora2);
+    //Rprintf("%lf\n",  priorr);
+    //Rprintf("%lf %lf\n", svmu1, svmu2);
+    //Rprintf("%lf %lf\n", svbase, svhalf);
+    //Rprintf("%lf\n", svevar);
+    //Rprintf("%lf %lf\n", svsig1, svsig2);
+    //Rprintf("%lf %lf\n", propvar[0], propvar[1]);
+    //Rprintf("%lf %lf\n", propvar[2], propvar[3]);
+    //Rprintf("%lf %lf %lf\n\n\n", propvar[4], propvar[5], propvar[6]);
 
 
 
     // -------------------------------------------
     // Read in the hormonal time series 
     // -------------------------------------------
-    N   = (int *)calloc(1, sizeof(int));
-    ts  = read_data_file(datafile, N);
+    //N   = (int *)calloc(1, sizeof(int));
+    //ts  = read_data_file(datafile, N);
 
 
     // -------------------------------------------
@@ -250,8 +262,8 @@ int decon() {
     priors->fe_variance[1] = priorvar2;
     priors->re_sdmax[0]    = priora1;
     priors->re_sdmax[1]    = priora2;
-    priors->alpha          = prioralpha;
-    priors->beta           = priorbeta;
+    priors->err_alpha      = prioralpha;
+    priors->err_beta       = priorbeta;
     priors->gamma          = priorgamma;
     priors->range          = priorrange;
 

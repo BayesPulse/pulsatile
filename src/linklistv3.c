@@ -14,6 +14,8 @@
 ///------------------------------------------------------------------------------
 
 // Include needed header files
+#include <R.h>
+#include <Rinternals.h>
 #include "linklistv3.h"
 #include "deconvolution_main.h"
 #include "hash.h"
@@ -211,8 +213,8 @@ void mcmc(Node_type *list,
     //    distribution via Ken's derivation.  Looked at Week7 of Ed's notes, but
     //    didn't find a clear answer.
     ssq           = error_squared(ts, list, parms, N);
-    parms->sigma  = inverse_gamma(priors->alpha + N / 2, 
-                                  priors->beta + 0.5 * ssq, 
+    parms->sigma  = inverse_gamma(priors->err_alpha + N / 2, 
+                                  priors->err_beta + 0.5 * ssq, 
                                   seed);
     parms->lsigma = log(parms->sigma);
 
@@ -266,7 +268,7 @@ void mcmc(Node_type *list,
     //----------------------------------------
     // Check for R user interrupt
     //----------------------------------------
-    R_CheckUserInterrupt() 
+    R_CheckUserInterrupt();
 
 
     //------------------------------------------------------

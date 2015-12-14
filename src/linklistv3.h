@@ -12,6 +12,7 @@
 
 // Include this here since defn of structures used in arguments
 #include "deconvolution_main.h"
+#include "Rmath.h"
 
 void mcmc(Node_type *list, 
           Common_parms *parms, 
