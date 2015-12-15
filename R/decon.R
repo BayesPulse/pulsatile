@@ -11,17 +11,33 @@
 
 #' test_inout
 #'
-#' Testing reading in data, converting to C data types and converting back.
-#'   Test List/Dataframe to 
+#' testing reading in data, converting to c data types and converting back.
+#'   test list/dataframe to 
 #' 
-#' @param data Named vector of parameters
+#' @param data named vector of parameters
 #' @keywords pulse simulation
 #' @export
+#' @useDynLib pulsatile testc
 #' @examples none currently
-#' @useDynLib pulsatile test_inout_
 #' test_inout()
 test_inout <- function(data) {
   
-  .Call(test_inout_, data, PACKAGE = "pulsatile")
+  .Call(testc, data, PACKAGE = "pulsatile")
+
+}
+
+#' show_args
+#'
+#' Example via R source code: http://git.io/v0zFx
+#' 
+#' @useDynLib pulsatile showArgs1
+#' @param data named vector of parameters
+#' @keywords pulse simulation
+#' @export
+#' @examples none currently
+#' show_args()
+show_args <- function(data) {
+  
+  .Call(showArgs1, data, PACKAGE = "pulsatile")
 
 }
