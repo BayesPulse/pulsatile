@@ -14,23 +14,10 @@
 SEXP testc(SEXP indata) {
 
   // Declare variables
-	//SEXP ab;
-	//SEXP mean_conc;
-	//double mean_conc_c = 0;
-	//int xnrow = 0;
-  //double *conc_dat;
   int nrow;
   int i = 0;
   double **data;   // Nx2 matrix of time and log-concentration
 
-	// Think this is how should pass list objects back to R 
-	//common = PROTECT(allocVector(VECSXP, common_c));
-	//pulse  = PROTECT(allocVector(VECSXP, pulse_c));
-	//nrow = PROTECT(coerceVector(nrow, INTSXP));
-	//mean_conc = PROTECT(allocVector(REALSXP, mean_conc_c));
-	//conc_dat = PROTECT(coerceVector(data, VECSXP));
-  //xnrow = REAL(nrow);
-  
   // Protect R data file
 	indata = PROTECT(coerceVector(indata, VECSXP));
 
@@ -49,51 +36,18 @@ SEXP testc(SEXP indata) {
     data[i][1] = REAL(getListElement(indata, "concentration"))[i];
     data[i][1] = log(data[i][1]);
     Rprintf("time = %lf, conc = %lf\n", data[i][0], data[i][1]);
-    //Rprintf("conc = %lf\n", REAL(getListElement(indata, "concentration"))[i]);
   }
-	//get 'length' of data (whatever length is for this object)
-	//nrow = LENGTH(data);
-  //Rprintf("Data is %d\n", TYPEOF(data));
-  //nrow = LENGTH(getListElement(data, "concentration"));
-  //Rprintf("Len of conc var is  %d\n", nrow);
 
-
-  //for (int i = 0; i < nrow; i++) {
-  //  Rprintf("conc_dat = %d\n", conc_dat[i]);
-  //  //conc_dat[i] = asReal(data[i]);
-  //}
-
+  // Unprotect R objects and free memory
 	UNPROTECT(1);
   // Free data memory 
   for (i = 0; i < nrow; i++) {
     free(data[i]);
   }
   free(data);
-  //free(nrow);
 
 	return(ScalarReal(nrow));
 	
-
-	//a = PROTECT(coerceVector(a, REALSXP));
-	//b = PROTECT(coerceVector(b, REALSXP));
-	//na = length(a); 
-	//nb = length(b); 
-	//nab = na + nb - 1;
-	//ab = PROTECT(allocVector(REALSXP, nab));
-	//xa = REAL(a); 
-	//xb = REAL(b); 
-	//xab = REAL(ab);
-	//for(int i = 0; i < nab; i++) {
-	//	xab[i] = 0.0;
-	//}
-	//for(int i = 0; i < na; i++) {
-	//	for(int j = 0; j < nb; j++) { 
-	//		xab[i + j] += xa[i] * xb[j];
-	//	}
-	//}
-	//UNPROTECT(3);
-	//return ab;
-
 }
 
 
