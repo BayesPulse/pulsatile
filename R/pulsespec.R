@@ -84,6 +84,7 @@ pulse_spec <-
     # Structure for single-subject, strauss prior model.
     # NOTE: sv's use std dev, while priors use variances (want this consistent
     # for any reason?)
+    # NOTE: need more clear label for max_sd's 
     ps_obj <- 
       structure(
         list(model = list(model      = model, 
@@ -94,8 +95,8 @@ pulse_spec <-
                            pulse_width    = list(mean  = prior_width_mean,
                                                  var   = prior_width_var),
                            pulse_location = list(gamma = prior_location_gamma,
-                                                 range = prior_location_range),
-                           pulse_count    = list(count = prior_mean_pulse_count),
+                                                 range = prior_location_range,
+                                                 count = prior_mean_pulse_count),
                            max_sd         = list(mass  = prior_max_sd_mass,
                                                  width = prior_max_sd_width),
                            baseline       = list(mean  = prior_baseline_mean,
@@ -132,10 +133,8 @@ pulse_spec <-
 #' @param x pulse_spec object
 #' @param ... Other arguments passed on to the individual methods
 #' @export
-print <- function(x, ...) { useMethod("pulse_spec") }
-
-
-#' @export
+#' @examples none currently
+#' print.pulse_spec()
 print.pulse_spec <- function(x) {
 
   cat("\nBayesian time-series analysis of pulsatile hormone data: 
