@@ -4,7 +4,7 @@
 \alias{test_inout}
 \title{test_inout}
 \usage{
-test_inout(data)
+test_inout(x, ...)
 }
 \arguments{
 \item{data}{named vector of parameters}

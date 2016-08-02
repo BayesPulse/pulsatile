@@ -15,7 +15,8 @@
 //#define TEST_INOUT_H 
 
 // Function Definitions
-SEXP testc(SEXP data);
+SEXP testc(SEXP indata);
+SEXP testspec(SEXP inspec);
 SEXP getListElement(SEXP list, const char *str);
 SEXP showArgs1(SEXP largs);
 

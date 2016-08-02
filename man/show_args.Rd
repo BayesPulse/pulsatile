@@ -4,7 +4,7 @@
 \alias{show_args}
 \title{show_args}
 \usage{
-show_args(data)
+show_args(.data)
 }
 \arguments{
 \item{data}{named vector of parameters}

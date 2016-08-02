@@ -85,47 +85,57 @@ pulse_spec <-
     # NOTE: sv's use std dev, while priors use variances (want this consistent
     # for any reason?)
     ps_obj <- 
-      structure(list(model = list("model" = model, iterations = iterations, data = .data),
-                     priors = list(pulse_mass     = list(mean  = prior_mass_mean,
-                                                         var   = prior_mass_var),
-                                   pulse_width    = list(mean  = prior_width_mean,
-                                                         var   = prior_width_var),
-                                   pulse_location = list(gamma = prior_location_gamma,
-                                                         range = prior_location_range),
-                                   pulse_count    = list(count = prior_mean_pulse_count),
-                                   max_sd         = list(mass  = prior_max_sd_mass,
-                                                         width = prior_max_sd_width),
-                                   baseline       = list(mean  = prior_baseline_mean,
-                                                         var   = prior_baseline_var),
-                                   halflife       = list(mean  = prior_halflife_mean,
-                                                         var   = prior_halflife_var),
-                                   error          = list(alpha = prior_error_alpha,
-                                                         beta  = prior_error_beta)),
-                     starting_values = list(pulse_mass  = list(mean = sv_mass_mean,
-                                                               sd   = sv_mass_sd),
-                                            pulse_width = list(mean = sv_width_mean,
-                                                               sd   = sv_width_sd),
-                                            baseline    = list(mean = sv_baseline_mean),
-                                            halflife    = list(mean = sv_halflife_mean),
-                                            error       = list(var  = sv_error_var)),
-                     proposal_variances = list(mean_pulse_mass  = pv_mean_pulse_mass,
-                                               mean_pulse_width = pv_mean_pulse_width,
-                                               pulse_mass       = pv_pulse_mass,
-                                               pulse_width      = pv_pulse_width,
-                                               pulse_location   = pv_pulse_location,
-                                               baseline         = pv_baseline,
-                                               halflife         = pv_halflife)),
-                class = "pulse_spec")
+      structure(
+        list(model = list(model      = model, 
+                          iterations = iterations, 
+                          data       = .data),
+             priors = list(pulse_mass     = list(mean  = prior_mass_mean,
+                                                 var   = prior_mass_var),
+                           pulse_width    = list(mean  = prior_width_mean,
+                                                 var   = prior_width_var),
+                           pulse_location = list(gamma = prior_location_gamma,
+                                                 range = prior_location_range),
+                           pulse_count    = list(count = prior_mean_pulse_count),
+                           max_sd         = list(mass  = prior_max_sd_mass,
+                                                 width = prior_max_sd_width),
+                           baseline       = list(mean  = prior_baseline_mean,
+                                                 var   = prior_baseline_var),
+                           halflife       = list(mean  = prior_halflife_mean,
+                                                 var   = prior_halflife_var),
+                           error          = list(alpha = prior_error_alpha,
+                                                 beta  = prior_error_beta)),
+             starting_values = list(pulse_mass  = list(mean = sv_mass_mean,
+                                                       sd   = sv_mass_sd),
+                                    pulse_width = list(mean = sv_width_mean,
+                                                       sd   = sv_width_sd),
+                                    baseline    = list(mean = sv_baseline_mean),
+                                    halflife    = list(mean = sv_halflife_mean),
+                                    error       = list(var  = sv_error_var)),
+             proposal_variances = list(mean_pulse_mass  = pv_mean_pulse_mass,
+                                       mean_pulse_width = pv_mean_pulse_width,
+                                       pulse_mass       = pv_pulse_mass,
+                                       pulse_width      = pv_pulse_width,
+                                       pulse_location   = pv_pulse_location,
+                                       baseline         = pv_baseline,
+                                       halflife         = pv_halflife)),
+        class = "pulse_spec")
 
     return(ps_obj)
 
   }
 
 
-print <- function(x) { useMethod("pulse_spec") }
+#' Print pulse_spec object
+#'
+#' This is a generic method that dispatches based on the first argument.
+#'
+#' @param x pulse_spec object
+#' @param ... Other arguments passed on to the individual methods
+#' @export
+print <- function(x, ...) { useMethod("pulse_spec") }
 
-# summary <- function(x) { useMethod("pulse_spec") }
 
+#' @export
 print.pulse_spec <- function(x) {
 
   cat("\nBayesian time-series analysis of pulsatile hormone data: 

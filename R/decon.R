@@ -18,13 +18,22 @@
 #' @keywords pulse simulation
 #' @export
 #' @useDynLib pulsatile testc
+#' @useDynLib pulsatile testspec
 #' @examples none currently
 #' test_inout()
-test_inout <- function(data) {
+test_inout <- function(x, ...) {
   
-  .Call(testc, data, PACKAGE = "pulsatile")
+  if ("pulse_spec" %in% class(x)) { 
+    .Call(testspec, x, 
+          PACKAGE = "pulsatile")
+
+  } else if (is.data.frame(x)) {
+    .Call(testc, x, 
+          PACKAGE = "pulsatile")
+  }
 
 }
+
 
 #' show_args
 #'
@@ -36,8 +45,9 @@ test_inout <- function(data) {
 #' @export
 #' @examples none currently
 #' show_args()
-show_args <- function(data) {
+show_args <- function(.data) {
   
-  .Call(showArgs1, data, PACKAGE = "pulsatile")
+  .Call(showArgs1, .data, PACKAGE = "pulsatile")
 
 }
+
