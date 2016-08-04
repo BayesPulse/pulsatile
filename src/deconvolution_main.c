@@ -169,33 +169,33 @@ SEXP decon(SEXP indata,
     priors->re_sdmax       = (double *)calloc(2, sizeof(double));
     priors->fe_variance    = (double *)calloc(2, sizeof(double));
     priors->fe_mean        = (double *)calloc(2, sizeof(double));
-    priors->meanbh[0]      = prior_baseline_mean;    // priormub;
-    priors->meanbh[1]      = prior_halflife_mean;    // priormuh;
-    priors->varbh[0]       = prior_baseline_var;     // priorvarb;
-    priors->varbh[1]       = prior_halflife_var;     // priorvarh;
-    priors->fe_mean[0]     = prior_pulse_mass_mean;  // priormu1;
-    priors->fe_mean[1]     = prior_pulse_width_mean; // priormu2;
-    priors->fe_variance[0] = prior_pulse_mass_var;   // priorvar1;
-    priors->fe_variance[1] = prior_pulse_width_var;  // priorvar2;
-    priors->re_sdmax[0]    = prior_max_sd_mass;      // priora1;
-    priors->re_sdmax[1]    = prior_max_sd_width;     // priora2;
-    priors->err_alpha      = prior_error_alpha;      // prioralpha;
-    priors->err_beta       = prior_error_beta;       // priorbeta;
-    priors->gamma          = prior_location_gamma;   // priorgamma;
-    priors->range          = prior_location_range;   // priorrange;
+    priors->meanbh[0]      = REAL(prior_baseline_mean);    // priormub;
+    priors->meanbh[1]      = REAL(prior_halflife_mean);    // priormuh;
+    priors->varbh[0]       = REAL(prior_baseline_var);     // priorvarb;
+    priors->varbh[1]       = REAL(prior_halflife_var);     // priorvarh;
+    priors->fe_mean[0]     = REAL(prior_pulse_mass_mean);  // priormu1;
+    priors->fe_mean[1]     = REAL(prior_pulse_width_mean); // priormu2;
+    priors->fe_variance[0] = REAL(prior_pulse_mass_var);   // priorvar1;
+    priors->fe_variance[1] = REAL(prior_pulse_width_var);  // priorvar2;
+    priors->re_sdmax[0]    = REAL(prior_max_sd_mass);      // priora1;
+    priors->re_sdmax[1]    = REAL(prior_max_sd_width);     // priora2;
+    priors->err_alpha      = REAL(prior_error_alpha);      // prioralpha;
+    priors->err_beta       = REAL(prior_error_beta);       // priorbeta;
+    priors->gamma          = REAL(prior_pulse_location_gamma);   // priorgamma;
+    priors->range          = REAL(prior_pulse_location_range);   // priorrange;
 
     // Set up parms structure -------------------
     parms           = (Common_parms *)calloc(1, sizeof(Common_parms));
     parms->re_sd    = (double *)calloc(2, sizeof(double));
-    parms->nprior   = prior_location_count; // priorr;
-    parms->theta[0] = sv_pulse_mass_mean;   // svmu1;
-    parms->theta[1] = sv_pulse_width_mean;  // svmu2;
-    parms->md[0]    = sv_baseline_mean;     // svbase;
-    parms->md[1]    = sv_halflife_mean;     // svhalf;
-    parms->sigma    = sv_error_var;         // svevar; // error variance
-    parms->lsigma   = log(parms->sigma);    // log of error variance
-    parms->re_sd[0] = sv_pulse_mass_sd;  // svsig1; 
-    parms->re_sd[1] = sv_pulse_width_sd; // svsig2; 
+    parms->nprior   = REAL(prior_pulse_location_count); // priorr;
+    parms->theta[0] = REAL(sv_pulse_mass_mean);   // svmu1;
+    parms->theta[1] = REAL(sv_pulse_width_mean);  // svmu2;
+    parms->md[0]    = REAL(sv_baseline_mean);     // svbase;
+    parms->md[1]    = REAL(sv_halflife_mean);     // svhalf;
+    parms->sigma    = REAL(sv_error_var);         // svevar; // error variance
+    parms->lsigma   = REAL(log(parms->sigma));    // log of error variance
+    parms->re_sd[0] = REAL(sv_pulse_mass_sd);  // svsig1; 
+    parms->re_sd[1] = REAL(sv_pulse_width_sd); // svsig2; 
     // note: other re_sd parms (max and pv) are entered and used on the natural
     // scale, so for consistency, we enter these on the same scale.  Functions
     // other than draw_re_sd, use re_sd[j] on the log scale so we log xform them
