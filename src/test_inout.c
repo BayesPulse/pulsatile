@@ -13,6 +13,30 @@
 #include <time.h>
 
 
+// 
+// Fn for testing extending Rvectors and RNGs
+//
+SEXP test_vec(SEXP n) {
+  // declare
+  int n = length(x);
+  int num_gen; 
+  double *px, *pout;
+
+  num_gen = Rf_runif(1, 20);
+  SEXP out = PROTECT(allocVector(REALSXP, n));
+
+  px = REAL(x);
+  pout = REAL(out);
+  for (int i = 0; i < n; i++) {
+    pout[i] = px[i] + 2;
+  }
+  UNPROTECT(1);
+
+  return out;
+
+}
+
+
 // Fn for testing reading in data
 SEXP testc(SEXP indata) { //, SEXP specification) {
 
