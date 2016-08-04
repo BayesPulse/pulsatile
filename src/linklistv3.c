@@ -1,17 +1,17 @@
-///-----------------------------------------------------------------------------
-///
-/// FILE: linklistv3.c
-/// AUTHOR: Matt Mulvahill 
-///         (and many before me: T Johnson, N Carlson, K Horton, Karen )
-///
-/// DESCRIPTION: 
-///   Contains birth-death algorithm, expanded to spatial birth-death with the
-///   option to use the older order-statistic prior approach.  To use the order
-///   statistic, priors->gamma should be less than some very small negative
-///   number.  I'm setting it to -1 in the arguments file (see
-///   deconvolution_main.c for more detail). 
-/// 
-///------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//
+// FILE: linklistv3.c
+// MAINTAINER: Matt Mulvahill 
+//         (and many before me: T Johnson, N Carlson, K Horton, Karen )
+//
+// DESCRIPTION: 
+//   Contains birth-death algorithm, expanded to spatial birth-death with the
+//   option to use the older order-statistic prior approach.  To use the order
+//   statistic, priors->gamma should be less than some very small negative
+//   number.  I'm setting it to -1 in the arguments file (see
+//   deconvolution_main.c for more detail). 
+// 
+//------------------------------------------------------------------------------
 
 // Include needed header files
 #include <R.h>
@@ -103,13 +103,13 @@ void mcmc(Node_type *list,
   double **pmd_var;    // Var-cov matrix for baseline and half-life
   double **pmd_vch;    // Cholesky decomposed var-cov matrix for baseline/half-life
   Node_type *new_node; // Node structure for new pulse
-  FILE *common;        // File path for outputting common parameters
-  FILE *parm;          // File path for outputting pulse parameters
+  //FILE *common;        // File path for outputting common parameters
+  //FILE *parm;          // File path for outputting pulse parameters
 
 
   // Open output files for writing
-  common = fopen(file1, "w");
-  parm   = fopen(file2, "w");
+  //common = fopen(file1, "w");
+  //parm   = fopen(file2, "w");
 
   // Allocate memory for likelihood 
   likeli = (double *)calloc(1, sizeof(double));
