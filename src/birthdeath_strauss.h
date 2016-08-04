@@ -21,7 +21,7 @@ void birth_death(Node_type *list,  //
                  Common_parms *parms, 
                  int N, 
                  double *likeli, 
-                 unsigned long *seed, 
+                 //unsigned long *seed, 
                  int iter, 
                  Priors *priors);
 

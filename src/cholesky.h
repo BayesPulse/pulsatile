@@ -19,7 +19,7 @@ int rmvnorm(double *result,
             double **A, 
             int size_A, 
             double *mean, 
-            unsigned long *seed, 
+            //unsigned long *seed, 
             int flag);
 
 //int rwishart(double **result, 

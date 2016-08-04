@@ -23,7 +23,7 @@
 #include <R.h>
 #include <Rinternals.h>
 #include "cholesky.h"
-#include "randgen.h"
+//#include "randgen.h"
 #include "deconvolution_main.h"
 
 
@@ -140,7 +140,7 @@ int rmvnorm(double *result,
             double **A, 
             int size_A, 
             double *mean, 
-            unsigned long *seed, 
+            //unsigned long *seed, 
             int flag) {
 
   int i;
@@ -160,7 +160,7 @@ int rmvnorm(double *result,
 
     runiv = (double *)calloc(size_A, sizeof(double));
     for (i = 0; i < size_A; i++) {
-      runiv[i] = snorm(seed);
+      runiv[i] = rnorm(0, 1); //snorm(seed);
     }
 
     for (i=0;i<size_A;i++) {
