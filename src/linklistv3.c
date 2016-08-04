@@ -80,8 +80,8 @@ void mcmc(Node_type *list,
           int N,
           Priors *priors, 
           unsigned long *seed, 
-          char *file1, 
-          char *file2, 
+          SEXP *common, //char *file1, 
+          SEXP *parm, //char *file2, 
           double propvar[]) {
 
   // Declarations ----------------------
@@ -103,13 +103,6 @@ void mcmc(Node_type *list,
   double **pmd_var;    // Var-cov matrix for baseline and half-life
   double **pmd_vch;    // Cholesky decomposed var-cov matrix for baseline/half-life
   Node_type *new_node; // Node structure for new pulse
-  //FILE *common;        // File path for outputting common parameters
-  //FILE *parm;          // File path for outputting pulse parameters
-
-
-  // Open output files for writing
-  //common = fopen(file1, "w");
-  //parm   = fopen(file2, "w");
 
   // Allocate memory for likelihood 
   likeli = (double *)calloc(1, sizeof(double));
@@ -167,6 +160,9 @@ void mcmc(Node_type *list,
     birth_death(list, ts, parms, N, likeli, seed, i, priors);
 
     // Count number of pulses
+    // **NOTE**: could remove this traversing of the linked-list by having
+    // birth_death() return the number of estimated pulses from this run -- some
+    // speed gains likely
     num_node2 = 0;
     new_node = list->succ;
     while (new_node != NULL) {
@@ -227,41 +223,67 @@ void mcmc(Node_type *list,
     // Save/Print results
     //------------------------------------------------------
     // Save to files common/parms
-    if (!(i%NN)) {
+    if (!(i % NN)) {
       num_node = 0;
       new_node = list->succ;
 
+      // create matrix for pulse-specific parms in this iteration
+      SEXP this_parm = Rf_protect(allocMatrix(REALSXP, num_node2, 6));
+
+      j = 0;
       while (new_node != NULL) {
-        Rprintf(parm, "%d %d %d %lf %lf %lf\n", 
-                i/NN, num_node2, num_node, new_node->time, 
-                new_node->theta[0], new_node->theta[1]);
+
+        REAL(this_parm[j, 0]) = i/NN
+        REAL(this_parm[j, 1]) = num_node2
+        REAL(this_parm[j, 2]) = num_node
+        REAL(this_parm[j, 3]) = new_node->time
+        REAL(this_parm[j, 4]) = new_node->theta[0]
+        REAL(this_parm[j, 5]) = new_node->theta[1]
+
+        //SEXP common1 = Rf_protect(Rf_allocMatrix(REALSXP, iter/NN, 8));
+        //Rprintf(parm, "%d %d %d %lf %lf %lf\n", 
+        //        i/NN, num_node2, num_node, new_node->time, 
+        //        new_node->theta[0], new_node->theta[1]);
+
         num_node++;
         new_node = new_node->succ;
+        j++;
       }
+      SET_VECTOR_ELT(parm, i/NN, this_parm);
 
-      Rprintf(common, "%d %lf %lf %lf %lf %lf %lf %lf \n", 
-              num_node2, parms->md[0], parms->theta[0], parms->theta[1],
-              parms->md[1], parms->sigma, parms->re_sd[0], parms->re_sd[1]);
+      // Save common parms from iteration i/NN to SEXP matrix obj
+      REAL(common)[i/NN, 0] = num_node2;
+      REAL(common)[i/NN, 1] = parms->md[0];
+      REAL(common)[i/NN, 2] = parms->theta[0];
+      REAL(common)[i/NN, 3] = parms->theta[1];
+      REAL(common)[i/NN, 4] = parms->md[1];
+      REAL(common)[i/NN, 5] = parms->sigma;
+      REAL(common)[i/NN, 6] = parms->re_sd[0];
+      REAL(common)[i/NN, 7] = parms->re_sd[1];
+
+      //Rprintf(common, "%d %lf %lf %lf %lf %lf %lf %lf \n", 
+      //        num_node2, parms->md[0], parms->theta[0], parms->theta[1],
+      //        parms->md[1], parms->sigma, parms->re_sd[0], parms->re_sd[1]);
     }
 
     // Print to STDOUT
-    if (!(i%NNN)) {
+    if (!(i % NNN)) {
       Rprintf("\n\n");
       Rprintf("iter = %d likelihood = %lf\n", i, *likeli);
       Rprintf("mu %.2lf A %.2lf s %.2lf d %.4lf  v %.4le\n", 
-             parms->md[0], parms->theta[0], parms->theta[1], parms->md[1],
-             parms->sigma);
+              parms->md[0], parms->theta[0], parms->theta[1], parms->md[1],
+              parms->sigma);
       Rprintf("pmdvar00 %.2lf pmdvar11 %.2lf pmdvar01 %.2lf \n",
-             pmd_var[0][0], pmd_var[1][1], pmd_var[0][1]);
+              pmd_var[0][0], pmd_var[1][1], pmd_var[0][1]);
       print_list(list);
       Rprintf("pct rem = %.2lf pct rew = %.2lf pct time = %.2lf\n",
-             (double)arem/(double)nrem, 
-             (double)arew/(double)nrew,
-             (double)atime/(double)ntime);
+              (double)arem  / (double)nrem, 
+              (double)arew  / (double)nrew,
+              (double)atime / (double)ntime);
       Rprintf("pct md = %.2lf revm = %.2lf revw = %.2lf\n", 
-             (double)adelta/(double)ndelta, 
-             (double)arevm/(double)nrevm,
-             (double)arevw/(double)nrevw);
+             (double)adelta / (double)ndelta, 
+             (double)arevm  / (double)nrevm,
+             (double)arevw  / (double)nrevw);
       fflush(stdout);
     }
 
@@ -276,28 +298,28 @@ void mcmc(Node_type *list,
     //------------------------------------------------------
     if (!(i % 500) && i < 25000 && i > 0) {
 
-      adjust2_acceptance((double)adelta/(double)ndelta, pmd_var, -0.90);
-      adjust_acceptance((double)atime/(double)ntime, &vt);
-      adjust_acceptance((double)arem/(double)nrem, &vrem);
-      adjust_acceptance((double)arew/(double)nrew, &vrew);
-      adjust_acceptance((double)arevm/(double)nrevm, &vmv);
-      adjust_acceptance((double)arevw/(double)nrevw, &vwv);
+      adjust2_acceptance((double) adelta / (double) ndelta, pmd_var, -0.90);
+      adjust_acceptance( (double) atime  / (double) ntime,  &vt);
+      adjust_acceptance( (double) arem   / (double) nrem,   &vrem);
+      adjust_acceptance( (double) arew   / (double) nrew,   &vrew);
+      adjust_acceptance( (double) arevm  / (double) nrevm,  &vmv);
+      adjust_acceptance( (double) arevw  / (double) nrevw,  &vwv);
 
       adelta = ndelta = 0;
-      atime = ntime = 0;
-      arem = nrem = 0;
-      arew = nrew = 0;
-      arevm = nrevm = 0;
-      arevw = nrevw = 0;
+      atime  = ntime  = 0;
+      arem   = nrem   = 0;
+      arew   = nrew   = 0;
+      arevm  = nrevm  = 0;
+      arevw  = nrevw  = 0;
 
       // Cholesky decompose the three proposal var-covar matrices
-      for (k=0;k<2;k++) {
-        for (l=0;l<2;l++) {
+      for (k = 0; k < 2; k++) {
+        for (l = 0; l < 2; l++) {
           pmd_vch[k][l] = pmd_var[k][l];
         }
       }
 
-      if (!cholesky_decomp(pmd_vch,2)){
+      if (!cholesky_decomp(pmd_vch, 2)){
         Rprintf("pmd not PSD matrix\n");
         exit(0);
       }

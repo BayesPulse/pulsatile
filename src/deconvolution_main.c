@@ -99,25 +99,42 @@ SEXP decon(SEXP indata,
 
 
   // Declarations ---------------------
-  int i;               // Generic counter
-  int *N;              // Number of obs in datafile, set by read_data_file()
-  int iter;            // number of iterations to run mcmc (args file)
-  int a;               // Generic counter
-  int placeholder = 0; // For return value on fscanf's (ignoring them)
+  int i;                          // Generic counter
+  int *N;                         // Number of obs in datafile, set by read_data_file()
+  int iter = INTEGER(iterations); // number of iterations to run mcmc (args file)
+  int a;                          // Generic counter
+  int placeholder = 0;            // For return value on fscanf's (ignoring them)
+  //unsigned long *seed;          // Pointer to seeds (args file)
+  double **ts;                    // Pointer to Nx2 matrix containing data
+  double propvar[7];              // Array of proposal variances for MH algorithms
+  double time[9];                 // Starting values for pulse locations
+  double mass[9];                 // Starting values for pulse masses
+  double width[9];                // Starting values for pulse widths
+
+  Common_parms *parms;            // Common parameters data structure
+  Priors *priors;                 // Prior parameters data structure
+  Node_type *list;                // Linked list of nodes/pulses
+  Node_type *new_node;            // New node/pulse
+
+  // Rprintf(parm, "%d %d %d %lf %lf %lf\n", 
+  //        i/NN, num_node2, num_node, new_node->time, 
+  //        new_node->theta[0], new_node->theta[1]);
+  // num_node++;
+  // new_node = new_node->succ;
+  //
+  // Rprintf(common, "%d %lf %lf %lf %lf %lf %lf %lf \n", 
+  //         num_node2, parms->md[0], parms->theta[0], parms->theta[1],
+  //         parms->md[1], parms->sigma, parms->re_sd[0], parms->re_sd[1]);
+  
+  // R lists for returning chains
+  // Common parameters -- 1 record per saved iteration
+  SEXP common1 = Rf_protect(Rf_allocMatrix(REALSXP, iter/NN, 8));
+  // Pulse-specific parameters -- 1 record per pulse per iteration
+  //   list object defined here, each iteration will differ in lenght, so the
+  //   entries are defined in linklistv3
+  SEXP parm1   = PROTECT(Rf_allocVector(VECSXP, iter/NN));
   //char common1[100];   // File path to save common parameters
   //char parm1[100];     // File path to save pulse-specific parameters
-  //unsigned long *seed; // Pointer to seeds (args file)
-  double **ts;         // Pointer to Nx2 matrix containing data
-  double propvar[7];   // Array of proposal variances for MH algorithms
-  double time[9];      // Starting values for pulse locations
-  double mass[9];      // Starting values for pulse masses
-  double width[9];     // Starting values for pulse widths
-
-  Common_parms *parms; // Common parameters data structure
-  Priors *priors;      // Prior parameters data structure
-  Node_type *list;     // Linked list of nodes/pulses
-  Node_type *new_node; // New node/pulse
-
 
   // Start main function
   for (a = 0; a < 1; a++) {
@@ -235,17 +252,17 @@ SEXP decon(SEXP indata,
 
 
 
-    //-------------------------------------------
+    //
     // Run MCMC
-    //-------------------------------------------
-    //ProfilerStart("decon.prof");
+    //
+    GetRNGstate();
     mcmc(list, parms, ts, iter, *N, priors, common1, parm1, propvar);
-    //ProfilerStop();
+    PutRNGstate();
 
 
-    //-------------------------------------------
+    //
     // Deallocate resources 
-    //-------------------------------------------
+    //
     destroy_list(list);
     free(seed);
     for (i = 0; i <* N; i++) {

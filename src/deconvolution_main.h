@@ -10,6 +10,10 @@
 #ifndef DECONVOLUTION_MAIN_H
 #define DECONVOLUTION_MAIN_H
 
+#define R_NO_REMAP 
+#include <R.h>
+#include <Rinternals.h>
+#include <Rmath.h>
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
@@ -47,8 +51,10 @@ typedef struct {
     double range;        // Range parameter for Strauss prior
 } Priors;
 
-
 #endif // DECONVOLUTION_MAIN_H
+
+double **convert_data(SEXP indata);
+SEXP getListElement(SEXP list, const char *str);
 
 //------------------------------------------------------------------------------
 // End of file
