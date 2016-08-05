@@ -19,10 +19,11 @@ void mcmc(Node_type *list,
           double **ts, 
           long iter, 
           int N,
+          int NN,
           Priors *priors, 
-          unsigned long *seed, 
-          char *file1, 
-          char *file2, 
+          //unsigned long *seed, 
+          SEXP common, 
+          SEXP parm, 
           double propvar[]);
 
 void mh_time_strauss(Node_type *list, 
@@ -30,7 +31,7 @@ void mh_time_strauss(Node_type *list,
                      double **ts, 
                      double *like, 
                      int N, 
-                     unsigned long *seed, 
+                     //unsigned long *seed, 
                      double v, 
                      Priors *priors);
 
@@ -39,7 +40,7 @@ void mh_time_os(Node_type *list,
                 double **ts, 
                 double *like,
                 int N, 
-                unsigned long *seed, 
+                //unsigned long *seed, 
                 double v);
 
 void mh_mu_delta(Node_type *list, 
@@ -49,20 +50,22 @@ void mh_mu_delta(Node_type *list,
                  double *like, 
                  int N, 
                  int num_node, 
-                 unsigned long *seed, 
+                 //unsigned long *seed, 
                  double **var);
 
 void draw_fixed_effects(Node_type *list, 
                         Priors *priors, 
-                        Common_parms *parms,
-                        unsigned long *seed);
+                        Common_parms *parms
+                        //unsigned long *seed
+                        );
 
 void draw_re_sd(Node_type *list, 
                 Priors *priors, 
                 Common_parms *parms,
                 double v1, 
-                double v2, 
-                unsigned long *seed);
+                double v2 
+                //unsigned long *seed
+                );
 
 void draw_random_effects(double **ts, 
                          Node_type *list, 
@@ -70,8 +73,9 @@ void draw_random_effects(double **ts,
                          int N, 
                          double *like, 
                          double v1,  
-                         double v2, 
-                         unsigned long *seed);
+                         double v2 
+                         //unsigned long *seed
+                         );
 
 double error_squared(double **ts, 
                      Node_type *list, 

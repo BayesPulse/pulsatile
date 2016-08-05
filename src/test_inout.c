@@ -6,35 +6,36 @@
 #define R_NO_REMAP 
 #include <R.h>
 #include <Rinternals.h>
-#include "test_inout.h"
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
 #include <time.h>
+#include "test_inout.h"
+#include "deconvolution_main.h"
 
 
 // 
 // Fn for testing extending Rvectors and RNGs
 //
-SEXP test_vec(SEXP n) {
-  // declare
-  int n = length(x);
-  int num_gen; 
-  double *px, *pout;
-
-  num_gen = Rf_runif(1, 20);
-  SEXP out = PROTECT(allocVector(REALSXP, n));
-
-  px = REAL(x);
-  pout = REAL(out);
-  for (int i = 0; i < n; i++) {
-    pout[i] = px[i] + 2;
-  }
-  UNPROTECT(1);
-
-  return out;
-
-}
+//SEXP test_vec(SEXP n) {
+//  // declare
+//  int n = length(x);
+//  int num_gen; 
+//  double *px, *pout;
+//
+//  num_gen = Rf_runif(1, 20);
+//  SEXP out = PROTECT(allocVector(REALSXP, n));
+//
+//  px = REAL(x);
+//  pout = REAL(out);
+//  for (int i = 0; i < n; i++) {
+//    pout[i] = px[i] + 2;
+//  }
+//  UNPROTECT(1);
+//
+//  return out;
+//
+//}
 
 
 // Fn for testing reading in data
@@ -159,20 +160,6 @@ SEXP showArgs1(SEXP largs) {
 }
 
 
-// Fn for accessing list elements
-SEXP getListElement(SEXP list, const char *str) {
-
-  SEXP elmt = R_NilValue, names = Rf_getAttrib(list, R_NamesSymbol);
-
-  for (int i = 0; i < Rf_xlength(list); i++)
-    if(strcmp(CHAR(STRING_ELT(names, i)), str) == 0) {
-      elmt = VECTOR_ELT(list, i);
-      break;
-    }
-
-  return elmt;
-
-}
 
 
 

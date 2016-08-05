@@ -9,7 +9,7 @@
 
 #include <R.h>
 #include <Rinternals.h>
-#include "decon.h"
+//#include "decon.h"
 
 // Don't recall what this is for
 //#ifndef TEST_INOUT_H 

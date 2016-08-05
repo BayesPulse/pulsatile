@@ -67,6 +67,7 @@ double fitend;   // Last time a pulse can occur (10 min. increments).
 SEXP decon(SEXP indata,
            SEXP model,
            SEXP iterations,
+           SEXP thin,
            SEXP prior_pulse_mass_mean,
            SEXP prior_pulse_mass_var,
            SEXP prior_pulse_width_mean,
@@ -101,7 +102,8 @@ SEXP decon(SEXP indata,
   // Declarations ---------------------
   int i;                          // Generic counter
   int *N;                         // Number of obs in datafile, set by read_data_file()
-  int iter = INTEGER(iterations); // number of iterations to run mcmc (args file)
+  int iter = *INTEGER(iterations); // number of iterations to run mcmc (args file)
+  int NN   = *INTEGER(thin);      // thinning ie keep every NN sample
   int a;                          // Generic counter
   int placeholder = 0;            // For return value on fscanf's (ignoring them)
   //unsigned long *seed;          // Pointer to seeds (args file)
@@ -132,7 +134,7 @@ SEXP decon(SEXP indata,
   // Pulse-specific parameters -- 1 record per pulse per iteration
   //   list object defined here, each iteration will differ in lenght, so the
   //   entries are defined in linklistv3
-  SEXP parm1   = PROTECT(Rf_allocVector(VECSXP, iter/NN));
+  SEXP parm1   = Rf_protect(Rf_allocVector(VECSXP, iter/NN));
   //char common1[100];   // File path to save common parameters
   //char parm1[100];     // File path to save pulse-specific parameters
 
@@ -169,33 +171,33 @@ SEXP decon(SEXP indata,
     priors->re_sdmax       = (double *)calloc(2, sizeof(double));
     priors->fe_variance    = (double *)calloc(2, sizeof(double));
     priors->fe_mean        = (double *)calloc(2, sizeof(double));
-    priors->meanbh[0]      = REAL(prior_baseline_mean);    // priormub;
-    priors->meanbh[1]      = REAL(prior_halflife_mean);    // priormuh;
-    priors->varbh[0]       = REAL(prior_baseline_var);     // priorvarb;
-    priors->varbh[1]       = REAL(prior_halflife_var);     // priorvarh;
-    priors->fe_mean[0]     = REAL(prior_pulse_mass_mean);  // priormu1;
-    priors->fe_mean[1]     = REAL(prior_pulse_width_mean); // priormu2;
-    priors->fe_variance[0] = REAL(prior_pulse_mass_var);   // priorvar1;
-    priors->fe_variance[1] = REAL(prior_pulse_width_var);  // priorvar2;
-    priors->re_sdmax[0]    = REAL(prior_max_sd_mass);      // priora1;
-    priors->re_sdmax[1]    = REAL(prior_max_sd_width);     // priora2;
-    priors->err_alpha      = REAL(prior_error_alpha);      // prioralpha;
-    priors->err_beta       = REAL(prior_error_beta);       // priorbeta;
-    priors->gamma          = REAL(prior_pulse_location_gamma);   // priorgamma;
-    priors->range          = REAL(prior_pulse_location_range);   // priorrange;
+    priors->meanbh[0]      = *REAL(prior_baseline_mean);    // priormub;
+    priors->meanbh[1]      = *REAL(prior_halflife_mean);    // priormuh;
+    priors->varbh[0]       = *REAL(prior_baseline_var);     // priorvarb;
+    priors->varbh[1]       = *REAL(prior_halflife_var);     // priorvarh;
+    priors->fe_mean[0]     = *REAL(prior_pulse_mass_mean);  // priormu1;
+    priors->fe_mean[1]     = *REAL(prior_pulse_width_mean); // priormu2;
+    priors->fe_variance[0] = *REAL(prior_pulse_mass_var);   // priorvar1;
+    priors->fe_variance[1] = *REAL(prior_pulse_width_var);  // priorvar2;
+    priors->re_sdmax[0]    = *REAL(prior_max_sd_mass);      // priora1;
+    priors->re_sdmax[1]    = *REAL(prior_max_sd_width);     // priora2;
+    priors->err_alpha      = *REAL(prior_error_alpha);      // prioralpha;
+    priors->err_beta       = *REAL(prior_error_beta);       // priorbeta;
+    priors->gamma          = *REAL(prior_pulse_location_gamma);   // priorgamma;
+    priors->range          = *REAL(prior_pulse_location_range);   // priorrange;
 
     // Set up parms structure -------------------
     parms           = (Common_parms *)calloc(1, sizeof(Common_parms));
     parms->re_sd    = (double *)calloc(2, sizeof(double));
-    parms->nprior   = REAL(prior_pulse_location_count); // priorr;
-    parms->theta[0] = REAL(sv_pulse_mass_mean);   // svmu1;
-    parms->theta[1] = REAL(sv_pulse_width_mean);  // svmu2;
-    parms->md[0]    = REAL(sv_baseline_mean);     // svbase;
-    parms->md[1]    = REAL(sv_halflife_mean);     // svhalf;
-    parms->sigma    = REAL(sv_error_var);         // svevar; // error variance
-    parms->lsigma   = REAL(log(parms->sigma));    // log of error variance
-    parms->re_sd[0] = REAL(sv_pulse_mass_sd);  // svsig1; 
-    parms->re_sd[1] = REAL(sv_pulse_width_sd); // svsig2; 
+    parms->nprior   = *REAL(prior_pulse_location_count); // priorr;
+    parms->theta[0] = *REAL(sv_pulse_mass_mean);   // svmu1;
+    parms->theta[1] = *REAL(sv_pulse_width_mean);  // svmu2;
+    parms->md[0]    = *REAL(sv_baseline_mean);     // svbase;
+    parms->md[1]    = *REAL(sv_halflife_mean);     // svhalf;
+    parms->sigma    = *REAL(sv_error_var);         // svevar; // error variance
+    parms->lsigma   = log(parms->sigma);    // log of error variance
+    parms->re_sd[0] = *REAL(sv_pulse_mass_sd);  // svsig1; 
+    parms->re_sd[1] = *REAL(sv_pulse_width_sd); // svsig2; 
     // note: other re_sd parms (max and pv) are entered and used on the natural
     // scale, so for consistency, we enter these on the same scale.  Functions
     // other than draw_re_sd, use re_sd[j] on the log scale so we log xform them
@@ -256,7 +258,7 @@ SEXP decon(SEXP indata,
     // Run MCMC
     //
     GetRNGstate();
-    mcmc(list, parms, ts, iter, *N, priors, common1, parm1, propvar);
+    mcmc(list, parms, ts, iter, *N, NN, priors, common1, parm1, propvar);
     PutRNGstate();
 
 
@@ -264,7 +266,7 @@ SEXP decon(SEXP indata,
     // Deallocate resources 
     //
     destroy_list(list);
-    free(seed);
+    //free(seed);
     for (i = 0; i <* N; i++) {
       free(ts[i]);
     }
@@ -277,7 +279,10 @@ SEXP decon(SEXP indata,
     free(priors);
     free(parms);
 
+
   }
+
+  Rf_unprotect(2);
 
   // Exit with success code
   exit(EXIT_SUCCESS);
@@ -317,6 +322,25 @@ double **convert_data(SEXP indata) {
 
 	return data;
 	
+}
+
+
+
+//
+// Fn for accessing list elements
+//
+SEXP getListElement(SEXP list, const char *str) {
+
+  SEXP elmt = R_NilValue, names = Rf_getAttrib(list, R_NamesSymbol);
+
+  for (int i = 0; i < Rf_xlength(list); i++)
+    if(strcmp(CHAR(STRING_ELT(names, i)), str) == 0) {
+      elmt = VECTOR_ELT(list, i);
+      break;
+    }
+
+  return elmt;
+
 }
 
 

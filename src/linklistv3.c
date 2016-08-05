@@ -76,10 +76,11 @@ void mcmc(Node_type *list,
           double **ts, 
           long iter, 
           int N,
+          int NN,
           Priors *priors, 
           //unsigned long *seed, 
-          SEXP *common, //char *file1, 
-          SEXP *parm, //char *file2, 
+          SEXP common, //char *file1, 
+          SEXP parm, //char *file2, 
           double propvar[]) {
 
   // Declarations ----------------------
@@ -89,7 +90,7 @@ void mcmc(Node_type *list,
   int	l;               // Generic counter
   int	num_node;        // Counter of num_node for loops
   int	num_node2;       // Number of pulses
-  int	NN = 50;         // Output ever NNth iteration to files
+  //int	NN = 50;         // Output ever NNth iteration to files
   int	NNN = 5000;      // Output ever NNth iteration to STDOUT
   double vrem;         // Proposal variance for RE masses
   double vrew;         // Proposal variance for RE widths
@@ -209,7 +210,7 @@ void mcmc(Node_type *list,
     //    distribution via Ken's derivation.  Looked at Week7 of Ed's notes, but
     //    didn't find a clear answer.
     ssq           = error_squared(ts, list, parms, N);
-    parms->sigma  = inverse_gamma(priors->err_alpha + N / 2, 
+    parms->sigma  = 1/Rf_rgamma(priors->err_alpha + N / 2, 
                                   priors->err_beta + 0.5 * ssq
                                   //seed
                                   );
@@ -230,16 +231,17 @@ void mcmc(Node_type *list,
 
       // create matrix for pulse-specific parms in this iteration
       SEXP this_parm = Rf_protect(allocMatrix(REALSXP, num_node2, 6));
+      //memset(REAL(this_parm), 0, num_node*6*sizeof(double)); //not sure how to use this with SEXP matrices
 
       j = 0;
       while (new_node != NULL) {
 
-        REAL(this_parm[j, 0]) = i/NN
-        REAL(this_parm[j, 1]) = num_node2
-        REAL(this_parm[j, 2]) = num_node
-        REAL(this_parm[j, 3]) = new_node->time
-        REAL(this_parm[j, 4]) = new_node->theta[0]
-        REAL(this_parm[j, 5]) = new_node->theta[1]
+        REAL(this_parm)[j + 0] = (i/NN);
+        REAL(this_parm)[j + 1] = num_node2;
+        REAL(this_parm)[j + 2] = num_node;
+        REAL(this_parm)[j + 3] = new_node->time;
+        REAL(this_parm)[j + 4] = new_node->theta[0];
+        REAL(this_parm)[j + 5] = new_node->theta[1];
 
         //SEXP common1 = Rf_protect(Rf_allocMatrix(REALSXP, iter/NN, 8));
         //Rprintf(parm, "%d %d %d %lf %lf %lf\n", 
@@ -253,19 +255,29 @@ void mcmc(Node_type *list,
       SET_VECTOR_ELT(parm, i/NN, this_parm);
 
       // Save common parms from iteration i/NN to SEXP matrix obj
-      REAL(common)[i/NN, 0] = num_node2;
-      REAL(common)[i/NN, 1] = parms->md[0];
-      REAL(common)[i/NN, 2] = parms->theta[0];
-      REAL(common)[i/NN, 3] = parms->theta[1];
-      REAL(common)[i/NN, 4] = parms->md[1];
-      REAL(common)[i/NN, 5] = parms->sigma;
-      REAL(common)[i/NN, 6] = parms->re_sd[0];
-      REAL(common)[i/NN, 7] = parms->re_sd[1];
+      REAL(common)[i/NN + 0] = num_node2;
+      REAL(common)[i/NN + 1] = parms->md[0];
+      REAL(common)[i/NN + 2] = parms->theta[0];
+      REAL(common)[i/NN + 3] = parms->theta[1];
+      REAL(common)[i/NN + 4] = parms->md[1];
+      REAL(common)[i/NN + 5] = parms->sigma;
+      REAL(common)[i/NN + 6] = parms->re_sd[0];
+      REAL(common)[i/NN + 7] = parms->re_sd[1];
 
       //Rprintf(common, "%d %lf %lf %lf %lf %lf %lf %lf \n", 
       //        num_node2, parms->md[0], parms->theta[0], parms->theta[1],
       //        parms->md[1], parms->sigma, parms->re_sd[0], parms->re_sd[1]);
+      
+      for (j = 0; j < num_node+1; j++) {
+        for (k = 0; k < 5; j++) {
+          REAL(common)[j + k] = 0;
+        }
+      }
+
+      Rf_unprotect(1);
+
     }
+
 
     // Print to STDOUT
     if (!(i % NNN)) {
@@ -330,8 +342,8 @@ void mcmc(Node_type *list,
   } // End of MCMC loop 
 
   // Close files and free allocated memory
-  fclose(common);
-  fclose(parm);
+  //fclose(common);
+  //fclose(parm);
   free(likeli);
 
 } 
@@ -405,7 +417,7 @@ void mh_time_strauss(Node_type *list,
     ntime++;
 
     // Compute proposal time 
-    ptime = rnorm(node->time, v); //, seed);
+    ptime = Rf_rnorm(node->time, v); //, seed);
 
     // Calculate sum_s_r for proposal value and current value
     sum_s_r_proposal = calc_sr_strauss(ptime, list, node, priors);
@@ -556,7 +568,7 @@ void mh_time_os(Node_type *list,
     ntime++;
 
     // Compute proposal time 
-    ptime = rnorm(node->time, v); //, seed);
+    ptime = Rf_rnorm(node->time, v); //, seed);
 
     // Only proceed if our proposed time is reasonable 
     if (ptime <= fitend && ptime > fitstart) {
@@ -888,7 +900,7 @@ void draw_fixed_effects(Node_type *list,
     //}
     //----DEBUGGING----//
            
-    parms->theta[j] = rnorm(gmean, sqrt(gvar));
+    parms->theta[j] = Rf_rnorm(gmean, sqrt(gvar));
   }
 
 }
@@ -964,8 +976,8 @@ void draw_re_sd(Node_type *list,
   accept_counter[1] = arevw;
 
   // Draw proposed values for sigma_1 and sigma_2 
-  new_sd[0] = rnorm(parms->re_sd[0], v1); \\, seed);
-  new_sd[1] = rnorm(parms->re_sd[1], v2); \\, seed);
+  new_sd[0] = rnorm(parms->re_sd[0], v1); //, seed);
+  new_sd[1] = rnorm(parms->re_sd[1], v2); //, seed);
   //------- DEBUGGING---------//
   //Rprintf("\ndebugging sd width MH algo\n");
   //Rprintf("current sd = %f\n", parms->re_sd[1]);

@@ -4,9 +4,9 @@
 \alias{pulse_spec}
 \title{pulse_spec.R}
 \usage{
-pulse_spec(.data = NULL, iterations = 250000, model = c("single-series"),
-  prior_mass_mean = 1.5, prior_mass_var = 10, prior_width_mean = 3.5,
-  prior_width_var = 10, prior_baseline_mean = 2.6,
+pulse_spec(.data = NULL, iterations = 2500, model = c("single-series"),
+  thin = 50, prior_mass_mean = 1.5, prior_mass_var = 10,
+  prior_width_mean = 3.5, prior_width_var = 10, prior_baseline_mean = 2.6,
   prior_baseline_var = 100, prior_halflife_mean = 45,
   prior_halflife_var = 100, prior_error_alpha = 1e-04,
   prior_error_beta = 1e-04, prior_location_gamma = 0,
@@ -19,10 +19,14 @@ pulse_spec(.data = NULL, iterations = 250000, model = c("single-series"),
   pv_pulse_width = 50, pv_pulse_location = 10)
 }
 \arguments{
+\item{.data}{Time-series of hormone concentration data}
+
 \item{iterations}{Number of iterations to run MCMC_}
 
 \item{model}{Model type to fit. One of "single-series", "population",
 "single-series associational", "population associational".}
+
+\item{thin}{Keep every 'thin' sample}
 
 \item{prior_mass_mean}{mass mean hyperparm}
 

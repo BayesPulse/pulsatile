@@ -32,6 +32,7 @@
 #include "birthdeath_strauss.h"
 //#include "randgen.h" 
 #include "hash.h" 
+#include "cholesky.h" 
 #include <math.h>
 
 // float.h included for EPS variable -- double check to see if this is
@@ -284,7 +285,7 @@ void birth_death(Node_type *list,
     } else { // Otherwise, a death occurs 
 
       // Pick a node to remove, find and remove it and update likelihood
-      remove = (int)rmultinomial(death_rate, (long)num_node) + 1; //, seed) + 1;
+      remove = one_rmultinom(death_rate, num_node) + 1; //, seed) + 1;
       node   = list;
 
       for (i = 0; i < remove; i++) { 

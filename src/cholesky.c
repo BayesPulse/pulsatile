@@ -184,6 +184,21 @@ int rmvnorm(double *result,
 
 
 
+// Single random multinomial
+int one_rmultinom(double *probs, int n_probs) {
+
+  //SEXP ans;
+  //Rf_protect(ans = Rf_allocVector(INTSXP, n_probs));
+  //probs = Rf_coerceVector(probs
+ 
+  int *ans;
+  int rtn;
+  ans = (int *)calloc(n_probs, sizeof(int));
+  Rf_rmultinom(1, probs, n_probs, ans);
+
+  //rtn = *ans;
+  return(*ans);
+}
 
 ///-----------------------------------------------------------------------------
 ///

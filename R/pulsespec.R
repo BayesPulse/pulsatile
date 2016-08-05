@@ -8,9 +8,11 @@
 #' fitting a fit_pulse model.
 #'   
 #' 
+#' @param .data Time-series of hormone concentration data
 #' @param iterations Number of iterations to run MCMC_
 #' @param model Model type to fit. One of "single-series", "population",
 #' "single-series associational", "population associational".
+#' @param thin Keep every 'thin' sample
 #' @param prior_mass_mean mass mean hyperparm
 #' @param prior_mass_var mass variance hyperparm
 #' @param prior_width_mean width mean hyperparm
@@ -46,10 +48,11 @@
 #' @seealso \code{\link{summary.pulse_spec}} \code{\link{print.pulse_spec}} 
 #' pulse_spec()
 pulse_spec <-
-  function(.data = NULL,
-           iterations = 250000,
-           model = c("single-series"), #, "population", "single-series
+  function(.data      = NULL,
+           iterations = 2500,
+           model      = c("single-series"), #, "population", "single-series
                      #associational", "population associational"),
+           thin       = 50,
            prior_mass_mean        = 1.50,
            prior_mass_var         = 10,
            prior_width_mean       = 3.5,
@@ -89,7 +92,8 @@ pulse_spec <-
       structure(
         list(model = list(model      = model, 
                           iterations = iterations, 
-                          data       = .data),
+                          data       = .data,
+                          thin       = thin),
              priors = list(pulse_mass     = list(mean  = prior_mass_mean,
                                                  var   = prior_mass_var),
                            pulse_width    = list(mean  = prior_width_mean,

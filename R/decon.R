@@ -49,6 +49,7 @@ show_args <- function(.data) {
 
 }
 
+
 #' fit_pulse
 #' 
 #' Primary function for fitting deconvulation model for time series of pulsatile
@@ -65,7 +66,8 @@ fit_pulse <- function(pulse_spec_obj) {
   .Call(decon, PACKAGE = "pulsatile",
         pulse_spec_obj$model$data,
         pulse_spec_obj$model$model,
-        pulse_spec_obj$iterations$iterations,
+        as.integer(pulse_spec_obj$model$thin),
+        as.integer(pulse_spec_obj$model$iterations),
         pulse_spec_obj$priors$pulse_mass$mean,
         pulse_spec_obj$priors$pulse_mass$var,
         pulse_spec_obj$priors$pulse_width$mean,
@@ -75,12 +77,12 @@ fit_pulse <- function(pulse_spec_obj) {
         pulse_spec_obj$priors$pulse_location$count,
         pulse_spec_obj$priors$max_sd$mass,
         pulse_spec_obj$priors$max_sd$width,
-        pulse_spec_obj$prior$baseline$smean,
-        pulse_spec_obj$prior$baseline$svar,
-        pulse_spec_obj$prior$halflife$smean,
-        pulse_spec_obj$prior$halflife$svar,
-        pulse_spec_obj$prior$error$salpha,
-        pulse_spec_obj$prior$error$sbeta,
+        pulse_spec_obj$prior$baseline$mean,
+        pulse_spec_obj$prior$baseline$var,
+        pulse_spec_obj$prior$halflife$mean,
+        pulse_spec_obj$prior$halflife$var,
+        pulse_spec_obj$prior$error$alpha,
+        pulse_spec_obj$prior$error$beta,
         pulse_spec_obj$starting_values$pulse_mass$mean,
         pulse_spec_obj$starting_values$pulse_mass$sd,
         pulse_spec_obj$starting_values$pulse_width$mean,
