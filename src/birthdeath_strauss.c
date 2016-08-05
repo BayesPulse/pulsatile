@@ -30,8 +30,9 @@
 
 // Include headers for files of used function definitions
 #include "birthdeath_strauss.h"
-#include "randgen.h" 
+//#include "randgen.h" 
 #include "hash.h" 
+#include "cholesky.h" 
 #include <math.h>
 
 // float.h included for EPS variable -- double check to see if this is
@@ -61,7 +62,6 @@ extern int mmm;
 ///     Common_parms *parms - the current values of the common parameters
 ///     int N               - the number of observations in **ts
 ///     double *likeli      - the current value of the likelihood
-///     unsigned long *seed - seed values needed for the randon number generator
 ///     int iter            - which iteration are we on
 ///     Priors *priors      - For priors->gamma, the repulsion parameter for
 ///                           Strauss process (hard core: gamma=0); and 
@@ -79,7 +79,7 @@ void birth_death(Node_type *list,
                  Common_parms *parms, 
                  int N, 
                  double *likeli, 
-                 unsigned long *seed, 
+                 //unsigned long *seed, 
                  int iter, 
                  Priors *priors) 
 {
@@ -234,7 +234,7 @@ void birth_death(Node_type *list,
     //   Draw from exp(B+D) and add to current S 
     //-------------------------------------------
     /*{{{*/
-    S += rexp(Birth_rate + Death_rate, seed);
+    S += rexp(Birth_rate + Death_rate); //, seed);
     // If S exceeds T or if we've run this too many times, break
     if (S > T)  { 
       //Rprintf("BD ran for %d iterations.\n", aaa);
@@ -250,10 +250,11 @@ void birth_death(Node_type *list,
     // Select Birth or Death and proceed with either
     //-------------------------------------------
     /*{{{*/
-    if (kiss(seed) < max) { // If U < B/(B+D), a birth occurs 
+    //if (kiss(seed) < max) { // If U < B/(B+D), a birth occurs 
+    if (runif(0, 1) < max) { // If U < B/(B+D), a birth occurs 
 
       // Generate new position
-      position = runif_atob(seed, fitstart, fitend);
+      position = runif(fitstart, fitend);
       int accept_pos = 1;
 
       // If using Strauss prior, run accept/reject for new position
@@ -261,7 +262,7 @@ void birth_death(Node_type *list,
         sum_s_r    = calc_sr_strauss(position, list, list, priors);
         papas_cif  = pulse_intensity * pow(priors->gamma, sum_s_r);
         b_ratio    = papas_cif / birth_rate;
-        accept_pos = (kiss(seed) < b_ratio) ? 1 : 0;
+        accept_pos = (runif(0, 1) < b_ratio) ? 1 : 0;
       }
 
       // If it's a valid position, generate initial parms and insert node
@@ -271,8 +272,8 @@ void birth_death(Node_type *list,
         // Initialize a new node
         new_node               = initialize_node();
         new_node->time         = position;
-        new_node->theta[0]     = exp(rnorm(parms->theta[0], parms->re_sd[0], seed));
-        new_node->theta[1]     = exp(rnorm(parms->theta[1], parms->re_sd[1], seed));
+        new_node->theta[0]     = exp(rnorm(parms->theta[0], parms->re_sd[0])); //, seed));
+        new_node->theta[1]     = exp(rnorm(parms->theta[1], parms->re_sd[1])); //, seed));
         new_node->mean_contrib = (double *)calloc(N, sizeof(double));
         // Add it to the linklist and update values
         mean_contribution(new_node, ts, parms, N);
@@ -284,7 +285,7 @@ void birth_death(Node_type *list,
     } else { // Otherwise, a death occurs 
 
       // Pick a node to remove, find and remove it and update likelihood
-      remove = (int)rmultinomial(death_rate, (long)num_node, seed) + 1;
+      remove = one_rmultinom(death_rate, num_node) + 1; //, seed) + 1;
       node   = list;
 
       for (i = 0; i < remove; i++) { 

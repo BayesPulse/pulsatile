@@ -20,8 +20,10 @@
 /// 
 ///-----------------------------------------------------------------------------
 
+#include <R.h>
+#include <Rinternals.h>
 #include "cholesky.h"
-#include "randgen.h"
+//#include "randgen.h"
 #include "deconvolution_main.h"
 
 
@@ -138,7 +140,7 @@ int rmvnorm(double *result,
             double **A, 
             int size_A, 
             double *mean, 
-            unsigned long *seed, 
+            //unsigned long *seed, 
             int flag) {
 
   int i;
@@ -158,7 +160,7 @@ int rmvnorm(double *result,
 
     runiv = (double *)calloc(size_A, sizeof(double));
     for (i = 0; i < size_A; i++) {
-      runiv[i] = snorm(seed);
+      runiv[i] = rnorm(0, 1); //snorm(seed);
     }
 
     for (i=0;i<size_A;i++) {
@@ -182,6 +184,21 @@ int rmvnorm(double *result,
 
 
 
+// Single random multinomial
+int one_rmultinom(double *probs, int n_probs) {
+
+  //SEXP ans;
+  //Rf_protect(ans = Rf_allocVector(INTSXP, n_probs));
+  //probs = Rf_coerceVector(probs
+ 
+  int *ans;
+  int rtn;
+  ans = (int *)calloc(n_probs, sizeof(int));
+  Rf_rmultinom(1, probs, n_probs, ans);
+
+  //rtn = *ans;
+  return(*ans);
+}
 
 ///-----------------------------------------------------------------------------
 ///

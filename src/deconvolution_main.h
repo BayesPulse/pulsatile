@@ -10,6 +10,10 @@
 #ifndef DECONVOLUTION_MAIN_H
 #define DECONVOLUTION_MAIN_H
 
+#define R_NO_REMAP 
+#include <R.h>
+#include <Rinternals.h>
+#include <Rmath.h>
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
@@ -41,14 +45,16 @@ typedef struct {
     double *fe_mean;     // array of prior mean for mean pulse mass and width
     double *fe_variance; // variance of prior for mean pulse mass
     double *re_sdmax;    // 'b' on uniform prior for random effects standard deviation
-    double alpha;        // alpha: prior parameters for model error (inverse gamma)
-    double beta;         // beta : ""
+    double err_alpha;    // alpha: prior parameters for model error (inverse gamma)
+    double err_beta;     // beta : ""
     double gamma;        // Gamma, repulsion parameter for Strauss prior
     double range;        // Range parameter for Strauss prior
 } Priors;
 
-
 #endif // DECONVOLUTION_MAIN_H
+
+double **convert_data(SEXP indata);
+SEXP getListElement(SEXP list, const char *str);
 
 //------------------------------------------------------------------------------
 // End of file

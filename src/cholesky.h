@@ -19,8 +19,10 @@ int rmvnorm(double *result,
             double **A, 
             int size_A, 
             double *mean, 
-            unsigned long *seed, 
+            //unsigned long *seed, 
             int flag);
+
+int one_rmultinom(double *probs, int n_probs);
 
 //int rwishart(double **result, 
 //             double **S, 

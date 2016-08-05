@@ -1,25 +1,27 @@
-///-----------------------------------------------------------------------------
-///
-/// FILE: linklistv3.c
-/// AUTHOR: Matt Mulvahill 
-///         (and many before me: T Johnson, N Carlson, K Horton, Karen )
-///
-/// DESCRIPTION: 
-///   Contains birth-death algorithm, expanded to spatial birth-death with the
-///   option to use the older order-statistic prior approach.  To use the order
-///   statistic, priors->gamma should be less than some very small negative
-///   number.  I'm setting it to -1 in the arguments file (see
-///   deconvolution_main.c for more detail). 
-/// 
-///------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//
+// FILE: linklistv3.c
+// MAINTAINER: Matt Mulvahill 
+//         (and many before me: T Johnson, N Carlson, K Horton, Karen )
+//
+// DESCRIPTION: 
+//   Contains birth-death algorithm, expanded to spatial birth-death with the
+//   option to use the older order-statistic prior approach.  To use the order
+//   statistic, priors->gamma should be less than some very small negative
+//   number.  I'm setting it to -1 in the arguments file (see
+//   deconvolution_main.c for more detail). 
+// 
+//------------------------------------------------------------------------------
 
 // Include needed header files
+#include <R.h>
+#include <Rinternals.h>
 #include "linklistv3.h"
 #include "deconvolution_main.h"
 #include "hash.h"
 #include "birthdeath_strauss.h"
 #include "cholesky.h"
-#include "randgen.h"
+//#include "randgen.h"
 
 // Minumum precision, used instead of equalities in some places
 #define EPS 1.0e-12
@@ -57,8 +59,6 @@ long nrevw = 0;         // Counter for RE pulse width SD draws
 ///     long iter           - the number of iterations to run
 ///     int N               - the number of observations in **ts
 ///     Priors *priors      - the parameters of the prior distributions
-///     unsigned long *seed - seed values needed for the randon number
-///                           generator                                        
 ///     char *file1         - the output file name for common parameters
 ///     char *file2         - the output file name for pulse specific
 ///                           parameters
@@ -76,10 +76,11 @@ void mcmc(Node_type *list,
           double **ts, 
           long iter, 
           int N,
+          int NN,
           Priors *priors, 
-          unsigned long *seed, 
-          char *file1, 
-          char *file2, 
+          //unsigned long *seed, 
+          SEXP common, //char *file1, 
+          SEXP parm, //char *file2, 
           double propvar[]) {
 
   // Declarations ----------------------
@@ -89,7 +90,7 @@ void mcmc(Node_type *list,
   int	l;               // Generic counter
   int	num_node;        // Counter of num_node for loops
   int	num_node2;       // Number of pulses
-  int	NN = 50;         // Output ever NNth iteration to files
+  //int	NN = 50;         // Output ever NNth iteration to files
   int	NNN = 5000;      // Output ever NNth iteration to STDOUT
   double vrem;         // Proposal variance for RE masses
   double vrew;         // Proposal variance for RE widths
@@ -101,13 +102,6 @@ void mcmc(Node_type *list,
   double **pmd_var;    // Var-cov matrix for baseline and half-life
   double **pmd_vch;    // Cholesky decomposed var-cov matrix for baseline/half-life
   Node_type *new_node; // Node structure for new pulse
-  FILE *common;        // File path for outputting common parameters
-  FILE *parm;          // File path for outputting pulse parameters
-
-
-  // Open output files for writing
-  common = fopen(file1, "w");
-  parm   = fopen(file2, "w");
 
   // Allocate memory for likelihood 
   likeli = (double *)calloc(1, sizeof(double));
@@ -162,9 +156,13 @@ void mcmc(Node_type *list,
     //   selection of prior occurs within function based on 
     //   priors->gamma < -0.001
     //------------------------------------------------------
-    birth_death(list, ts, parms, N, likeli, seed, i, priors);
+    birth_death(list, ts, parms, N, likeli, //seed, 
+                i, priors);
 
     // Count number of pulses
+    // **NOTE**: could remove this traversing of the linked-list by having
+    // birth_death() return the number of estimated pulses from this run -- some
+    // speed gains likely
     num_node2 = 0;
     new_node = list->succ;
     while (new_node != NULL) {
@@ -178,7 +176,7 @@ void mcmc(Node_type *list,
 
     // 1) Draw the fixed effects   
     //    (Gibbs sampler)
-    draw_fixed_effects(list, priors, parms, seed); 
+    draw_fixed_effects(list, priors, parms); //, seed); 
 
     // 2) Draw standard deviation of random effects 
     //    (Metropolis Hastings)
@@ -186,23 +184,24 @@ void mcmc(Node_type *list,
     //------ DEBUGGING ------//
     //Rprintf("\n\n\nIteration %d\n", i);
     //------ DEBUGGING ------//
-    draw_re_sd(list, priors, parms, vmv, vwv, seed);
+    draw_re_sd(list, priors, parms, vmv, vwv); //, seed);
 
     // 3) Draw the random effects 
     //    (Metropolis Hastings)
-    draw_random_effects(ts, list, parms, N, likeli, vrem, vrew, seed);
+    draw_random_effects(ts, list, parms, N, likeli, vrem, vrew); //, seed);
 
     // 4) Draw the pulse locations 
     //    (Metropolis Hastings)
     if (priors->gamma < -0.001) {
-      mh_time_os(list, parms, ts, likeli, N, seed, vt); 
+      mh_time_os(list, parms, ts, likeli, N, vt); //, seed, vt); 
     } else {
-      mh_time_strauss(list, parms, ts, likeli, N, seed, vt, priors);
+      mh_time_strauss(list, parms, ts, likeli, N, //seed, 
+                      vt, priors);
     }
 
     // 5) Draw baseline and halflife
     //    (Metropolis-Hastings)
-    mh_mu_delta(list, parms, priors, ts, likeli, N, num_node2, seed,
+    mh_mu_delta(list, parms, priors, ts, likeli, N, num_node2, //seed,
                 pmd_vch);
 
     // 6) Draw the model error variance from the inverse Gamma distribution 
@@ -211,9 +210,10 @@ void mcmc(Node_type *list,
     //    distribution via Ken's derivation.  Looked at Week7 of Ed's notes, but
     //    didn't find a clear answer.
     ssq           = error_squared(ts, list, parms, N);
-    parms->sigma  = inverse_gamma(priors->alpha + N / 2, 
-                                  priors->beta + 0.5 * ssq, 
-                                  seed);
+    parms->sigma  = 1/Rf_rgamma(priors->err_alpha + N / 2, 
+                                  priors->err_beta + 0.5 * ssq
+                                  //seed
+                                  );
     parms->lsigma = log(parms->sigma);
 
     //------------------------------------------------------
@@ -225,48 +225,85 @@ void mcmc(Node_type *list,
     // Save/Print results
     //------------------------------------------------------
     // Save to files common/parms
-    if (!(i%NN)) {
+    if (!(i % NN)) {
       num_node = 0;
       new_node = list->succ;
 
+      // create matrix for pulse-specific parms in this iteration
+      SEXP this_parm = Rf_protect(allocMatrix(REALSXP, num_node2, 6));
+      //memset(REAL(this_parm), 0, num_node*6*sizeof(double)); //not sure how to use this with SEXP matrices
+
+      j = 0;
       while (new_node != NULL) {
-        Rprintf(parm, "%d %d %d %lf %lf %lf\n", 
-                i/NN, num_node2, num_node, new_node->time, 
-                new_node->theta[0], new_node->theta[1]);
+
+        REAL(this_parm)[j + 0] = (i/NN);
+        REAL(this_parm)[j + 1] = num_node2;
+        REAL(this_parm)[j + 2] = num_node;
+        REAL(this_parm)[j + 3] = new_node->time;
+        REAL(this_parm)[j + 4] = new_node->theta[0];
+        REAL(this_parm)[j + 5] = new_node->theta[1];
+
+        //SEXP common1 = Rf_protect(Rf_allocMatrix(REALSXP, iter/NN, 8));
+        //Rprintf(parm, "%d %d %d %lf %lf %lf\n", 
+        //        i/NN, num_node2, num_node, new_node->time, 
+        //        new_node->theta[0], new_node->theta[1]);
+
         num_node++;
         new_node = new_node->succ;
+        j++;
+      }
+      SET_VECTOR_ELT(parm, i/NN, this_parm);
+
+      // Save common parms from iteration i/NN to SEXP matrix obj
+      REAL(common)[i/NN + 0] = num_node2;
+      REAL(common)[i/NN + 1] = parms->md[0];
+      REAL(common)[i/NN + 2] = parms->theta[0];
+      REAL(common)[i/NN + 3] = parms->theta[1];
+      REAL(common)[i/NN + 4] = parms->md[1];
+      REAL(common)[i/NN + 5] = parms->sigma;
+      REAL(common)[i/NN + 6] = parms->re_sd[0];
+      REAL(common)[i/NN + 7] = parms->re_sd[1];
+
+      //Rprintf(common, "%d %lf %lf %lf %lf %lf %lf %lf \n", 
+      //        num_node2, parms->md[0], parms->theta[0], parms->theta[1],
+      //        parms->md[1], parms->sigma, parms->re_sd[0], parms->re_sd[1]);
+      
+      for (j = 0; j < num_node+1; j++) {
+        for (k = 0; k < 5; j++) {
+          REAL(common)[j + k] = 0;
+        }
       }
 
-      Rprintf(common, "%d %lf %lf %lf %lf %lf %lf %lf \n", 
-              num_node2, parms->md[0], parms->theta[0], parms->theta[1],
-              parms->md[1], parms->sigma, parms->re_sd[0], parms->re_sd[1]);
+      Rf_unprotect(1);
+
     }
 
+
     // Print to STDOUT
-    if (!(i%NNN)) {
+    if (!(i % NNN)) {
       Rprintf("\n\n");
       Rprintf("iter = %d likelihood = %lf\n", i, *likeli);
       Rprintf("mu %.2lf A %.2lf s %.2lf d %.4lf  v %.4le\n", 
-             parms->md[0], parms->theta[0], parms->theta[1], parms->md[1],
-             parms->sigma);
+              parms->md[0], parms->theta[0], parms->theta[1], parms->md[1],
+              parms->sigma);
       Rprintf("pmdvar00 %.2lf pmdvar11 %.2lf pmdvar01 %.2lf \n",
-             pmd_var[0][0], pmd_var[1][1], pmd_var[0][1]);
+              pmd_var[0][0], pmd_var[1][1], pmd_var[0][1]);
       print_list(list);
       Rprintf("pct rem = %.2lf pct rew = %.2lf pct time = %.2lf\n",
-             (double)arem/(double)nrem, 
-             (double)arew/(double)nrew,
-             (double)atime/(double)ntime);
+              (double)arem  / (double)nrem, 
+              (double)arew  / (double)nrew,
+              (double)atime / (double)ntime);
       Rprintf("pct md = %.2lf revm = %.2lf revw = %.2lf\n", 
-             (double)adelta/(double)ndelta, 
-             (double)arevm/(double)nrevm,
-             (double)arevw/(double)nrevw);
+             (double)adelta / (double)ndelta, 
+             (double)arevm  / (double)nrevm,
+             (double)arevw  / (double)nrevw);
       fflush(stdout);
     }
 
     //----------------------------------------
     // Check for R user interrupt
     //----------------------------------------
-    R_CheckUserInterrupt() 
+    R_CheckUserInterrupt();
 
 
     //------------------------------------------------------
@@ -274,28 +311,28 @@ void mcmc(Node_type *list,
     //------------------------------------------------------
     if (!(i % 500) && i < 25000 && i > 0) {
 
-      adjust2_acceptance((double)adelta/(double)ndelta, pmd_var, -0.90);
-      adjust_acceptance((double)atime/(double)ntime, &vt);
-      adjust_acceptance((double)arem/(double)nrem, &vrem);
-      adjust_acceptance((double)arew/(double)nrew, &vrew);
-      adjust_acceptance((double)arevm/(double)nrevm, &vmv);
-      adjust_acceptance((double)arevw/(double)nrevw, &vwv);
+      adjust2_acceptance((double) adelta / (double) ndelta, pmd_var, -0.90);
+      adjust_acceptance( (double) atime  / (double) ntime,  &vt);
+      adjust_acceptance( (double) arem   / (double) nrem,   &vrem);
+      adjust_acceptance( (double) arew   / (double) nrew,   &vrew);
+      adjust_acceptance( (double) arevm  / (double) nrevm,  &vmv);
+      adjust_acceptance( (double) arevw  / (double) nrevw,  &vwv);
 
       adelta = ndelta = 0;
-      atime = ntime = 0;
-      arem = nrem = 0;
-      arew = nrew = 0;
-      arevm = nrevm = 0;
-      arevw = nrevw = 0;
+      atime  = ntime  = 0;
+      arem   = nrem   = 0;
+      arew   = nrew   = 0;
+      arevm  = nrevm  = 0;
+      arevw  = nrevw  = 0;
 
       // Cholesky decompose the three proposal var-covar matrices
-      for (k=0;k<2;k++) {
-        for (l=0;l<2;l++) {
+      for (k = 0; k < 2; k++) {
+        for (l = 0; l < 2; l++) {
           pmd_vch[k][l] = pmd_var[k][l];
         }
       }
 
-      if (!cholesky_decomp(pmd_vch,2)){
+      if (!cholesky_decomp(pmd_vch, 2)){
         Rprintf("pmd not PSD matrix\n");
         exit(0);
       }
@@ -305,8 +342,8 @@ void mcmc(Node_type *list,
   } // End of MCMC loop 
 
   // Close files and free allocated memory
-  fclose(common);
-  fclose(parm);
+  //fclose(common);
+  //fclose(parm);
   free(likeli);
 
 } 
@@ -332,8 +369,6 @@ void mcmc(Node_type *list,
 ///                           column of times and a column of log(concentration)
 ///     double *like        - the current value of the likelihood
 ///     int N               - the number of observations in **ts
-///     unsigned long *seed - seed values needed for the randon number
-///                           generator
 ///     double v            - the proposal variance for pulse location
 ///     Priors *priors      - For priors->gamma, the repulsion parameter for
 ///                           Strauss process (hard core: gamma=0); and 
@@ -351,7 +386,7 @@ void mh_time_strauss(Node_type *list,
                      double **ts, 
                      double *like, 
                      int N, 
-                     unsigned long *seed, 
+                     //unsigned long *seed, 
                      double v, 
                      Priors *priors) {
 
@@ -382,7 +417,7 @@ void mh_time_strauss(Node_type *list,
     ntime++;
 
     // Compute proposal time 
-    ptime = rnorm(node->time, v, seed);
+    ptime = Rf_rnorm(node->time, v); //, seed);
 
     // Calculate sum_s_r for proposal value and current value
     sum_s_r_proposal = calc_sr_strauss(ptime, list, node, priors);
@@ -432,7 +467,9 @@ void mh_time_strauss(Node_type *list,
       alpha = (0 < l_rho) ? 0 : l_rho;
 
       // Accept/Reject
-      if (log(kiss(seed)) < alpha) {
+      //if (log(kiss(seed)) < alpha) {
+      // ***NOTE***: just guessed on this implementation
+      if (log(runif(0, 1)) < alpha) {
 
         // If log U < log rho, we accept proposed value. Increase
         // acceptance count by one and set likelihood equal to
@@ -489,8 +526,6 @@ void mh_time_strauss(Node_type *list,
 ///                           log(concentration)
 ///     double *like        - the current value of the likelihood
 ///     int N               - the number of observations in **ts
-///     unsigned long *seed - seed values needed for the randon number
-///                           generator
 ///     double v            - the proposal variance for pulse location
 ///
 ///   RETURNS: 
@@ -504,7 +539,7 @@ void mh_time_os(Node_type *list,
                 double **ts, 
                 double *like,
                 int N, 
-                unsigned long *seed, 
+                //unsigned long *seed, 
                 double v) {
 
   int i;                     // Generic counter
@@ -533,7 +568,7 @@ void mh_time_os(Node_type *list,
     ntime++;
 
     // Compute proposal time 
-    ptime = rnorm(node->time, v, seed);
+    ptime = Rf_rnorm(node->time, v); //, seed);
 
     // Only proceed if our proposed time is reasonable 
     if (ptime <= fitend && ptime > fitstart) {
@@ -590,7 +625,8 @@ void mh_time_os(Node_type *list,
       // x ? y:z is equivalent to R's ifelse, y = true, z = false 
       alpha = (0 < (rho = (prior_ratio + like_ratio))) ? 0 : rho;
 
-      if (log(kiss(seed)) < alpha) {
+      //if (log(kiss(seed)) < alpha) {
+      if (log(runif(0, 1)) < alpha) {
         // If log U < log rho, we accept proposed value. Increase acceptance
         // count by one and set likelihood equal to likelihood under proposal 
         atime++;
@@ -645,8 +681,6 @@ void mh_time_os(Node_type *list,
 ///     double *like        - the current value of the likelihood
 ///     int N               - the number of observations in **ts
 ///     int num_node        - the current number of pulses
-///     unsigned long *seed - seed values needed for the randon number
-///                           generator
 ///     double **var        - the proposal variance-covariance matrix
 ///                           for baseline and halflife
 ///
@@ -663,7 +697,7 @@ void mh_mu_delta(Node_type *list,
                  double *like, 
                  int N, 
                  int num_node, 
-                 unsigned long *seed, 
+                 //unsigned long *seed, 
                  double **var) {
 
   int i;                // Generic counter
@@ -695,7 +729,7 @@ void mh_mu_delta(Node_type *list,
   ndelta++;
 
   // Draw proposal values for b and hl 
-  rmvnorm(pmd, var, 2, parms->md, seed, 1);
+  rmvnorm(pmd, var, 2, parms->md, 1); //seed, 1);
 
   // Only proceed if we draw reasonable values 
   if (pmd[0] > 0 && pmd[1] > 3) {
@@ -744,7 +778,8 @@ void mh_mu_delta(Node_type *list,
     // Calculate log rho; set alpha equal to min(0, log rho) 
     alpha = (0 < (logrho = (prior_ratio + like_ratio))) ? 0:logrho;
 
-    if (log(kiss(seed)) < alpha) {
+    //if (log(kiss(seed)) < alpha) {
+    if (log(runif(0, 1)) < alpha) {
       // If log U < log rho, increase acceptance rate by 1 and set the
       // likelihood equal to the likelihood under proposed values 
       adelta++;
@@ -801,8 +836,6 @@ void mh_mu_delta(Node_type *list,
 ///     Priors *priors      - the parameters of the prior distributions          
 ///     Common_parms *parms - the current values of the common
 ///                           parameters        
-///     unsigned long *seed - seed values needed for the randon number
-///                           generator 
 ///     double v1           - the proposal variance for overall mean
 ///                           mass        
 ///     double v2           - the proposal variance for overall mean
@@ -816,8 +849,9 @@ void mh_mu_delta(Node_type *list,
 
 void draw_fixed_effects(Node_type *list, 
                         Priors *priors, 
-                        Common_parms *parms,
-                        unsigned long *seed) {
+                        Common_parms *parms
+                        //unsigned long *seed
+                        ) {
 
   // Declarations
   int j;           // Generic counter
@@ -866,7 +900,7 @@ void draw_fixed_effects(Node_type *list,
     //}
     //----DEBUGGING----//
            
-    parms->theta[j] = rnorm(gmean, sqrt(gvar), seed);
+    parms->theta[j] = Rf_rnorm(gmean, sqrt(gvar));
   }
 
 }
@@ -899,8 +933,6 @@ void draw_fixed_effects(Node_type *list,
 ///                           of mass   
 ///     double v2           - the proposal variance for overall st-dev
 ///                           of width  
-///     unsigned long *seed - seed values needed for the randon number
-///                           generator 
 ///
 ///   RETURNS: 
 ///     None                - all updates are made internally
@@ -912,8 +944,9 @@ void draw_re_sd(Node_type *list,
                 Priors *priors, 
                 Common_parms *parms,
                 double v1, 
-                double v2, 
-                unsigned long *seed) {
+                double v2 
+                //unsigned long *seed
+                ) {
 
   int j;                  // Index for re_sd, theta, etc. arrays (mass=0, width=1)
   int npulse;             // Number of pulses
@@ -943,8 +976,8 @@ void draw_re_sd(Node_type *list,
   accept_counter[1] = arevw;
 
   // Draw proposed values for sigma_1 and sigma_2 
-  new_sd[0] = rnorm(parms->re_sd[0], v1, seed);
-  new_sd[1] = rnorm(parms->re_sd[1], v2, seed);
+  new_sd[0] = rnorm(parms->re_sd[0], v1); //, seed);
+  new_sd[1] = rnorm(parms->re_sd[1], v2); //, seed);
   //------- DEBUGGING---------//
   //Rprintf("\ndebugging sd width MH algo\n");
   //Rprintf("current sd = %f\n", parms->re_sd[1]);
@@ -1011,7 +1044,7 @@ void draw_re_sd(Node_type *list,
 
       // Compute log rho, and set alpha equal to min(log rho, 0) 
       alpha = (0 < prop_ratio) ? 0 : prop_ratio;
-      draw  = log(kiss(seed));
+      draw  = log(runif(0,1));
       //------- DEBUGGING---------//
       //if (j == 1) {
       //  Rprintf("alpha  = %.20f\n", alpha);
@@ -1068,8 +1101,6 @@ void draw_re_sd(Node_type *list,
 ///                           pulse masses                                         
 ///     double v2           - the proposal variance for individual
 ///                           pulse widths                                         
-///     unsigned long *seed - seed values needed for the randon number
-///                           generator                                        
 /// 
 ///   RETURNS: 
 ///     None                - all updates are made internally
@@ -1079,8 +1110,9 @@ void draw_re_sd(Node_type *list,
 /*{{{*/
 
 void draw_random_effects(double **ts, Node_type *list, Common_parms *parms, 
-                         int N, double *like, double v1,  double v2, 
-                         unsigned long *seed) {
+                         int N, double *like, double v1,  double v2 
+                         //unsigned long *seed
+                         ) {
 
   int i;                  // Generic counters
   int j;                  // Generic counters
@@ -1117,8 +1149,8 @@ void draw_random_effects(double **ts, Node_type *list, Common_parms *parms,
     nrew++;
 
     // Draw proposed values of current pulse's mass and width 
-    pRE[0] = rnorm(log(node->theta[0]), v1, seed);
-    pRE[1] = rnorm(log(node->theta[1]), v2, seed);
+    pRE[0] = rnorm(log(node->theta[0]), v1); //, seed);
+    pRE[1] = rnorm(log(node->theta[1]), v2); //, seed);
 
     // Determine if we accept or reject proposed pulse mass then determine if
     // we accept or reject proposed pulse width
@@ -1157,7 +1189,7 @@ void draw_random_effects(double **ts, Node_type *list, Common_parms *parms,
       // Calculate log rho; set alpha equal to min(0, log rho) 
       alpha = (0 < (logrho = (prior_ratio + like_ratio))) ? 0:logrho;
 
-      if (log(kiss(seed)) < alpha) {
+      if (log(runif(0, 1)) < alpha) {
         // If log U < log rho, accept the proposed value, increase
         // acceptance counter and set current likelihood equal to
         // likelihood under proposed mass/width 

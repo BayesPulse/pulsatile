@@ -1,0 +1,20 @@
+./datastore/reference/data/pulse_reference_001.dat
+./datastore/reference/orderstat/chains/c_pulse_reference_001_orderstat.dat
+./datastore/reference/orderstat/chains/p_pulse_reference_001_orderstat.dat
+2451048799 9329106810 2534989318
+250000
+1.5 10
+3.5 10
+2.6 100
+45 100
+0.0001 0.0001
+-1 -1
+10 10
+12
+1.5 3.5
+2.6 45
+0.25
+1 1
+0.5 45
+2 2
+2 50 10
