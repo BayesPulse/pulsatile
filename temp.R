@@ -2,7 +2,7 @@
 library(pryr)
 library(inline)
 
-rinternals <- file.path(R.home("modules"), "Rinternals.c")
+rinternals <- file.path(R.home("include"), "Rinternals.h")
 file.show(rinternals)
 
 one_rmultinom <- cfunction(c(probs = "numeric", n_probs = "integer"), "
