@@ -37,7 +37,21 @@ SEXP decon_input(SEXP indata,
                  SEXP prior_halflife_mean,
                  SEXP prior_halflife_var,
                  SEXP prior_error_alpha,
-                 SEXP prior_error_beta
+                 SEXP prior_error_beta,
+                 SEXP sv_pulse_mass_mean,
+                 SEXP sv_pulse_mass_sd,
+                 SEXP sv_pulse_width_mean,
+                 SEXP sv_pulse_width_sd,
+                 SEXP sv_baseline_mean,
+                 SEXP sv_halflife_mean,
+                 SEXP sv_error_var,
+                 SEXP pv_mean_pulse_mass,
+                 SEXP pv_mean_pulse_width,
+                 SEXP pv_pulse_mass,
+                 SEXP pv_pulse_width,
+                 SEXP pv_pulse_location,
+                 SEXP pv_baseline,
+                 SEXP pv_halflife
                  ) {
 
   double **ts; // Pointer to Nx2 matrix containing data
@@ -60,11 +74,10 @@ SEXP decon_input(SEXP indata,
   Rprintf("The algo was run for %ld iterations.\n", iters);
   Rprintf("Every %ldth sample was saved in the output chain.\n", nthin);
   // Read the time series into memory                          
-  Rprintf("And the dataset looks like this:\n");
-  for (int i = 0; i < nobs; i++) {
+  Rprintf("And the first 10 obs of the dataset looks like this:\n");
+  for (int i = 0; i < 10; i++) {
     Rprintf("time = %lf, conc = %lf\n", ts[i][0], ts[i][1]);
   }
-
 
   fitend   = ts[nobs - 1][0] + ts[0][0] * 2; // search 2 units farther in time
   fitstart = -ts[0][0] * 4;                // search 4 units in the past
@@ -90,8 +103,49 @@ SEXP decon_input(SEXP indata,
   priors->gamma          = Rf_asReal(prior_pulse_location_gamma);   // priorgamma;
   priors->range          = Rf_asReal(prior_pulse_location_range);   // priorrange;
 
+  Rprintf("The fit start is %f and the fit end is at time %f\n", fitstart, fitend);
+  Rprintf("The prior on the baseline has mean %f and variance %f\n", priors->meanbh[0], priors->varbh[0]);
+
+  // Set up parms structure ------------------
+  Common_parms *parms;            // Common parameters data structure
+  parms           = (Common_parms *)calloc(1, sizeof(Common_parms));
+  parms->re_sd    = (double *)calloc(2, sizeof(double));
+  parms->nprior   = Rf_asReal(prior_pulse_location_count); // priorr;
+  parms->theta[0] = Rf_asReal(sv_pulse_mass_mean);   // svmu1;
+  parms->theta[1] = Rf_asReal(sv_pulse_width_mean);  // svmu2;
+  parms->md[0]    = Rf_asReal(sv_baseline_mean);     // svbase;
+  parms->md[1]    = Rf_asReal(sv_halflife_mean);     // svhalf;
+  parms->sigma    = Rf_asReal(sv_error_var);         // svevar; // error variance
+  parms->lsigma   = log(parms->sigma);    // log of error variance
+  parms->re_sd[0] = Rf_asReal(sv_pulse_mass_sd);  // svsig1; 
+  parms->re_sd[1] = Rf_asReal(sv_pulse_width_sd); // svsig2; 
+  // note: other re_sd parms (max and pv) are entered and used on the natural
+  // scale, so for consistency, we enter these on the same scale.  Functions
+  // other than draw_re_sd, use re_sd[j] on the log scale so we log xform them
+  // here.                                                                   
+  parms->decay    = log(2) / parms->md[1]; // calculate decay rate from halflife
+
+
+  // Set up proposal variances ------------------
+  double propvar[7];   // Array of proposal variances for MH algorithms
+  propvar[4] = Rf_asReal(pv_mean_pulse_mass); 
+  propvar[5] = Rf_asReal(pv_mean_pulse_width);
+  propvar[2] = Rf_asReal(pv_pulse_mass); 
+  propvar[3] = Rf_asReal(pv_pulse_width);
+  propvar[6] = Rf_asReal(pv_pulse_location); 
+  propvar[0] = Rf_asReal(pv_baseline); 
+  propvar[1] = Rf_asReal(pv_halflife);
+
+  Rprintf("proposal variance for location is %f\n", propvar[6]);
+
   // Free memory
   deallocate_data(ts, nobs);
+  free(priors->fe_mean);
+  free(priors->fe_variance);
+  free(priors->re_sdmax);
+  free(priors);
+  free(parms->re_sd);
+  free(parms);
 
   return Rf_ScalarReal(nthin);
   //return Rf_asVector(priors);
