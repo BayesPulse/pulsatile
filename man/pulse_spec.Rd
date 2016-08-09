@@ -4,7 +4,7 @@
 \alias{pulse_spec}
 \title{pulse_spec.R}
 \usage{
-pulse_spec(.data = NULL, iterations = 2500, model = c("single-series"),
+pulse_spec(.data, iterations = 2500, model = c("single-series"),
   thin = 50, prior_mass_mean = 1.5, prior_mass_var = 10,
   prior_width_mean = 3.5, prior_width_var = 10, prior_baseline_mean = 2.6,
   prior_baseline_var = 100, prior_halflife_mean = 45,
