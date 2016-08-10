@@ -3,14 +3,17 @@
 //
 
 
-#define R_NO_REMAP 
-#include <R.h>
-#include <Rinternals.h>
-//#include <stdlib.h>
+//#define R_NO_REMAP 
+//#include <R.h>
+//#include <Rinternals.h>
+// For boolean variables, consider: #include <stdbool.h>
+#include <stdlib.h>
 //#include <math.h>
 //#include <stdio.h>
 //#include <time.h>
 #include "decon_test.h"
+#include "pulse_node.c"
+#include "birth_death.c"
 
 double fitstart; // First time a pulse can occur (10 min. increments).
 double fitend;   // Last time a pulse can occur (10 min. increments).
@@ -54,6 +57,7 @@ SEXP decon_input(SEXP indata,
                  SEXP pv_halflife
                  ) {
 
+  int i;
   double **ts; // Pointer to Nx2 matrix containing data
   int nobs; // n observations in data (*N)
 
@@ -137,6 +141,59 @@ SEXP decon_input(SEXP indata,
   propvar[1] = Rf_asReal(pv_halflife);
 
   Rprintf("proposal variance for location is %f\n", propvar[6]);
+
+
+
+  // Set up pulse linklist ------------------
+  //   NOTE: Possibly add option to pulse_spec for setting starting values/num
+  //   pulses
+  double time[9];       // Starting values: pulse locations
+  double mass[9];       // Starting values: pulse masses
+  double width[9];      // Starting values: pulse widths
+  Node_type *list;      
+  Node_type *new_node;  
+  list = initialize_node();
+  mass[0]  = 12.32657558;
+  mass[1]  = 8.335093817;
+  mass[2]  = 6.169354435;
+  mass[3]  = 17.80691618;
+  mass[4]  = 17.81203064;
+  mass[5]  = 4.180821883;
+  mass[6]  = 9.385968508;
+  mass[7]  = 3.539176735;
+  mass[8]  = 8.860152668;
+  width[0] = 26.02652032;
+  width[1] = 37.383667;
+  width[2] = 37.90962662;
+  width[3] = 31.45537546;
+  width[4] = 52.64992824;
+  width[5] = 42.00314896;
+  width[6] = 11.7825812;
+  width[7] = 21.11221475;
+  width[8] = 100.6173752;
+  time[0]  = 139.2555248;
+  time[1]  = 293.9643442;
+  time[2]  = 400.3647507;
+  time[3]  = 654.7396597;
+  time[4]  = 788.742805;
+  time[5]  = 918.9406528;
+  time[6]  = 1156.007127;
+  time[7]  = 1335.413248;
+  time[8]  = 1408.372033;
+
+  // Initialize nodes and insert into linkedlist
+  for (i = 0; i < 9; i++) {
+
+    new_node               = initialize_node();
+    new_node->time         = time[i];
+    new_node->theta[0]     = mass[i];
+    new_node->theta[1]     = width[i];
+    new_node->mean_contrib = (double *)calloc(nobs, sizeof(double));
+    mean_contribution(new_node, ts, parms, nobs);
+    insert_node(new_node, list);
+
+  }
+
 
   // Free memory
   deallocate_data(ts, nobs);

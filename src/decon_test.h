@@ -1,16 +1,16 @@
+//
+// FILE: decon_test.h
+// DESCRIPTION: Definitions for decon_test.c
+// 
+
+
+#ifndef DECON_TEST_H
+#define DECON_TEST_H
 
 #define R_NO_REMAP 
 #include <R.h>
 #include <Rinternals.h>
-//#include <stdlib.h>
-//#include <math.h>
-//#include <stdio.h>
-//#include <time.h>
-
-//SEXP decon_input(SEXP indata, SEXP model, SEXP iterations, SEXP thin);
-double **convert_data(SEXP indata, int nrow); 
-void deallocate_data(double **data, int nrow);
-SEXP getListElement(SEXP list, const char *str);
+#include "birth_death.c"
 
 typedef struct {
     double meanbh[2];    // prior mean on baseline and halflife
@@ -34,4 +34,15 @@ typedef struct {
     double nprior;   // prior number of pulses
 } Common_parms;
 
+//SEXP decon_input(SEXP indata, SEXP model, SEXP iterations, SEXP thin);
+double **convert_data(SEXP indata, int nrow); 
+void deallocate_data(double **data, int nrow);
+SEXP getListElement(SEXP list, const char *str);
 //#endif // DECONVOLUTION_MAIN_H
+
+#endif
+
+//------------------------------------------------------------------------------
+// End of file
+//------------------------------------------------------------------------------
+
