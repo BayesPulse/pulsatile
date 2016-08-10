@@ -196,6 +196,31 @@ SEXP decon_input(SEXP indata,
 
   //print_list(list);
 
+
+
+  // R lists for chains ------------------
+  // Common parameters -- 1 record per saved iteration
+  SEXP common1 = Rf_protect(Rf_allocMatrix(REALSXP, iters/nthin, 8));
+  // Pulse-specific parameters -- 1 record per pulse per iteration
+  //   list object defined here, each iteration will differ in lenght, so the
+  //   entries are defined in linklistv3
+  SEXP parm1   = Rf_protect(Rf_allocVector(VECSXP, iters/nthin));
+
+
+  GetRNGstate();
+  mcmc(list, parms, ts, iters, nobs, nthin, priors, common1, parm1, propvar);
+  PutRNGstate();
+
+
+
+  // Combine chains for output
+  SEXP chains = Rf_protect(Rf_allocVector(VECSXP, 2));
+  SET_VECTOR_ELT(chains, 0, common1);
+  SET_VECTOR_ELT(chains, 1, parm1);
+
+
+
+
   // Free memory
   deallocate_data(ts, nobs);
   destroy_list(list);
@@ -205,9 +230,11 @@ SEXP decon_input(SEXP indata,
   free(priors);
   free(parms->re_sd);
   free(parms);
+  Rf_unprotect(3);
 
-  return Rf_ScalarReal(nthin);
+  //return Rf_ScalarReal(nthin);
   //return Rf_asVector(priors);
+  return chains;
 
 }
 
