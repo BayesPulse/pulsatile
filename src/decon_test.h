@@ -3,14 +3,12 @@
 // DESCRIPTION: Definitions for decon_test.c
 // 
 
-
-#ifndef DECON_TEST_H
-#define DECON_TEST_H
-
 #define R_NO_REMAP 
 #include <R.h>
 #include <Rinternals.h>
-#include "birth_death.c"
+
+#ifndef DECON_TEST_H
+#define DECON_TEST_H
 
 typedef struct {
     double meanbh[2];    // prior mean on baseline and halflife

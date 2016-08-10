@@ -8,15 +8,15 @@
 //#include <Rinternals.h>
 // For boolean variables, consider: #include <stdbool.h>
 #include <stdlib.h>
-//#include <math.h>
-//#include <stdio.h>
-//#include <time.h>
+#include <math.h>
+#include <time.h>
 #include "decon_test.h"
-#include "pulse_node.c"
-#include "birth_death.c"
+#include "pulse_node.h"
+#include "birth_death.h"
 
 double fitstart; // First time a pulse can occur (10 min. increments).
 double fitend;   // Last time a pulse can occur (10 min. increments).
+double mmm = 3;
 
 
 //
@@ -194,9 +194,11 @@ SEXP decon_input(SEXP indata,
 
   }
 
+  //print_list(list);
 
   // Free memory
   deallocate_data(ts, nobs);
+  destroy_list(list);
   free(priors->fe_mean);
   free(priors->fe_variance);
   free(priors->re_sdmax);
