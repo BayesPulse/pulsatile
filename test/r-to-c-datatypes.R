@@ -18,7 +18,7 @@ library(pulsatile)
 dat <- read_delim("test/pulse_reference_001.dat", delim = " ") %>% tbl_df %>%
   select(-observation)
 
-model_spec <- pulse_spec(.data = dat)
+model_spec <- pulse_spec(.data = dat, iterations = 50000)
 model_spec
 
 # Test C functions

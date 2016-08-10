@@ -18,7 +18,7 @@ int rmvnorm(double *result,
             //unsigned long *seed, 
             int flag);
 
-int one_rmultinom(double *probs, int n_probs);
+int one_rmultinom(double *cumprobs, int n_probs);
 
 //int rwishart(double **result, 
 //             double **S, 

@@ -274,7 +274,7 @@ void birth_death(Node_type *list,
     } else { // Otherwise, a death occurs 
 
       // Pick a node to remove, find and remove it and update likelihood
-      remove = one_rmultinom(death_rate, num_node) + 1; //, seed) + 1;
+      remove = one_rmultinom(death_rate, num_node) + 1; 
       node   = list;
 
       for (i = 0; i < remove; i++) { 
