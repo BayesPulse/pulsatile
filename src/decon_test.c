@@ -13,6 +13,7 @@
 #include "decon_test.h"
 #include "pulse_node.h"
 #include "birth_death.h"
+#include "mcmc.h"
 
 double fitstart; // First time a pulse can occur (10 min. increments).
 double fitend;   // Last time a pulse can occur (10 min. increments).
