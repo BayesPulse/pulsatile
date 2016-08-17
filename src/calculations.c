@@ -184,6 +184,7 @@ int one_rmultinom(double *cumprobs, int n_probs) {
   //probs = Rf_coerceVector(probs
  
   int i;
+  int rtn = 0;
   int *ans;
   ans = (int *)calloc(n_probs, sizeof(int));
   double *probs;
@@ -192,11 +193,20 @@ int one_rmultinom(double *cumprobs, int n_probs) {
   for (i = 0; i < n_probs; i++) {
     if (i == 0) probs[i] = cumprobs[i];
     else probs[i] = cumprobs[i] - cumprobs[i-1];
+    ans[i] = 0;
+    //Rprintf("Probability for pulse %d = %f\n", i, probs[i]);
+    //Rprintf("Ans for pulse %d = %d\n", i, ans[i]);
   }
 
   Rf_rmultinom(1, probs, n_probs, ans);
 
-  return(*ans);
+  for (i = 0; i < n_probs; i++) {
+    if (ans[i] == 1) rtn = i;
+    //Rprintf("What is ans[%d] after rmultinom?: %d\n", i, ans[i]);
+  }
+  //Rprintf("What is rtn after assignment?: %d\n", rtn);
+
+  return(rtn);
 }
 
 ////-----------------------------------------------------------------------------
