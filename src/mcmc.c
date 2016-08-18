@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 //
-// FILE: linklistv3.c
+// FILE: mcmc.c
 // MAINTAINER: Matt Mulvahill 
 //         (and many before me: T Johnson, N Carlson, K Horton, Karen )
 //
@@ -16,11 +16,12 @@
 // Include needed header files
 #include <R.h>
 #include <Rinternals.h>
-#include "linklistv3.h"
-#include "deconvolution_main.h"
-#include "hash.h"
-#include "birthdeath_strauss.h"
-#include "cholesky.h"
+#include <Rmath.h>
+#include "mcmc.h"
+#include "decon_test.h"
+#include "pulse_node.h"
+#include "birth_death.h"
+#include "calculations.h"
 //#include "randgen.h"
 
 // Minumum precision, used instead of equalities in some places
@@ -268,11 +269,11 @@ void mcmc(Node_type *list,
       //        num_node2, parms->md[0], parms->theta[0], parms->theta[1],
       //        parms->md[1], parms->sigma, parms->re_sd[0], parms->re_sd[1]);
       
-      for (j = 0; j < num_node+1; j++) {
-        for (k = 0; k < 5; j++) {
-          REAL(common)[j + k] = 0;
-        }
-      }
+      //for (j = 0; j < num_node+1; j++) {
+      //  for (k = 0; k < 5; j++) {
+      //    REAL(common)[j + k] = 0;
+      //  }
+      //}
 
       Rf_unprotect(1);
 

@@ -1,12 +1,9 @@
 //
-// hash.c 
+// pulse_node.c
 //
 // this module implements the linked list.  in this implementation, the first 
 // node in the linked list is a dummy node.  one must initialize the list with
 // the dummy node as the first.                                               
-//
-// Global variable definitions
-//      fitstart - The first time in hours that a pulse may occur
 //
 // Subroutines that exist in this program
 //      *initialize_node
@@ -16,7 +13,13 @@
 //      print_list
 //      destroy_list
 //
-#include "hash.h"
+
+#include <stdlib.h>
+#include <R.h>
+#include <Rinternals.h>
+#include "pulse_node.h"
+
+//#include "decon_test.h"
 extern double fitstart;
 
 
@@ -210,8 +213,9 @@ void print_list(Node_type *list) {
   /* traverses the linked list and prints the contents of each node */
   i = 1;
   node = list->succ;
+  Rprintf("Pulse No. Time  Mass  Width\n");
   while (node != NULL) {
-    Rprintf("%2d %8.4lf %8.4lf %8.4lf \n", i, node->time, node->theta[0],
+    Rprintf("%2d %8.2lf %8.2lf %8.2lf \n", i, node->time, node->theta[0],
            node->theta[1]);
     node = node->succ;
     i++;

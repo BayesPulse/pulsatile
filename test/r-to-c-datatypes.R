@@ -22,10 +22,10 @@ model_spec <- pulse_spec(.data = dat)
 model_spec
 
 # Test C functions
-test_inout(x = dat)
-test_inout(x = model_spec)
-show_args(.data = dat)
-fit_pulse(model_spec)
+#test_inout(x = dat)
+#test_inout(x = model_spec)
+#show_args(.data = dat)
+fit <- fit_pulse(model_spec)
 
 dat %>% str
 

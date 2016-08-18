@@ -48,7 +48,7 @@
 #' @seealso \code{\link{summary.pulse_spec}} \code{\link{print.pulse_spec}} 
 #' pulse_spec()
 pulse_spec <-
-  function(.data      = NULL,
+  function(.data,
            iterations = 2500,
            model      = c("single-series"), #, "population", "single-series
                      #associational", "population associational"),
