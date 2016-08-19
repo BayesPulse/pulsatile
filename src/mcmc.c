@@ -253,7 +253,19 @@ void mcmc(Node_type *list,
         new_node = new_node->succ;
         j++;
       }
+
       SET_VECTOR_ELT(parm, i/NN, this_parm);
+
+      // create names 
+      SEXP parm_names = Rf_protect(Rf_allocVector(STRSXP, 8));
+      SET_STRING_ELT(parm_names, 0, Rf_mkChar("iteration"));
+      SET_STRING_ELT(parm_names, 1, Rf_mkChar("total_num_pulses"));
+      SET_STRING_ELT(parm_names, 2, Rf_mkChar("pulse_num"));
+      SET_STRING_ELT(parm_names, 3, Rf_mkChar("location"));
+      SET_STRING_ELT(parm_names, 4, Rf_mkChar("mass"));
+      SET_STRING_ELT(parm_names, 5, Rf_mkChar("width"));
+      // assign names to list
+      setAttrib(this_parm, R_NamesSymbol, parm_names);
 
       // Save common parms from iteration i/NN to SEXP matrix obj
       REAL(common)[i/NN + 0] = num_node2;
