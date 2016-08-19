@@ -47,31 +47,29 @@ long nrevw = 0;         // Counter for RE pulse width SD draws
 
 
 
-///-----------------------------------------------------------------------------
-///
-/// mcmc()
-///   This function runs the BDMCMC process
-///
-///   ARGUMENTS: 
-///     Node_type *list     - this is the current list of pulses that exist
-///     Common_parms *parms - the current values of the common parameters 
-///     double **ts         - this is the matrix of observed data (a column
-///                           of times and a column of log(concentration) 
-///     long iter           - the number of iterations to run
-///     int N               - the number of observations in **ts
-///     Priors *priors      - the parameters of the prior distributions
-///     char *file1         - the output file name for common parameters
-///     char *file2         - the output file name for pulse specific
-///                           parameters
-///     double **pmd_var    - proposal variance-covariance matrix for
-///                           baseline and halflife
-///
-///   RETURNS: 
-///     None                - all updates are made internally
-/// 
-///-----------------------------------------------------------------------------
-///*{{{*/
-
+//-----------------------------------------------------------------------------
+//
+// mcmc()
+//   This function runs the BDMCMC process
+//
+//   ARGUMENTS: 
+//     Node_type *list     - this is the current list of pulses that exist
+//     Common_parms *parms - the current values of the common parameters 
+//     double **ts         - this is the matrix of observed data (a column
+//                           of times and a column of log(concentration) 
+//     long iter           - the number of iterations to run
+//     int N               - the number of observations in **ts
+//     Priors *priors      - the parameters of the prior distributions
+//     char *file1         - the output file name for common parameters
+//     char *file2         - the output file name for pulse specific
+//                           parameters
+//     double **pmd_var    - proposal variance-covariance matrix for
+//                           baseline and halflife
+//
+//   RETURNS: 
+//     None                - all updates are made internally
+// 
+//-----------------------------------------------------------------------------
 void mcmc(Node_type *list, 
           Common_parms *parms, 
           double **ts, 
@@ -82,7 +80,7 @@ void mcmc(Node_type *list,
           //unsigned long *seed, 
           SEXP common, //char *file1, 
           SEXP parm, //char *file2, 
-          double propvar[]) {
+          double propsd[]) {
 
   // Declarations ----------------------
   int i;               // Generic counter
@@ -93,11 +91,11 @@ void mcmc(Node_type *list,
   int	num_node2;       // Number of pulses
   //int	NN = 50;         // Output ever NNth iteration to files
   int	NNN = 5000;      // Output ever NNth iteration to STDOUT
-  double vrem;         // Proposal variance for RE masses
-  double vrew;         // Proposal variance for RE widths
-  double vmv;          // Proposal variance for SD of RE masses
-  double vwv;          // Proposal variance for SD of RE widths
-  double vt;           // Proposal variance for individual pulse locations
+  double sdrem;         // Proposal variance for RE masses
+  double sdrew;         // Proposal variance for RE widths
+  double sdmv;          // Proposal variance for SD of RE masses
+  double sdwv;          // Proposal variance for SD of RE widths
+  double sdt;           // Proposal variance for individual pulse locations
   double ssq;          // Sum of squared differences between log(concentration) and expected value
   double *likeli;      // Value of likelihood
   double **pmd_var;    // Var-cov matrix for baseline and half-life
@@ -108,11 +106,11 @@ void mcmc(Node_type *list,
   likeli = (double *)calloc(1, sizeof(double));
 
   // Save proposal variances for passing to functions
-  vt   = propvar[6];
-  vrem = propvar[4];
-  vrew = propvar[5];
-  vmv  = propvar[2];
-  vwv  = propvar[3];
+  sdt   = propsd[6];
+  sdrem = propsd[4];
+  sdrew = propsd[5];
+  sdmv  = propsd[2];
+  sdwv  = propsd[3];
 
 
   //----------------------------------------------
@@ -125,8 +123,8 @@ void mcmc(Node_type *list,
   }
 
   // Assign proposal values to matrix and calculate covariance
-  pmd_var[0][0] = propvar[0];
-  pmd_var[1][1] = propvar[1];
+  pmd_var[0][0] = propsd[0];
+  pmd_var[1][1] = propsd[1];
   pmd_var[0][1] = pmd_var[1][0] = -0.90 * sqrt(pmd_var[0][0]) * sqrt(pmd_var[1][1]);
   
   // Cholesky decompose the proposal var-covar matrix for b and hl
@@ -185,19 +183,19 @@ void mcmc(Node_type *list,
     //------ DEBUGGING ------//
     //Rprintf("\n\n\nIteration %d\n", i);
     //------ DEBUGGING ------//
-    draw_re_sd(list, priors, parms, vmv, vwv); //, seed);
+    draw_re_sd(list, priors, parms, sdmv, sdwv); //, seed);
 
     // 3) Draw the random effects 
     //    (Metropolis Hastings)
-    draw_random_effects(ts, list, parms, N, likeli, vrem, vrew); //, seed);
+    draw_random_effects(ts, list, parms, N, likeli, sdrem, sdrew); //, seed);
 
     // 4) Draw the pulse locations 
     //    (Metropolis Hastings)
     if (priors->gamma < -0.001) {
-      mh_time_os(list, parms, ts, likeli, N, vt); //, seed, vt); 
+      mh_time_os(list, parms, ts, likeli, N, sdt); //, seed, sdt); 
     } else {
       mh_time_strauss(list, parms, ts, likeli, N, //seed, 
-                      vt, priors);
+                      sdt, priors);
     }
 
     // 5) Draw baseline and halflife
@@ -211,10 +209,7 @@ void mcmc(Node_type *list,
     //    distribution via Ken's derivation.  Looked at Week7 of Ed's notes, but
     //    didn't find a clear answer.
     ssq           = error_squared(ts, list, parms, N);
-    parms->sigma  = 1/Rf_rgamma(priors->err_alpha + N / 2, 
-                                  priors->err_beta + 0.5 * ssq
-                                  //seed
-                                  );
+    parms->sigma  = 1 / Rf_rgamma(priors->err_alpha + N / 2, priors->err_beta + 0.5 * ssq);
     parms->lsigma = log(parms->sigma);
 
     //------------------------------------------------------
@@ -313,11 +308,11 @@ void mcmc(Node_type *list,
     if (!(i % 500) && i < 25000 && i > 0) {
 
       adjust2_acceptance((double) adelta / (double) ndelta, pmd_var, -0.90);
-      adjust_acceptance( (double) atime  / (double) ntime,  &vt);
-      adjust_acceptance( (double) arem   / (double) nrem,   &vrem);
-      adjust_acceptance( (double) arew   / (double) nrew,   &vrew);
-      adjust_acceptance( (double) arevm  / (double) nrevm,  &vmv);
-      adjust_acceptance( (double) arevw  / (double) nrevw,  &vwv);
+      adjust_acceptance( (double) atime  / (double) ntime,  &sdt);
+      adjust_acceptance( (double) arem   / (double) nrem,   &sdrem);
+      adjust_acceptance( (double) arew   / (double) nrew,   &sdrew);
+      adjust_acceptance( (double) arevm  / (double) nrevm,  &sdmv);
+      adjust_acceptance( (double) arevw  / (double) nrevw,  &sdwv);
 
       adelta = ndelta = 0;
       atime  = ntime  = 0;
@@ -348,47 +343,44 @@ void mcmc(Node_type *list,
   free(likeli);
 
 } 
-/*}}}*/
 
 
 
 
-///-----------------------------------------------------------------------------
-///
-/// mh_time_strauss: 
-///   this runs the M-H draws for each individual pulse location using a
-///   Strauss process prior - can be set to a hard core by setting gamma = 0
-///
-///   NOTE: Estimated on natural scale of location/time
-///
-///   ARGUMENTS: 
-///     Node_type *list     - this is the current list of pulses that
-///                           exist
-///     Common_parms *parms - the current values of the common
-///                           parameters
-///     double **ts         - this is the matrix of observed data (a
-///                           column of times and a column of log(concentration)
-///     double *like        - the current value of the likelihood
-///     int N               - the number of observations in **ts
-///     double v            - the proposal variance for pulse location
-///     Priors *priors      - For priors->gamma, the repulsion parameter for
-///                           Strauss process (hard core: gamma=0); and 
-///                           priors->range, the range of repulsion (R) for
-///                           Strauss process 
-///
-///   RETURNS: 
-///     None                - all updates are made internally
-/// 
-///-----------------------------------------------------------------------------
-///*{{{*/
-
+//-----------------------------------------------------------------------------
+//
+// mh_time_strauss: 
+//   this runs the M-H draws for each individual pulse location using a
+//   Strauss process prior - can be set to a hard core by setting gamma = 0
+//
+//   NOTE: Estimated on natural scale of location/time
+//
+//   ARGUMENTS: 
+//     Node_type *list     - this is the current list of pulses that
+//                           exist
+//     Common_parms *parms - the current values of the common
+//                           parameters
+//     double **ts         - this is the matrix of observed data (a
+//                           column of times and a column of log(concentration)
+//     double *like        - the current value of the likelihood
+//     int N               - the number of observations in **ts
+//     double v            - the proposal variance for pulse location
+//     Priors *priors      - For priors->gamma, the repulsion parameter for
+//                           Strauss process (hard core: gamma=0); and 
+//                           priors->range, the range of repulsion (R) for
+//                           Strauss process 
+//
+//   RETURNS: 
+//     None                - all updates are made internally
+// 
+//-----------------------------------------------------------------------------
 void mh_time_strauss(Node_type *list, 
                      Common_parms *parms, 
                      double **ts, 
                      double *like, 
                      int N, 
                      //unsigned long *seed, 
-                     double v, 
+                     double sd, 
                      Priors *priors) {
 
   // Declarations ----------------------
@@ -418,7 +410,7 @@ void mh_time_strauss(Node_type *list,
     ntime++;
 
     // Compute proposal time 
-    ptime = Rf_rnorm(node->time, v); //, seed);
+    ptime = Rf_rnorm(node->time, sd); 
 
     // Calculate sum_s_r for proposal value and current value
     sum_s_r_proposal = calc_sr_strauss(ptime, list, node, priors);
@@ -429,8 +421,7 @@ void mh_time_strauss(Node_type *list,
 
       // Calculate prior ratio - 
       //      gamma^(sum(s_r*)_proposal - sum(s_r)_current)
-      prior_ratio = pow(priors->gamma, 
-                        sum_s_r_proposal - sum_s_r_current);
+      prior_ratio = pow(priors->gamma, sum_s_r_proposal - sum_s_r_current);
 
       // if prior ratio is 0 (~EPS), set l_rho to 0, 
       // else calculate it 
@@ -446,7 +437,7 @@ void mh_time_strauss(Node_type *list,
         node->time = ptime;
 
         // Save mean_contrib of this pulse 
-        for (i=0; i<N; i++) {
+        for (i = 0; i < N; i++) {
           tmp_mean_contrib[i] = node->mean_contrib[i];
         }
 
@@ -459,7 +450,7 @@ void mh_time_strauss(Node_type *list,
 
         // Calculate the likelihood ratio 
         like_ratio = plikelihood - *like;
-        l_rho = (log(prior_ratio) + like_ratio);
+        l_rho      = (log(prior_ratio) + like_ratio);
 
       }
 
@@ -505,43 +496,40 @@ void mh_time_strauss(Node_type *list,
   free(tmp_mean_contrib);
 
 }
-/*}}}*/
 
 
 
 
-///-----------------------------------------------------------------------------
-///
-/// mh_time_os: 
-///   this runs the M-H draws for each individual pulse location
-///
-///   NOTE: Estimated on natural scale of location/time
-/// 
-///   ARGUMENTS: 
-///     Node_type *list     - this is the current list of pulses that
-///                           exist
-///     Common_parms *parms - the current values of the common
-///                           parameters
-///     double **ts         - this is the matrix of observed data (a
-///                           column of times and a column of
-///                           log(concentration)
-///     double *like        - the current value of the likelihood
-///     int N               - the number of observations in **ts
-///     double v            - the proposal variance for pulse location
-///
-///   RETURNS: 
-///       None                - all updates are made internally
-/// 
-///-----------------------------------------------------------------------------
-///*{{{*/
-
+//-----------------------------------------------------------------------------
+//
+// mh_time_os: 
+//   this runs the M-H draws for each individual pulse location
+//
+//   NOTE: Estimated on natural scale of location/time
+// 
+//   ARGUMENTS: 
+//     Node_type *list     - this is the current list of pulses that
+//                           exist
+//     Common_parms *parms - the current values of the common
+//                           parameters
+//     double **ts         - this is the matrix of observed data (a
+//                           column of times and a column of
+//                           log(concentration)
+//     double *like        - the current value of the likelihood
+//     int N               - the number of observations in **ts
+//     double v            - the proposal variance for pulse location
+//
+//   RETURNS: 
+//       None                - all updates are made internally
+// 
+//-----------------------------------------------------------------------------
 void mh_time_os(Node_type *list, 
                 Common_parms *parms, 
                 double **ts, 
                 double *like,
                 int N, 
                 //unsigned long *seed, 
-                double v) {
+                double sd) {
 
   int i;                     // Generic counter
   Node_type *node;           // Pointer for current list of pulses
@@ -569,7 +557,7 @@ void mh_time_os(Node_type *list,
     ntime++;
 
     // Compute proposal time 
-    ptime = Rf_rnorm(node->time, v); //, seed);
+    ptime = Rf_rnorm(node->time, sd);
 
     // Only proceed if our proposed time is reasonable 
     if (ptime <= fitend && ptime > fitstart) {
@@ -658,39 +646,36 @@ void mh_time_os(Node_type *list,
   free(curr_mean_contrib);
 
 }
-/*}}}*/
 
 
 
 
-///-----------------------------------------------------------------------------
-///
-/// mh_mu_delta: 
-///   this runs the M-H draw for baseline and halflife (drawn together)
-///
-///   NOTE: Estimated on natural scale of baseline and half-life
-/// 
-///   ARGUMENTS: 
-///     Node_type *list     - this is the current list of pulses that
-///                           exist
-///     Common_parms *parms - the current values of the common
-///                           parameters
-///     Priors *priors      - the parameters of the prior distributions
-///     double **ts         - this is the matrix of observed data (a
-///                           column of times and a column of
-///                           log(concentration)
-///     double *like        - the current value of the likelihood
-///     int N               - the number of observations in **ts
-///     int num_node        - the current number of pulses
-///     double **var        - the proposal variance-covariance matrix
-///                           for baseline and halflife
-///
-///   RETURNS: 
-///     None                - all updates are made internally
-///
-///-----------------------------------------------------------------------------
-///*{{{*/
-
+//-----------------------------------------------------------------------------
+//
+// mh_mu_delta: 
+//   this runs the M-H draw for baseline and halflife (drawn together)
+//
+//   NOTE: Estimated on natural scale of baseline and half-life
+// 
+//   ARGUMENTS: 
+//     Node_type *list     - this is the current list of pulses that
+//                           exist
+//     Common_parms *parms - the current values of the common
+//                           parameters
+//     Priors *priors      - the parameters of the prior distributions
+//     double **ts         - this is the matrix of observed data (a
+//                           column of times and a column of
+//                           log(concentration)
+//     double *like        - the current value of the likelihood
+//     int N               - the number of observations in **ts
+//     int num_node        - the current number of pulses
+//     double **var        - the proposal variance-covariance matrix
+//                           for baseline and halflife
+//
+//   RETURNS: 
+//     None                - all updates are made internally
+//
+//-----------------------------------------------------------------------------
 void mh_mu_delta(Node_type *list, 
                  Common_parms *parms, 
                  Priors *priors, 
@@ -818,36 +803,33 @@ void mh_mu_delta(Node_type *list,
   free(pmd);
 
 }
-/*}}}*/
 
 
 
 
-///-----------------------------------------------------------------------------
-/// 
-/// draw_fixed_effects: 
-///   this runs the M-H draw for overall mean mass and width
-/// 
-///   NOTE: Estimated on log scale, relative to natural scales of mass and
-///     width.
-///
-///   ARGUMENTS: 
-///     Node_type *list     - this is the current list of pulses that
-///                           exist      
-///     Priors *priors      - the parameters of the prior distributions          
-///     Common_parms *parms - the current values of the common
-///                           parameters        
-///     double v1           - the proposal variance for overall mean
-///                           mass        
-///     double v2           - the proposal variance for overall mean
-///                           width       
-/// 
-///   RETURNS: 
-///     None                - all updates are made internally
-/// 
-///-----------------------------------------------------------------------------
-/// /*{{{*/
-
+//-----------------------------------------------------------------------------
+// 
+// draw_fixed_effects: 
+//   this runs the M-H draw for overall mean mass and width
+// 
+//   NOTE: Estimated on log scale, relative to natural scales of mass and
+//     width.
+//
+//   ARGUMENTS: 
+//     Node_type *list     - this is the current list of pulses that
+//                           exist      
+//     Priors *priors      - the parameters of the prior distributions          
+//     Common_parms *parms - the current values of the common
+//                           parameters        
+//     double v1           - the proposal variance for overall mean
+//                           mass        
+//     double v2           - the proposal variance for overall mean
+//                           width       
+// 
+//   RETURNS: 
+//     None                - all updates are made internally
+// 
+//-----------------------------------------------------------------------------
 void draw_fixed_effects(Node_type *list, 
                         Priors *priors, 
                         Common_parms *parms
@@ -905,42 +887,39 @@ void draw_fixed_effects(Node_type *list,
   }
 
 }
-/*}}}*/
 
 
 
 
-///-----------------------------------------------------------------------------
-///
-/// draw_re_sd: 
-///   this runs the M-H draw for overall standard deviations of mass and
-///   width
-/// 
-///   NOTE: While other fixed effects and random effects parameters are
-///     estimated on the log scale, SD of the random effects is estimated on the
-///     natual scale and log transformed at the end of the function.  This is to
-///     avoid putting infinite prior mass on sd=0 with a U(0,max) prior, per
-///     Gelman 2006's recommendation. Arguments specifically for this MH
-///     routine (re_maxsd, parms->re_sd) should be provided on the natural
-///     scale.
-///
-///   ARGUMENTS: 
-///     Node_type *list     - this is the current list of pulses that
-///                           exist      
-///     Priors *priors      - the parameters of the prior distributions          
-///     Common_parms *parms - the current values of the common
-///                           parameters        
-///     double v1           - the proposal variance for overall st-dev
-///                           of mass   
-///     double v2           - the proposal variance for overall st-dev
-///                           of width  
-///
-///   RETURNS: 
-///     None                - all updates are made internally
-///
-///-----------------------------------------------------------------------------
-///*{{{*/
-
+//-----------------------------------------------------------------------------
+//
+// draw_re_sd: 
+//   this runs the M-H draw for overall standard deviations of mass and
+//   width
+// 
+//   NOTE: While other fixed effects and random effects parameters are
+//     estimated on the log scale, SD of the random effects is estimated on the
+//     natual scale and log transformed at the end of the function.  This is to
+//     avoid putting infinite prior mass on sd=0 with a U(0,max) prior, per
+//     Gelman 2006's recommendation. Arguments specifically for this MH
+//     routine (re_maxsd, parms->re_sd) should be provided on the natural
+//     scale.
+//
+//   ARGUMENTS: 
+//     Node_type *list     - this is the current list of pulses that
+//                           exist      
+//     Priors *priors      - the parameters of the prior distributions          
+//     Common_parms *parms - the current values of the common
+//                           parameters        
+//     double v1           - the proposal variance for overall st-dev
+//                           of mass   
+//     double v2           - the proposal variance for overall st-dev
+//                           of width  
+//
+//   RETURNS: 
+//     None                - all updates are made internally
+//
+//-----------------------------------------------------------------------------
 void draw_re_sd(Node_type *list, 
                 Priors *priors, 
                 Common_parms *parms,
@@ -1075,41 +1054,38 @@ void draw_re_sd(Node_type *list,
   free(accept_counter);
 
 }
-/*}}}*/
 
 
 
 
-///-----------------------------------------------------------------------------
-/// 
-/// draw_random_effects: 
-///   this runs the M-H draw for individual pulse masses and widths
-///  
-///   NOTE: Estimated on log scale, transformed to natural scale before saving
+//-----------------------------------------------------------------------------
+// 
+// draw_random_effects: 
+//   this runs the M-H draw for individual pulse masses and widths
+//  
+//   NOTE: Estimated on log scale, transformed to natural scale before saving
 //      to node->theta[j].
-/// 
-///   ARGUMENTS: 
-///     double **ts         - this is the matrix of observed data (a
-///                           column of times and a column of
-///                           log(concentration) 
-///     Node_type *list     - this is the current list of pulses that
-///                           exist                                             
-///     Common_parms *parms - the current values of the common
-///                           parameters
-///     int N               - the number of observations in **ts
-///     double *like        - the current value of the likelihood
-///     double v1           - the proposal variance for individual
-///                           pulse masses                                         
-///     double v2           - the proposal variance for individual
-///                           pulse widths                                         
-/// 
-///   RETURNS: 
-///     None                - all updates are made internally
-/// 
-/// 
-///-----------------------------------------------------------------------------
-/*{{{*/
-
+// 
+//   ARGUMENTS: 
+//     double **ts         - this is the matrix of observed data (a
+//                           column of times and a column of
+//                           log(concentration) 
+//     Node_type *list     - this is the current list of pulses that
+//                           exist                                             
+//     Common_parms *parms - the current values of the common
+//                           parameters
+//     int N               - the number of observations in **ts
+//     double *like        - the current value of the likelihood
+//     double v1           - the proposal variance for individual
+//                           pulse masses                                         
+//     double v2           - the proposal variance for individual
+//                           pulse widths                                         
+// 
+//   RETURNS: 
+//     None                - all updates are made internally
+// 
+// 
+//-----------------------------------------------------------------------------
 void draw_random_effects(double **ts, Node_type *list, Common_parms *parms, 
                          int N, double *like, double v1,  double v2 
                          //unsigned long *seed
@@ -1224,34 +1200,31 @@ void draw_random_effects(double **ts, Node_type *list, Common_parms *parms,
   free(old_contrib);
 
 }
-/*}}}*/
 
 
 
 
-///-----------------------------------------------------------------------------
-/// 
-/// error_squared: 
-///   This subroutine calculates the sum of squared error. It uses the list of
-///   pulses and the common parameters to evaluate the likelihood and
-///   calculate the sum of the squared error between observed concentration
-///   and expected under the current parameters
-/// 
-///   ARGUMENTS: 
-///     double **ts         - this is the matrix of observed data (a column
-///                           of times and a column of log(concentration)
-///     Node_type *list     - this is the current list of pulses that exist
-///     Common_parms *parms - the current values of the common parameters
-///     int N               - the number of observations in **ts
-/// 
-///   RETURNS: 
-///     double ssq          - this value is needed for one of the parameters
-///                             of the posterior distribution of model error
-///                             variance
-/// 
-///-----------------------------------------------------------------------------
-///*{{{*/
-
+//-----------------------------------------------------------------------------
+// 
+// error_squared: 
+//   This subroutine calculates the sum of squared error. It uses the list of
+//   pulses and the common parameters to evaluate the likelihood and
+//   calculate the sum of the squared error between observed concentration
+//   and expected under the current parameters
+// 
+//   ARGUMENTS: 
+//     double **ts         - this is the matrix of observed data (a column
+//                           of times and a column of log(concentration)
+//     Node_type *list     - this is the current list of pulses that exist
+//     Common_parms *parms - the current values of the common parameters
+//     int N               - the number of observations in **ts
+// 
+//   RETURNS: 
+//     double ssq          - this value is needed for one of the parameters
+//                             of the posterior distribution of model error
+//                             variance
+// 
+//-----------------------------------------------------------------------------
 double error_squared(double **ts, 
                      Node_type *list, 
                      Common_parms *parms, 
@@ -1273,29 +1246,26 @@ double error_squared(double **ts,
   return ssq;
 
 }
-/*}}}*/
 
 
 
 
-///-----------------------------------------------------------------------------
-///
-/// adjust_acceptance: 
-///   this adjusts the proposal variances based on the inputted acceptance
-///   rate and proposal variance. If the acceptance rate is too high or too
-///   low, proposal variance will be adjusted.
-///
-///   ARGUMENTS: 
-///     double x  - the inputted acceptance rate; usually inputted as the
-///                 acceptance counter divided by the attempt counter
-///     double *X - the current proposal variance
-///
-///   RETURNS: 
-///     None      - update to the proposal variance is made internally
-///
-///-----------------------------------------------------------------------------
-///*{{{*/
-
+//-----------------------------------------------------------------------------
+//
+// adjust_acceptance: 
+//   this adjusts the proposal variances based on the inputted acceptance
+//   rate and proposal variance. If the acceptance rate is too high or too
+//   low, proposal variance will be adjusted.
+//
+//   ARGUMENTS: 
+//     double x  - the inputted acceptance rate; usually inputted as the
+//                 acceptance counter divided by the attempt counter
+//     double *X - the current proposal variance
+//
+//   RETURNS: 
+//     None      - update to the proposal variance is made internally
+//
+//-----------------------------------------------------------------------------
 void adjust_acceptance(double x, double *X) {
 
   double y; // new proposal variance based on inputs
@@ -1313,32 +1283,29 @@ void adjust_acceptance(double x, double *X) {
   *X *= y;
 
 }
-/*}}}*/
 
 
 
 
-///-----------------------------------------------------------------------------
-/// 
-/// adjust2_acceptance: 
-///   this adjusts the proposal variance-covriance matrix for baseline and
-///   halflife based on the inputted acceptance rate and proposal matrix. If
-///   the acceptance rate is too high or too low, proposal variance will be
-///   adjusted.
-/// 
-///   ARGUMENTS: 
-///     double x    - the inputted acceptance rate; usually inputted as the
-///                   acceptance counter divided by the attempt counter
-///     double **X  - the current proposal variance-covariance matrix
-///     double corr - the correlation between the two proposal variances
-/// 
-///   RETURNS: 
-///     None        - update to the proposal variance is made internally
-/// 
-/// 
-///-----------------------------------------------------------------------------
-///*{{{*/
-
+//-----------------------------------------------------------------------------
+// 
+// adjust2_acceptance: 
+//   this adjusts the proposal variance-covriance matrix for baseline and
+//   halflife based on the inputted acceptance rate and proposal matrix. If
+//   the acceptance rate is too high or too low, proposal variance will be
+//   adjusted.
+// 
+//   ARGUMENTS: 
+//     double x    - the inputted acceptance rate; usually inputted as the
+//                   acceptance counter divided by the attempt counter
+//     double **X  - the current proposal variance-covariance matrix
+//     double corr - the correlation between the two proposal variances
+// 
+//   RETURNS: 
+//     None        - update to the proposal variance is made internally
+// 
+// 
+//-----------------------------------------------------------------------------
 void adjust2_acceptance(double x, double **X, double corr) {
 
   double y; // new diagonal elements of proposal var-covar matrix
@@ -1360,7 +1327,6 @@ void adjust2_acceptance(double x, double **X, double corr) {
   }
 
 }
-/*}}}*/
 
 
 

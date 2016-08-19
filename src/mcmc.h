@@ -18,7 +18,7 @@
 #include "pulse_node.h"
 
 void mcmc(Node_type *list, Common_parms *parms, double **ts, long iter, int N,
-          int NN, Priors *priors, SEXP common, SEXP parm, double propvar[]);
+          int NN, Priors *priors, SEXP common, SEXP parm, double propsd[]);
 
 void mh_time_strauss(Node_type *list, Common_parms *parms, double **ts, 
                      double *like, int N, double v, Priors *priors);

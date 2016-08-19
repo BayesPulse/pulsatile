@@ -153,7 +153,7 @@ int rmvnorm(double *result,
 
     runiv = (double *)calloc(size_A, sizeof(double));
     for (i = 0; i < size_A; i++) {
-      runiv[i] = Rf_rnorm(0, 1); //snorm(seed);
+      runiv[i] = Rf_rnorm(0, 1);;
     }
 
     for (i=0;i<size_A;i++) {

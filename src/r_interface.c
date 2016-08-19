@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
-#include "decon_test.h"
+#include "r_interface.h"
 #include "pulse_node.h"
 #include "birth_death.h"
 #include "mcmc.h"
@@ -23,7 +23,7 @@ double mmm = 3;
 //
 // read in arguments and data and convert to types for original decon code
 //
-SEXP decon_input(SEXP indata,
+SEXP r_interface(SEXP indata,
                  SEXP model,
                  SEXP thin,
                  SEXP iterations,
@@ -132,16 +132,16 @@ SEXP decon_input(SEXP indata,
 
 
   // Set up proposal variances ------------------
-  double propvar[7];   // Array of proposal variances for MH algorithms
-  propvar[4] = Rf_asReal(pv_mean_pulse_mass); 
-  propvar[5] = Rf_asReal(pv_mean_pulse_width);
-  propvar[2] = Rf_asReal(pv_pulse_mass); 
-  propvar[3] = Rf_asReal(pv_pulse_width);
-  propvar[6] = Rf_asReal(pv_pulse_location); 
-  propvar[0] = Rf_asReal(pv_baseline); 
-  propvar[1] = Rf_asReal(pv_halflife);
+  double propsd[7];   // Array of proposal variances for MH algorithms
+  propsd[4] = Rf_asReal(pv_mean_pulse_mass); 
+  propsd[5] = Rf_asReal(pv_mean_pulse_width);
+  propsd[2] = Rf_asReal(pv_pulse_mass); 
+  propsd[3] = Rf_asReal(pv_pulse_width);
+  propsd[6] = Rf_asReal(pv_pulse_location); 
+  propsd[0] = Rf_asReal(pv_baseline); 
+  propsd[1] = Rf_asReal(pv_halflife);
 
-  Rprintf("proposal variance for location is %f\n", propvar[6]);
+  Rprintf("proposal variance for location is %f\n", propsd[6]);
 
 
 
@@ -209,7 +209,7 @@ SEXP decon_input(SEXP indata,
 
 
   GetRNGstate();
-  mcmc(list, parms, ts, iters, nobs, nthin, priors, common1, parm1, propvar);
+  mcmc(list, parms, ts, iters, nobs, nthin, priors, common1, parm1, propsd);
   PutRNGstate();
 
 
