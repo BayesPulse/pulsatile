@@ -23,7 +23,7 @@ double mmm = 3;
 //
 // read in arguments and data and convert to types for original decon code
 //
-SEXP r_interface(SEXP indata,
+SEXP decon_r_interface(SEXP indata,
                  SEXP model,
                  SEXP thin,
                  SEXP iterations,
@@ -203,7 +203,7 @@ SEXP r_interface(SEXP indata,
   // Common parameters -- 1 record per saved iteration
   SEXP common1 = Rf_protect(Rf_allocMatrix(REALSXP, iters/nthin, 8));
   // Pulse-specific parameters -- 1 record per pulse per iteration
-  //   list object defined here, each iteration will differ in lenght, so the
+  //   list object defined here, each iteration will differ in length, so the
   //   entries are defined in linklistv3
   SEXP parm1   = Rf_protect(Rf_allocVector(VECSXP, iters/nthin));
 

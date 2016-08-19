@@ -18,7 +18,7 @@
 #include <Rinternals.h>
 #include <Rmath.h>
 #include "mcmc.h"
-#include "decon_test.h"
+#include "r_interface.h"
 #include "pulse_node.h"
 #include "birth_death.h"
 #include "calculations.h"

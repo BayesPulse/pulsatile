@@ -32,7 +32,7 @@ typedef struct {
     double nprior;   // prior number of pulses
 } Common_parms;
 
-//SEXP r_interface(SEXP indata, SEXP model, SEXP iterations, SEXP thin);
+//SEXP decon_r_interface(SEXP indata, SEXP model, SEXP iterations, SEXP thin);
 double **convert_data(SEXP indata, int nrow); 
 void deallocate_data(double **data, int nrow);
 SEXP getListElement(SEXP list, const char *str);

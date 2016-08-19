@@ -14,7 +14,7 @@
 
 #endif 
 
-#include "decon_test.h"
+#include "r_interface.h"
 #include "pulse_node.h"
 
 void mcmc(Node_type *list, Common_parms *parms, double **ts, long iter, int N,

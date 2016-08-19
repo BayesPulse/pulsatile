@@ -2,6 +2,7 @@
 # Testing getting data to the C functions
 #
 #-------------------------------------------------------------------------------
+options(scipen = 99)
 setwd("~/Projects/Rpackages/pulsatile/")
 library(readr)
 library(dplyr)
@@ -18,15 +19,17 @@ library(pulsatile)
 dat <- read_delim("test/pulse_reference_001.dat", delim = " ") %>% tbl_df %>%
   select(-observation)
 
-model_spec <- pulse_spec(.data = dat, iterations = 50000)
+model_spec <- pulse_spec(.data = dat, iterations = 10000)
 model_spec
 
 # Test C functions
 #test_inout(x = dat)
 #test_inout(x = model_spec)
 #show_args(.data = dat)
+set.seed(999)
 fit <- fit_pulse(model_spec)
 
-dat %>% str
+#dat %>% str
 
+pulses <- fit[[2]] %>% do.call(rbind, .) %>% as.data.frame %>% tbl_df  
 
