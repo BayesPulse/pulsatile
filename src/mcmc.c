@@ -265,7 +265,7 @@ void mcmc(Node_type *list,
       SET_STRING_ELT(parm_names, 4, Rf_mkChar("mass"));
       SET_STRING_ELT(parm_names, 5, Rf_mkChar("width"));
       // assign names to list
-      setAttrib(this_parm, R_NamesSymbol, parm_names);
+      Rf_setAttrib(this_parm, R_NamesSymbol, parm_names);
 
       // Save common parms from iteration i/NN to SEXP matrix obj
       REAL(common)[i/NN + 0] = num_node2;
@@ -287,7 +287,7 @@ void mcmc(Node_type *list,
       //  }
       //}
 
-      Rf_unprotect(1);
+      Rf_unprotect(2);
 
     }
 

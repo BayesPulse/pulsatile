@@ -212,6 +212,11 @@ SEXP decon_input(SEXP indata,
   mcmc(list, parms, ts, iters, nobs, nthin, priors, common1, parm1, propvar);
   PutRNGstate();
 
+  SEXP dim, dimnames;
+  Rf_protect(dim = Rf_allocVector(INTSXP, 2));
+  INTEGER(dim)[0] = iters/nthin; INTEGER(dim)[1] = 8;
+  Rf_setAttrib(common1, R_DimSymbol, dim);
+
   // create column names for common parms matrix
   SEXP common_names = Rf_protect(Rf_allocVector(STRSXP, 8));
   SET_STRING_ELT(common_names, 0, Rf_mkChar("num_pulses"));
@@ -223,7 +228,9 @@ SEXP decon_input(SEXP indata,
   SET_STRING_ELT(common_names, 6, Rf_mkChar("sd_mass"));
   SET_STRING_ELT(common_names, 7, Rf_mkChar("sd_widths"));
   // assign names to list
-  Rf_setAttrib(common1, R_NamesSymbol, common_names);
+  Rf_protect(dimnames = Rf_allocVector(VECSXP, 2));
+  SET_VECTOR_ELT(dimnames, 1, common_names);
+  Rf_setAttrib(common1, R_DimNamesSymbol, dimnames);
 
 
   // Combine chains for output
@@ -243,7 +250,7 @@ SEXP decon_input(SEXP indata,
   free(priors);
   free(parms->re_sd);
   free(parms);
-  Rf_unprotect(4);
+  Rf_unprotect(6);
 
   //return Rf_ScalarReal(nthin);
   //return Rf_asVector(priors);
