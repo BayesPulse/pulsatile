@@ -2,6 +2,7 @@
 # Testing getting data to the C functions
 #
 #-------------------------------------------------------------------------------
+options(scipen = 99)
 setwd("~/Projects/Rpackages/pulsatile/")
 library(readr)
 library(dplyr)
@@ -28,6 +29,7 @@ model_spec
 set.seed(999999)
 fit <- fit_pulse(model_spec)
 
-dat %>% str
+#dat %>% str
 
+pulses <- fit[[2]] %>% do.call(rbind, .) %>% as.data.frame %>% tbl_df  
 

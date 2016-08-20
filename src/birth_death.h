@@ -10,7 +10,7 @@
 
 #endif 
 
-#include "decon_test.h"
+#include "r_interface.h"
 #include "pulse_node.h"
 
 // Birth-death algorithm for poisson/order-statistic or Strauss priors on pulse

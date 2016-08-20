@@ -19,7 +19,7 @@
 #include <Rinternals.h>
 #include "pulse_node.h"
 
-//#include "decon_test.h"
+//#include "r_interface.h"
 extern double fitstart;
 
 
