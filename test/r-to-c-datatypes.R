@@ -6,9 +6,13 @@ options(scipen = 99)
 setwd("~/Projects/Rpackages/pulsatile/")
 library(readr)
 library(dplyr)
+library(tidyr)
 library(pryr)
 library(devtools)
 library(roxygen2)
+library(ggplot2)
+library(ggthemes)
+theme_set(theme_tufte())
 
 document()
 install("../pulsatile")
@@ -19,17 +23,35 @@ library(pulsatile)
 dat <- read_delim("test/pulse_reference_001.dat", delim = " ") %>% tbl_df %>%
   select(-observation)
 
-model_spec <- pulse_spec(.data = dat, iterations = 10000)
+model_spec <- pulse_spec(.data = dat, iterations = 250000)
 model_spec
 
 # Test C functions
 #test_inout(x = dat)
 #test_inout(x = model_spec)
 #show_args(.data = dat)
-set.seed(999)
+start_time <- proc.time()
+set.seed(999999)
 fit <- fit_pulse(model_spec)
+stop_time <- proc.time()
+(stop_time - start_time)/60
 
-#dat %>% str
 
 pulses <- fit[[2]] %>% do.call(rbind, .) %>% as.data.frame %>% tbl_df  
+common <- fit[[1]] %>% as.data.frame %>% tbl_df %>% mutate(iteration = 1:n()) %>% select(iteration, everything())
+
+timeseries <- 
+  ggplot() +
+    geom_path(data = dat, aes(x = time, y = concentration)) 
+
+location_hist <- 
+  ggplot() +
+  geom_histogram(data = pulses, aes(x = location, y = ..density..))
+
+traceplots <- 
+  common %>% gather(key = parameter, value = value, -iteration) %>%
+  ggplot(aes(x = iteration, y = value)) +
+    geom_path() +
+    facet_wrap(~ parameter, ncol = 3, scales = "free")
+
 
