@@ -1,44 +1,45 @@
-///-----------------------------------------------------------------------------
-///
-/// FILE: birthdeath.c 
-/// AUTHOR: Matt Mulvahill 
-///         (and many before me: T Johnson, N Carlson, K Horton, Karen )
-///
-/// DESCRIPTION: 
-///   Contains birth-death algorithm, expanded to spatial birth-death with the
-///   option to use the older order-statistic prior approach.  To use the order
-///   statistic, priors->gamma should be less than some very small negative
-///   number.  I'm setting it to -1 in the arguments file (see
-///   deconvolution_main.c for more detail). 
-/// 
-/// Subroutines: 
-///      birth_death
-///      mean_contribution
-///      *mean_concentration
-///      likelihood
-///      *calc_death_rate_os
-///      *calc_death_rate_strauss
-///      calc_sr_strauss
-/// 
-/// Global variable definitions:
-///      fitstart - The first time in hours that a pulse may occur
-///      fitend   - The last time in hours that a pulse may occur
-///      mmm      - Order statistic used for distribution of pulse locations.
-///                 This is assigned in deconvolution_main.c and is typically 3
-/// 
-///-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//
+// FILE: birth_death.c 
+// AUTHOR: Matt Mulvahill 
+//         (and many before me: T Johnson, N Carlson, K Horton, Karen )
+//
+// DESCRIPTION: 
+//   Contains birth-death algorithm, expanded to spatial birth-death with the
+//   option to use the older order-statistic prior approach.  To use the order
+//   statistic, priors->gamma should be less than some very small negative
+//   number.  I'm setting it to -1 in the arguments file (see
+//   deconvolution_main.c for more detail). 
+// 
+// Subroutines: 
+//      birth_death
+//      mean_contribution
+//      *mean_concentration
+//      likelihood
+//      *calc_death_rate_os
+//      *calc_death_rate_strauss
+//      calc_sr_strauss
+// 
+// Global variable definitions:
+//      fitstart - The first time in hours that a pulse may occur
+//      fitend   - The last time in hours that a pulse may occur
+//      mmm      - Order statistic used for distribution of pulse locations.
+//                 This is assigned in deconvolution_main.c and is typically 3
+// 
+//-----------------------------------------------------------------------------
 
 // Include headers for files of used function definitions
-#include "birthdeath_strauss.h"
-//#include "randgen.h" 
-#include "hash.h" 
-#include "cholesky.h" 
+#include <stdlib.h>
 #include <math.h>
+#include <Rmath.h>
+#include "birth_death.h"
+#include "pulse_node.h" 
+#include "calculations.h" 
 
 // float.h included for EPS variable -- double check to see if this is
 // working/necessary
-#include <float.h>
-#define EPS 1.0e-12
+//#include <float.h>
+//#define EPS 1.0e-12
 
 // Global variable definitions 
 extern double fitstart;
@@ -48,32 +49,30 @@ extern int mmm;
 
 
 
-///-----------------------------------------------------------------------------
-///
-/// birth_death_strauss() 
-///
-///   this runs the birth-death step of the spatial BDMCMC process, using the
-///   Strauss prior on pulse location.
-///
-///   ARGUMENTS: 
-///     Node_type *list     - this is the current list of pulses that exist
-///     double **ts         - this is the matrix of observed data (a column
-///                           of times and a column of log(concentration) 
-///     Common_parms *parms - the current values of the common parameters
-///     int N               - the number of observations in **ts
-///     double *likeli      - the current value of the likelihood
-///     int iter            - which iteration are we on
-///     Priors *priors      - For priors->gamma, the repulsion parameter for
-///                           Strauss process (hard core: gamma=0); and 
-///                           priors->range, the range of repulsion (R) for
-///                           Strauss process 
-///
-///   RETURNS:   
-///     None                - all updates are made internally
-///
-///-----------------------------------------------------------------------------
-/// /*{{{*/
-
+//-----------------------------------------------------------------------------
+//
+// birth_death_strauss() 
+//
+//   this runs the birth-death step of the spatial BDMCMC process, using the
+//   Strauss prior on pulse location.
+//
+//   ARGUMENTS: 
+//     Node_type *list     - this is the current list of pulses that exist
+//     double **ts         - this is the matrix of observed data (a column
+//                           of times and a column of log(concentration) 
+//     Common_parms *parms - the current values of the common parameters
+//     int N               - the number of observations in **ts
+//     double *likeli      - the current value of the likelihood
+//     int iter            - which iteration are we on
+//     Priors *priors      - For priors->gamma, the repulsion parameter for
+//                           Strauss process (hard core: gamma=0); and 
+//                           priors->range, the range of repulsion (R) for
+//                           Strauss process 
+//
+//   RETURNS:   
+//     None                - all updates are made internally
+//
+//-----------------------------------------------------------------------------
 void birth_death(Node_type *list, 
                  double **ts, 
                  Common_parms *parms, 
@@ -84,7 +83,7 @@ void birth_death(Node_type *list,
                  Priors *priors) 
 {
 
-  // Declarations /*{{{*/
+  // Declarations
   int i;                      // Generic counter
   int remove;                 // Ordered number of pulse to remove
   int num_node;               // Number of pulses
@@ -108,14 +107,12 @@ void birth_death(Node_type *list,
   double papas_cif;           // Papangelou's cond'l intensity fn for birthed
   double b_ratio;             // Ratio of papas_cif/birth_rate for accept/rej
   double pulse_intensity;     // Prior intensity on pulse count poisson
-  /*}}}*/
 
 
   //-----------------------------------------
   // Prepare for birth death loop. Save and 
   // calculate values and allocate memory
   //-----------------------------------------
-  /*{{{*/
   full_likelihood = *likeli;
   Birth_rate = parms->nprior; 
   tmp = (double *)calloc(2, sizeof(double));
@@ -125,7 +122,6 @@ void birth_death(Node_type *list,
     birth_rate      = Birth_rate/(fitend-fitstart);
     pulse_intensity = parms->nprior/(fitend-fitstart);
   } 
-  /*}}}*/
 
 
   //-----------------------------------------
@@ -140,7 +136,6 @@ void birth_death(Node_type *list,
     // Calculate death rate for each component 
     // conditional on Strauss or order statistic
     //-------------------------------------------
-    /*{{{*/
     // Count number of pulses 
     num_node = 0;
     node = list->succ;
@@ -170,14 +165,12 @@ void birth_death(Node_type *list,
                                       full_likelihood, Birth_rate, 
                                       parms->nprior);
     }
-    /*}}}*/
 
 
     //-------------------------------------------
     // Compute total death rate D
     //   Multi-step due to precision issues
     //-------------------------------------------
-    /*{{{*/
     if (death_rate != NULL) {
 
       Death_rate = death_rate[0];
@@ -212,13 +205,11 @@ void birth_death(Node_type *list,
     }
 
     free(partial_likelihood);
-    /*}}}*/
 
 
     //-------------------------------------------
     // Calculate probability of birth
     //-------------------------------------------
-    /*{{{*/
     // Set Pr(Birth), force death/birth if too many/few
     if (num_node <= 1) { 
       max = 1.1;
@@ -226,15 +217,15 @@ void birth_death(Node_type *list,
       max = -0.1;
     } else { 
       max = Birth_rate / (Birth_rate + Death_rate); 
-    } /*}}}*/
+    } 
 
 
     //-------------------------------------------
     // Update virtual time (how long to run BD step) 
     //   Draw from exp(B+D) and add to current S 
     //-------------------------------------------
-    /*{{{*/
-    S += rexp(Birth_rate + Death_rate); //, seed);
+    S += Rf_rexp(1/(Birth_rate + Death_rate)); //, seed);
+    //Rprintf("S = %f; T = %f\n", S, T);
     // If S exceeds T or if we've run this too many times, break
     if (S > T)  { 
       //Rprintf("BD ran for %d iterations.\n", aaa);
@@ -243,18 +234,17 @@ void birth_death(Node_type *list,
     if (aaa > 5000) {
       //Rprintf("BD ran for %d iterations.\n", aaa);
       break;
-    } /*}}}*/
+    } 
 
 
     //-------------------------------------------
     // Select Birth or Death and proceed with either
     //-------------------------------------------
-    /*{{{*/
     //if (kiss(seed) < max) { // If U < B/(B+D), a birth occurs 
-    if (runif(0, 1) < max) { // If U < B/(B+D), a birth occurs 
+    if (Rf_runif(0, 1) < max) { // If U < B/(B+D), a birth occurs 
 
       // Generate new position
-      position = runif(fitstart, fitend);
+      position = Rf_runif(fitstart, fitend);
       int accept_pos = 1;
 
       // If using Strauss prior, run accept/reject for new position
@@ -262,7 +252,7 @@ void birth_death(Node_type *list,
         sum_s_r    = calc_sr_strauss(position, list, list, priors);
         papas_cif  = pulse_intensity * pow(priors->gamma, sum_s_r);
         b_ratio    = papas_cif / birth_rate;
-        accept_pos = (runif(0, 1) < b_ratio) ? 1 : 0;
+        accept_pos = (Rf_runif(0, 1) < b_ratio) ? 1 : 0;
       }
 
       // If it's a valid position, generate initial parms and insert node
@@ -285,7 +275,8 @@ void birth_death(Node_type *list,
     } else { // Otherwise, a death occurs 
 
       // Pick a node to remove, find and remove it and update likelihood
-      remove = one_rmultinom(death_rate, num_node) + 1; //, seed) + 1;
+      remove = one_rmultinom(death_rate, num_node) + 1; 
+      //Rprintf("node to remove: %d\n", remove);
       node   = list;
 
       for (i = 0; i < remove; i++) { 
@@ -295,7 +286,7 @@ void birth_death(Node_type *list,
       delete_node(node, list);
       full_likelihood = likelihood(list, ts, parms, N, list);
 
-    } /*}}}*/
+    } 
 
     // Clean up
     free(death_rate);
@@ -310,33 +301,30 @@ void birth_death(Node_type *list,
   free(tmp);
 
 }
-/*}}}*/
 
 
 
 
-///-----------------------------------------------------------------------------
-///
-/// mean_contribution() 
-///
-///   this updates a pulse's mean_contrib vector based on current values of
-///   parameters
-/// 
-///   Two version: Phi version and built-in erf version
-/// 
-///   ARGUMENTS: 
-///     Node_type *node     - what pulse are we updating
-///     double **ts         - this is the matrix of observed data (a column
-///                           of times and a column of log(concentration)
-///     Common_parms *parms - the current values of the common parameters
-///     int N               - the number of observations in **ts
-/// 
-///   RETURNS: 
-///     None                - all updates are made internally
-/// 
-///-----------------------------------------------------------------------------
-///*{{{*/
-
+//-----------------------------------------------------------------------------
+//
+// mean_contribution() 
+//
+//   this updates a pulse's mean_contrib vector based on current values of
+//   parameters
+// 
+//   Two version: Phi version and built-in erf version
+// 
+//   ARGUMENTS: 
+//     Node_type *node     - what pulse are we updating
+//     double **ts         - this is the matrix of observed data (a column
+//                           of times and a column of log(concentration)
+//     Common_parms *parms - the current values of the common parameters
+//     int N               - the number of observations in **ts
+// 
+//   RETURNS: 
+//     None                - all updates are made internally
+// 
+//-----------------------------------------------------------------------------
 void mean_contribution(Node_type *node, 
                        double **ts, 
                        Common_parms *parms, 
@@ -370,31 +358,28 @@ void mean_contribution(Node_type *node,
   // Exit, returning nothing ---------------------
  
 }
-/*}}}*/
 
 
 
 
-///-----------------------------------------------------------------------------
-/// 
-/// mean_concentration() 
-///   this takes each pulse's mean_contrib vector and sums across them to get a
-///   overall mean concentration at each time
-/// 
-///   Arguments: 
-///     Node_type *list     - this is the current list of pulses that exist
-///     Common_parms *parms - the current values of the common parameters
-///     int N               - the number of observations in **ts
-///     Node_type *node_out - if we want, we can ignore a pulse
-///     double **ts         - this is the matrix of observed data (a column
-///                           of times and a column of log(concentration)
-/// 
-///   Returns: 
-///     x                   - the vector of sums
-/// 
-///-----------------------------------------------------------------------------
-///*{{{*/
-
+//-----------------------------------------------------------------------------
+// 
+// mean_concentration() 
+//   this takes each pulse's mean_contrib vector and sums across them to get a
+//   overall mean concentration at each time
+// 
+//   Arguments: 
+//     Node_type *list     - this is the current list of pulses that exist
+//     Common_parms *parms - the current values of the common parameters
+//     int N               - the number of observations in **ts
+//     Node_type *node_out - if we want, we can ignore a pulse
+//     double **ts         - this is the matrix of observed data (a column
+//                           of times and a column of log(concentration)
+// 
+//   Returns: 
+//     x                   - the vector of sums
+// 
+//-----------------------------------------------------------------------------
 double *mean_concentration(Node_type *list, Common_parms *parms, int N,
                            Node_type *node_out, double **ts) {
 
@@ -427,32 +412,29 @@ double *mean_concentration(Node_type *list, Common_parms *parms, int N,
   return x;
 
 }
-/*}}}*/
 
 
 
 
-///-----------------------------------------------------------------------------
-/// 
-/// likelihood() 
-///   computes the current likelihood using the observed log-concentrations
-///   and mean concentration
-/// 
-///   ARGUMENTS: 
-///     Node_type *list     - this is the current list of pulses that exist
-///     double **ts         - this is the matrix of observed data (a column
-///                           of times and a column of log(concentration)
-///     Common_parms *parms - the current values of the common parameters
-///     int N               - the number of observations in **ts
-///     Node_type *node_out - if we want, we can ignore a pulse
-/// 
-///   RETURNS: 
-///     x                   - the likelihood computed based on the inputs
-///                           (scalar valued)
-///  
-///-----------------------------------------------------------------------------
-/*{{{*/
-
+//-----------------------------------------------------------------------------
+// 
+// likelihood() 
+//   computes the current likelihood using the observed log-concentrations
+//   and mean concentration
+// 
+//   ARGUMENTS: 
+//     Node_type *list     - this is the current list of pulses that exist
+//     double **ts         - this is the matrix of observed data (a column
+//                           of times and a column of log(concentration)
+//     Common_parms *parms - the current values of the common parameters
+//     int N               - the number of observations in **ts
+//     Node_type *node_out - if we want, we can ignore a pulse
+// 
+//   RETURNS: 
+//     x                   - the likelihood computed based on the inputs
+//                           (scalar valued)
+//  
+//-----------------------------------------------------------------------------
 double likelihood(Node_type *list, double **ts, Common_parms *parms, int N,
                   Node_type *node_out) {
 
@@ -476,33 +458,30 @@ double likelihood(Node_type *list, double **ts, Common_parms *parms, int N,
   return x;
 
 }
-/*}}}*/
 
 
 
 
-///-----------------------------------------------------------------------------
-/// 
-/// calc_death_rate_os() 
-///   calculates a vector of death rates, one for each existing pulse
-///   
-///   ARGUMENTS: 
-///     Node_type *list            - Current linklist of pulses 
-///     int num_node               - Current number of pulses
-///     double *partial_likelihood - Vector of partial likelihoods, where the
-///                                  ith element represents the likelihood with
-///                                  the ith pulse removed
-///     double full_likelihood     - Value of the full likelihood
-///     double Birth_rate          - Value of the birth rate
-///     double r                   - Prior on pulse count (parms->nprior)
-/// 
-///   RETURNS:
-///     death_rate                 - Vector where the ith element represents 
-///                                  the death rate of the ith pulse
-/// 
-///-----------------------------------------------------------------------------
-///*{{{*/
-
+//-----------------------------------------------------------------------------
+// 
+// calc_death_rate_os() 
+//   calculates a vector of death rates, one for each existing pulse
+//   
+//   ARGUMENTS: 
+//     Node_type *list            - Current linklist of pulses 
+//     int num_node               - Current number of pulses
+//     double *partial_likelihood - Vector of partial likelihoods, where the
+//                                  ith element represents the likelihood with
+//                                  the ith pulse removed
+//     double full_likelihood     - Value of the full likelihood
+//     double Birth_rate          - Value of the birth rate
+//     double r                   - Prior on pulse count (parms->nprior)
+// 
+//   RETURNS:
+//     death_rate                 - Vector where the ith element represents 
+//                                  the death rate of the ith pulse
+// 
+//-----------------------------------------------------------------------------
 double *calc_death_rate_os(Node_type *list, 
                            int num_node, 
                            double *partial_likelihood, 
@@ -612,49 +591,46 @@ double *calc_death_rate_os(Node_type *list,
   return death_rate;  
 
 }
-/*}}}*/
 
 
 
 
-///-----------------------------------------------------------------------------
-/// 
-///  calc_death_rate_strauss()
-/// 
-///    Calculates a vector of death rates, one for each existing pulse
-///    
-///    Arguments: 
-///      Node_type *list            - this is the current list of pulses that
-///                                   exist
-///      int num_node               - current number of pulses
-///      double *partial_likelihood - vector of likelihoods, where the ith
-///                                   element represents the likelihood with
-///                                   the ith pulse removed
-///      double full_likelihood     - value of the full likelihood
-///      double Birth_rate          - value of the birth rate
-/// 
-///    Returns:
-///      death_rate                 - a vector where the ith element
-///                                   represents the death rate of the ith
-///                                   pulse
-/// Notes: 
-///   Two possible version:
-///      1) if we can use distr of birth_rate, it's simple -- just partial -
-///      full likelihoods.
-///      2) if we have to use our set birth_rate (which I suspect based on
-///      Stephens2000), we have to multiply by papas^-1 * birth_rate
-///      
-///   Resolution:
-///     1) is the correct approach. We aren't actually setting the birth rate.
-///     Instead we are providing the intensity parameter as the strauss and as
-///     long as death rate and birth rate intensity parms are the same, they
-///     cancel. Option 2) would require not using an accept/reject in birth step
-///     and instead generating from the actual Strauss density (i.e. really
-///     difficult and computationally expensive.
-/// 
-///-----------------------------------------------------------------------------
-/*{{{*/
-
+//-----------------------------------------------------------------------------
+// 
+//  calc_death_rate_strauss()
+// 
+//    Calculates a vector of death rates, one for each existing pulse
+//    
+//    Arguments: 
+//      Node_type *list            - this is the current list of pulses that
+//                                   exist
+//      int num_node               - current number of pulses
+//      double *partial_likelihood - vector of likelihoods, where the ith
+//                                   element represents the likelihood with
+//                                   the ith pulse removed
+//      double full_likelihood     - value of the full likelihood
+//      double Birth_rate          - value of the birth rate
+// 
+//    Returns:
+//      death_rate                 - a vector where the ith element
+//                                   represents the death rate of the ith
+//                                   pulse
+// Notes: 
+//   Two possible version:
+//      1) if we can use distr of birth_rate, it's simple -- just partial -
+//      full likelihoods.
+//      2) if we have to use our set birth_rate (which I suspect based on
+//      Stephens2000), we have to multiply by papas^-1 * birth_rate
+//      
+//   Resolution:
+//     1) is the correct approach. We aren't actually setting the birth rate.
+//     Instead we are providing the intensity parameter as the strauss and as
+//     long as death rate and birth rate intensity parms are the same, they
+//     cancel. Option 2) would require not using an accept/reject in birth step
+//     and instead generating from the actual Strauss density (i.e. really
+//     difficult and computationally expensive.
+// 
+//-----------------------------------------------------------------------------
 double *calc_death_rate_strauss(Node_type *list, 
                                 int num_node, 
                                 double *partial_likelihood, 
@@ -701,32 +677,29 @@ double *calc_death_rate_strauss(Node_type *list,
   return death_rate;  
 
 }
-/*}}}*/
 
 
 
 
-///-----------------------------------------------------------------------------
-/// 
-///  calc_sr_strauss()
-/// 
-///    Calculates sum(S(R)), the exponent on the gamma parameter in the Strauss
-///    process/prior for pulse location. Used for Strauss prior 
-///    (prior->gamma >= 0) prior in birth_death and mh_time_strauss.
-/// 
-///    Arguments: 
-///      position    position to test nodes against (current or proposal,
-///                  depending on context)
-///      *list       linked list of all pulse nodes
-///      *node_out   optional node to exclude
-///      *priors     prior parameters
-/// 
-///    Returns: 
-///      sum(S(R))   scalar value for sum of # pulses too close to each other
-/// 
-///-----------------------------------------------------------------------------
-/*{{{*/
-
+//-----------------------------------------------------------------------------
+// 
+//  calc_sr_strauss()
+// 
+//    Calculates sum(S(R)), the exponent on the gamma parameter in the Strauss
+//    process/prior for pulse location. Used for Strauss prior 
+//    (prior->gamma >= 0) prior in birth_death and mh_time_strauss.
+// 
+//    Arguments: 
+//      position    position to test nodes against (current or proposal,
+//                  depending on context)
+//      *list       linked list of all pulse nodes
+//      *node_out   optional node to exclude
+//      *priors     prior parameters
+// 
+//    Returns: 
+//      sum(S(R))   scalar value for sum of # pulses too close to each other
+// 
+//-----------------------------------------------------------------------------
 int calc_sr_strauss(double position, Node_type *list, Node_type *node_out,
                     Priors *priors) {
 
@@ -749,7 +722,7 @@ int calc_sr_strauss(double position, Node_type *list, Node_type *node_out,
 
   return(s_r); 
 
-}/*}}}*/
+}
 
 
 

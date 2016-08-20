@@ -1,15 +1,11 @@
-///-----------------------------------------------------------------------------
-///
-/// FILE: cholesky.h
-///
-/// DESCRIPTION: 
-///   Function definitions for cholesky decomposition and random multivariate
-///   normal
-/// 
-///-----------------------------------------------------------------------------
+//
+// FILE: cholesky.h
+// DESCRIPTION: Function definitions for cholesky decomposition and random
+//   multivariate normal
+// 
 
-#ifndef CHOLESKY_H
-#define CHOLESKY_H
+#ifndef CALCULATIONS_H
+#define CALCULATIONS_H
 
 int cholesky_decomp(double **A, int num_col);
 
@@ -22,7 +18,7 @@ int rmvnorm(double *result,
             //unsigned long *seed, 
             int flag);
 
-int one_rmultinom(double *probs, int n_probs);
+int one_rmultinom(double *cumprobs, int n_probs);
 
 //int rwishart(double **result, 
 //             double **S, 
@@ -31,7 +27,7 @@ int one_rmultinom(double *probs, int n_probs);
 //             unsigned long *seed, 
 //             int flag);
 
-#endif // CHOLESKY_H
+#endif 
 
 //------------------------------------------------------------------------------
 // End of file

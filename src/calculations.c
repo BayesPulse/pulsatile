@@ -1,39 +1,36 @@
-///-----------------------------------------------------------------------------
-///                                                                         
-/// cholesky_decomp                                                         
-///                                                                         
-///   This routine takes a symmetric positive definite matrix and performs    
-///   a cholesky decomposition.  It replaces the lower triangular part of     
-///   A with G.                                                               
-///                                                                           
-///   The cholesky decomposition, decomposes A into A = GG'.  This version of 
-///   the algorithm is an outer product (rank-1) update of the principal      
-///   submatrices of A.                                                       
-///                                                                           
-///   See "Matrix Computations" by Golub and Van Loan.  2nd edition, Johns    
-///   Hopkins University Press, 1989. p. 423ff                                
-///                                                                           
-///   Input  A - a SPD matrix                                                 
-///          num_col - size of A                                              
-///                                                                           
-///   Returns 1 upon success, 0 if A not SPD                                  
-/// 
-///-----------------------------------------------------------------------------
+//                                                                         
+// calculations.c
+//                                                                         
+//   This routine takes a symmetric positive definite matrix and performs    
+//   a cholesky decomposition.  It replaces the lower triangular part of     
+//   A with G.                                                               
+//                                                                           
+//   The cholesky decomposition, decomposes A into A = GG'.  This version of 
+//   the algorithm is an outer product (rank-1) update of the principal      
+//   submatrices of A.                                                       
+//                                                                           
+//   See "Matrix Computations" by Golub and Van Loan.  2nd edition, Johns    
+//   Hopkins University Press, 1989. p. 423ff                                
+//                                                                           
+//   Input  A - a SPD matrix                                                 
+//          num_col - size of A                                              
+//                                                                           
+//   Returns 1 upon success, 0 if A not SPD                                  
+// 
 
 #include <R.h>
 #include <Rinternals.h>
-#include "cholesky.h"
-//#include "randgen.h"
-#include "deconvolution_main.h"
+#include <Rmath.h>
+#include "calculations.h"
+//#include "deconvolution_main.h"
 
 
 
-///-----------------------------------------------------------------------------
-///
-/// cholesky_decomp
-///
-///-----------------------------------------------------------------------------
-/*{{{*/
+//-----------------------------------------------------------------------------
+//
+// cholesky_decomp
+//
+//-----------------------------------------------------------------------------
 int cholesky_decomp(double **A, int num_col) {
 
   int k;
@@ -72,17 +69,15 @@ int cholesky_decomp(double **A, int num_col) {
   return 1;
 
 }
-/*}}}*/
 
 
 
 
-///-----------------------------------------------------------------------------
-/// 
-/// **cholesky_invert
-/// 
-///-----------------------------------------------------------------------------
-/*{{{*/
+//-----------------------------------------------------------------------------
+// 
+// **cholesky_invert
+// 
+//-----------------------------------------------------------------------------
 double **cholesky_invert(int len, double **H) {
 
   // takes G from GG' = A and computes A inverse 
@@ -125,17 +120,15 @@ double **cholesky_invert(int len, double **H) {
   return INV;
 
 }
-/*}}}*/
 
 
 
 
-///-----------------------------------------------------------------------------
-/// 
-/// rmvnorm
-/// 
-///-----------------------------------------------------------------------------
-/*{{{*/
+//-----------------------------------------------------------------------------
+// 
+// rmvnorm
+// 
+//-----------------------------------------------------------------------------
 int rmvnorm(double *result, 
             double **A, 
             int size_A, 
@@ -160,7 +153,7 @@ int rmvnorm(double *result,
 
     runiv = (double *)calloc(size_A, sizeof(double));
     for (i = 0; i < size_A; i++) {
-      runiv[i] = rnorm(0, 1); //snorm(seed);
+      runiv[i] = Rf_rnorm(0, 1);;
     }
 
     for (i=0;i<size_A;i++) {
@@ -180,32 +173,47 @@ int rmvnorm(double *result,
   }
 
 }
-/*}}}*/
 
 
 
 // Single random multinomial
-int one_rmultinom(double *probs, int n_probs) {
+int one_rmultinom(double *cumprobs, int n_probs) {
 
   //SEXP ans;
   //Rf_protect(ans = Rf_allocVector(INTSXP, n_probs));
   //probs = Rf_coerceVector(probs
  
+  int i;
+  int rtn = 0;
   int *ans;
-  int rtn;
   ans = (int *)calloc(n_probs, sizeof(int));
+  double *probs;
+  probs = (double *)calloc(n_probs, sizeof(double));
+
+  for (i = 0; i < n_probs; i++) {
+    if (i == 0) probs[i] = cumprobs[i];
+    else probs[i] = cumprobs[i] - cumprobs[i-1];
+    ans[i] = 0;
+    //Rprintf("Probability for pulse %d = %f\n", i, probs[i]);
+    //Rprintf("Ans for pulse %d = %d\n", i, ans[i]);
+  }
+
   Rf_rmultinom(1, probs, n_probs, ans);
 
-  //rtn = *ans;
-  return(*ans);
+  for (i = 0; i < n_probs; i++) {
+    if (ans[i] == 1) rtn = i;
+    //Rprintf("What is ans[%d] after rmultinom?: %d\n", i, ans[i]);
+  }
+  //Rprintf("What is rtn after assignment?: %d\n", rtn);
+
+  return(rtn);
 }
 
-///-----------------------------------------------------------------------------
-///
-/// rwishart
-///
-///-----------------------------------------------------------------------------
-/*{{{*/
+////-----------------------------------------------------------------------------
+////
+//// rwishart
+////
+////-----------------------------------------------------------------------------
 //int rwishart(double **result, double **S, int size_S, int df, unsigned long
 //        *seed, int flag) {
 //
@@ -266,12 +274,11 @@ int one_rmultinom(double *probs, int n_probs) {
 //    return 1;
 //
 //}
-/*}}}*/
 
 
 
 
-/*******************************************************************************
- * END OF FILE
- ******************************************************************************/
+//******************************************************************************
+// END OF FILE
+//******************************************************************************
 
