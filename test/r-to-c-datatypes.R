@@ -27,16 +27,29 @@ model_spec <- pulse_spec(.data = dat, iterations = 250000)
 model_spec
 
 # Test C functions
-#test_inout(x = dat)
-#test_inout(x = model_spec)
 #show_args(.data = dat)
+
+#
+# ---- Simple test for repeatable results ---- 
+#
 start_time <- proc.time()
 set.seed(999999)
-fit <- fit_pulse(model_spec)
+fit_round1 <- fit_pulse(model_spec)
 stop_time <- proc.time()
-stop_time - start_time
+time_round1 <- (stop_time - start_time)/60
 
-#dat %>% str
+start_time <- proc.time()
+set.seed(999999)
+fit_round2 <- fit_pulse(model_spec)
+stop_time <- proc.time()
+time_round2 <- (stop_time - start_time)/60
+
+all(fit_round1[[1]] == fit_round2[[1]])
+time_round1 == time_round2
+
+
+
+
 
 pulses <- fit[[2]] %>% do.call(rbind, .) %>% as.data.frame %>% tbl_df  
 common <- fit[[1]] %>% as.data.frame %>% tbl_df %>% mutate(iteration = 1:n()) %>% select(iteration, everything())
