@@ -205,11 +205,11 @@ SEXP decon_input(SEXP indata,
   // Pulse-specific parameters -- 1 record per pulse per iteration
   //   list object defined here, each iteration will differ in lenght, so the
   //   entries are defined in linklistv3
-  SEXP parm1   = Rf_protect(Rf_allocVector(VECSXP, iters/nthin));
+  SEXP pulse_chains   = Rf_protect(Rf_allocVector(VECSXP, iters/nthin));
 
 
   GetRNGstate();
-  mcmc(list, parms, ts, iters, nobs, nthin, priors, common1, parm1, propvar);
+  mcmc(list, parms, ts, iters, nobs, nthin, priors, common1, pulse_chains, propvar);
   PutRNGstate();
 
 
@@ -217,7 +217,8 @@ SEXP decon_input(SEXP indata,
   SEXP dim, dimnames;
   // create 'dim' attribute (dimension of matrix)
   Rf_protect(dim = Rf_allocVector(INTSXP, 2));
-  INTEGER(dim)[0] = iters/nthin; INTEGER(dim)[1] = 8;
+  INTEGER(dim)[0] = iters/nthin; 
+  INTEGER(dim)[1] = 8;
   Rf_setAttrib(common1, R_DimSymbol, dim);
   // create column names for common parms matrix
   SEXP common_names = Rf_protect(Rf_allocVector(STRSXP, 8));
@@ -240,7 +241,7 @@ SEXP decon_input(SEXP indata,
   // Combine chains for output -------------
   SEXP chains = Rf_protect(Rf_allocVector(VECSXP, 2));
   SET_VECTOR_ELT(chains, 0, common1);
-  SET_VECTOR_ELT(chains, 1, parm1);
+  SET_VECTOR_ELT(chains, 1, pulse_chains);
 
 
   // Free memory ---------------------------

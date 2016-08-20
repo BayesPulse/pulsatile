@@ -81,7 +81,7 @@ void mcmc(Node_type *list,
           Priors *priors, 
           //unsigned long *seed, 
           SEXP common, //char *file1, 
-          SEXP parm, //char *file2, 
+          SEXP pulse_chains, //char *file2, 
           double propvar[]) {
 
   // Declarations ----------------------
@@ -231,21 +231,20 @@ void mcmc(Node_type *list,
       new_node = list->succ;
 
       // create matrix for pulse-specific parms in this iteration
-      SEXP this_parm = Rf_protect(allocMatrix(REALSXP, num_node2, 6));
-      //memset(REAL(this_parm), 0, num_node*6*sizeof(double)); //not sure how to use this with SEXP matrices
+      SEXP this_pulse_chain = Rf_protect(allocMatrix(REALSXP, num_node2, 6));
+      //memset(REAL(this_pulse_chain), 0, num_node*6*sizeof(double)); //not sure how to use this with SEXP matrices
 
-      j = 0;
       while (new_node != NULL) {
 
-        REAL(this_parm)[j + 0] = (i/NN);
-        REAL(this_parm)[j + 1] = num_node2;
-        REAL(this_parm)[j + 2] = num_node;
-        REAL(this_parm)[j + 3] = new_node->time;
-        REAL(this_parm)[j + 4] = new_node->theta[0];
-        REAL(this_parm)[j + 5] = new_node->theta[1];
+        REAL(this_pulse_chain)[num_node + 0] = (i/NN);
+        REAL(this_pulse_chain)[num_node + 1] = num_node2;
+        REAL(this_pulse_chain)[num_node + 2] = num_node;
+        REAL(this_pulse_chain)[num_node + 3] = new_node->time;
+        REAL(this_pulse_chain)[num_node + 4] = new_node->theta[0];
+        REAL(this_pulse_chain)[num_node + 5] = new_node->theta[1];
 
         //SEXP common1 = Rf_protect(Rf_allocMatrix(REALSXP, iter/NN, 8));
-        //Rprintf(parm, "%d %d %d %lf %lf %lf\n", 
+        //Rprintf(pulse_chain, "%d %d %d %lf %lf %lf\n", 
         //        i/NN, num_node2, num_node, new_node->time, 
         //        new_node->theta[0], new_node->theta[1]);
 
@@ -254,28 +253,42 @@ void mcmc(Node_type *list,
         j++;
       }
 
-      SET_VECTOR_ELT(parm, i/NN, this_parm);
-
+      // Column names for this_pulse obj in pulse chain --------
+      SEXP dim, dimnames;
+      // create 'dim' attribute (dimension of matrix)
+      Rf_protect(dim = Rf_allocVector(INTSXP, 2));
+      INTEGER(dim)[0] = num_node2; 
+      INTEGER(dim)[1] = 6;
+      Rf_setAttrib(this_pulse_chain, R_DimSymbol, dim);
       // create names 
-      SEXP parm_names = Rf_protect(Rf_allocVector(STRSXP, 8));
-      SET_STRING_ELT(parm_names, 0, Rf_mkChar("iteration"));
-      SET_STRING_ELT(parm_names, 1, Rf_mkChar("total_num_pulses"));
-      SET_STRING_ELT(parm_names, 2, Rf_mkChar("pulse_num"));
-      SET_STRING_ELT(parm_names, 3, Rf_mkChar("location"));
-      SET_STRING_ELT(parm_names, 4, Rf_mkChar("mass"));
-      SET_STRING_ELT(parm_names, 5, Rf_mkChar("width"));
+      SEXP pulse_chain_names = Rf_protect(Rf_allocVector(STRSXP, 6));
+      SET_STRING_ELT(pulse_chain_names, 0, Rf_mkChar("iteration"));
+      SET_STRING_ELT(pulse_chain_names, 1, Rf_mkChar("total_num_pulses"));
+      SET_STRING_ELT(pulse_chain_names, 2, Rf_mkChar("pulse_num"));
+      SET_STRING_ELT(pulse_chain_names, 3, Rf_mkChar("location"));
+      SET_STRING_ELT(pulse_chain_names, 4, Rf_mkChar("mass"));
+      SET_STRING_ELT(pulse_chain_names, 5, Rf_mkChar("width"));
+      // assign names to vector
+      Rf_protect(dimnames = Rf_allocVector(VECSXP, 2));
+      // assign names vector to columns (1) names attribute, leaving rows (0) NULL;
+      SET_VECTOR_ELT(dimnames, 1, pulse_chain_names);
       // assign names to list
-      Rf_setAttrib(this_parm, R_NamesSymbol, parm_names);
+      Rf_setAttrib(this_pulse_chain, R_DimNamesSymbol, dimnames);
 
-      // Save common parms from iteration i/NN to SEXP matrix obj
-      REAL(common)[i/NN + 0] = num_node2;
-      REAL(common)[i/NN + 1] = parms->md[0];
-      REAL(common)[i/NN + 2] = parms->theta[0];
-      REAL(common)[i/NN + 3] = parms->theta[1];
-      REAL(common)[i/NN + 4] = parms->md[1];
-      REAL(common)[i/NN + 5] = parms->sigma;
-      REAL(common)[i/NN + 6] = parms->re_sd[0];
-      REAL(common)[i/NN + 7] = parms->re_sd[1];
+      // Insert 'this_pulse_chain' into list pulse_chain
+      SET_VECTOR_ELT(pulse_chains, i/NN, this_pulse_chain);
+
+
+      // Save common parms from iteration i/NN to SEXP matrix obj -------
+      REAL(common)[(i/NN) + 0] = num_node2;
+      REAL(common)[(i/NN) + 1] = parms->md[0];
+      REAL(common)[(i/NN) + 2] = parms->theta[0];
+      REAL(common)[(i/NN) + 3] = parms->theta[1];
+      REAL(common)[(i/NN) + 4] = parms->md[1];
+      REAL(common)[(i/NN) + 5] = parms->sigma;
+      REAL(common)[(i/NN) + 6] = parms->re_sd[0];
+      REAL(common)[(i/NN) + 7] = parms->re_sd[1];
+
 
       //Rprintf(common, "%d %lf %lf %lf %lf %lf %lf %lf \n", 
       //        num_node2, parms->md[0], parms->theta[0], parms->theta[1],
@@ -287,7 +300,7 @@ void mcmc(Node_type *list,
       //  }
       //}
 
-      Rf_unprotect(2);
+      Rf_unprotect(4);
 
     }
 
