@@ -32,4 +32,5 @@ fit <- fit_pulse(model_spec)
 #dat %>% str
 
 pulses <- fit[[2]] %>% do.call(rbind, .) %>% as.data.frame %>% tbl_df  
+common <- fit[[1]] %>% as.data.frame %>% tbl_df
 
