@@ -224,7 +224,8 @@ void birth_death(Node_type *list,
     // Update virtual time (how long to run BD step) 
     //   Draw from exp(B+D) and add to current S 
     //-------------------------------------------
-    S += Rf_rexp(Birth_rate + Death_rate); //, seed);
+    S += Rf_rexp(1/(Birth_rate + Death_rate)); //, seed);
+    //Rprintf("S = %f; T = %f\n", S, T);
     // If S exceeds T or if we've run this too many times, break
     if (S > T)  { 
       //Rprintf("BD ran for %d iterations.\n", aaa);
@@ -274,7 +275,8 @@ void birth_death(Node_type *list,
     } else { // Otherwise, a death occurs 
 
       // Pick a node to remove, find and remove it and update likelihood
-      remove = one_rmultinom(death_rate, num_node) + 1; //, seed) + 1;
+      remove = one_rmultinom(death_rate, num_node) + 1; 
+      //Rprintf("node to remove: %d\n", remove);
       node   = list;
 
       for (i = 0; i < remove; i++) { 

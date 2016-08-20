@@ -1,6 +1,6 @@
 //
-// FILE: decon_test.h
-// DESCRIPTION: Definitions for decon_test.c
+// FILE: r_interface.h
+// DESCRIPTION: Definitions for r_interface.c
 // 
 
 #define R_NO_REMAP 
@@ -32,7 +32,7 @@ typedef struct {
     double nprior;   // prior number of pulses
 } Common_parms;
 
-//SEXP decon_input(SEXP indata, SEXP model, SEXP iterations, SEXP thin);
+//SEXP decon_r_interface(SEXP indata, SEXP model, SEXP iterations, SEXP thin);
 double **convert_data(SEXP indata, int nrow); 
 void deallocate_data(double **data, int nrow);
 SEXP getListElement(SEXP list, const char *str);
