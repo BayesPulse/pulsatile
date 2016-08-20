@@ -41,21 +41,18 @@ stop_time - start_time
 pulses <- fit[[2]] %>% do.call(rbind, .) %>% as.data.frame %>% tbl_df  
 common <- fit[[1]] %>% as.data.frame %>% tbl_df %>% mutate(iteration = 1:n()) %>% select(iteration, everything())
 
-ggplot() +
-  geom_path(data = dat, aes(x = time, y = concentration)) +
+timeseries <- 
+  ggplot() +
+    geom_path(data = dat, aes(x = time, y = concentration)) +
 
-x11()
-ggplot() +
+location_hist <- 
+  ggplot() +
   geom_histogram(data = pulses, aes(x = location, y = ..density..))
 
-x11()
-common %>% gather(key = parameter, value = value, -iteration) %>%
-ggplot(aes(x = iteration, y = value)) +
-  geom_path() +
-  facet_wrap(~ parameter, ncol = 3, scales = "free")
+traceplots <- 
+  common %>% gather(key = parameter, value = value, -iteration) %>%
+  ggplot(aes(x = iteration, y = value)) +
+    geom_path() +
+    facet_wrap(~ parameter, ncol = 3, scales = "free")
 
 
-
-
-dev.off()
-dev.off()
