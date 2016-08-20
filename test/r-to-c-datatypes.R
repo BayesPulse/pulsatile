@@ -25,6 +25,7 @@ model_spec
 #test_inout(x = dat)
 #test_inout(x = model_spec)
 #show_args(.data = dat)
+set.seed(999999)
 fit <- fit_pulse(model_spec)
 
 dat %>% str

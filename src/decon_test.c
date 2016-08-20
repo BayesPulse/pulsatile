@@ -202,10 +202,11 @@ SEXP decon_input(SEXP indata,
   // R lists for chains ------------------
   // Common parameters -- 1 record per saved iteration
   SEXP common1 = Rf_protect(Rf_allocMatrix(REALSXP, iters/nthin, 8));
+  //double * commonptr = REAL(common1);
   // Pulse-specific parameters -- 1 record per pulse per iteration
   //   list object defined here, each iteration will differ in lenght, so the
   //   entries are defined in linklistv3
-  SEXP pulse_chains   = Rf_protect(Rf_allocVector(VECSXP, iters/nthin));
+  SEXP pulse_chains = Rf_protect(Rf_allocVector(VECSXP, iters/nthin));
 
 
   GetRNGstate();
