@@ -262,8 +262,8 @@ void birth_death(Node_type *list,
         // Initialize a new node
         new_node               = initialize_node();
         new_node->time         = position;
-        new_node->theta[0]     = exp(rnorm(parms->theta[0], parms->re_sd[0])); //, seed));
-        new_node->theta[1]     = exp(rnorm(parms->theta[1], parms->re_sd[1])); //, seed));
+        new_node->theta[0]     = exp(Rf_rnorm(parms->theta[0], parms->re_sd[0])); //, seed));
+        new_node->theta[1]     = exp(Rf_rnorm(parms->theta[1], parms->re_sd[1])); //, seed));
         new_node->mean_contrib = (double *)calloc(N, sizeof(double));
         // Add it to the linklist and update values
         mean_contribution(new_node, ts, parms, N);

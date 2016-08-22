@@ -490,7 +490,7 @@ void mh_time_strauss(Node_type *list,
       // Accept/Reject
       //if (log(kiss(seed)) < alpha) {
       // ***NOTE***: just guessed on this implementation
-      if (log(runif(0, 1)) < alpha) {
+      if (log(Rf_runif(0, 1)) < alpha) {
 
         // If log U < log rho, we accept proposed value. Increase
         // acceptance count by one and set likelihood equal to
@@ -644,7 +644,7 @@ void mh_time_os(Node_type *list,
       alpha = (0 < (rho = (prior_ratio + like_ratio))) ? 0 : rho;
 
       //if (log(kiss(seed)) < alpha) {
-      if (log(runif(0, 1)) < alpha) {
+      if (log(Rf_runif(0, 1)) < alpha) {
         // If log U < log rho, we accept proposed value. Increase acceptance
         // count by one and set likelihood equal to likelihood under proposal 
         atime++;
@@ -794,7 +794,7 @@ void mh_mu_delta(Node_type *list,
     alpha = (0 < (logrho = (prior_ratio + like_ratio))) ? 0:logrho;
 
     //if (log(kiss(seed)) < alpha) {
-    if (log(runif(0, 1)) < alpha) {
+    if (log(Rf_runif(0, 1)) < alpha) {
       // If log U < log rho, increase acceptance rate by 1 and set the
       // likelihood equal to the likelihood under proposed values 
       adelta++;
@@ -985,8 +985,8 @@ void draw_re_sd(Node_type *list,
   accept_counter[1] = arevw;
 
   // Draw proposed values for sigma_1 and sigma_2 
-  new_sd[0] = rnorm(parms->re_sd[0], v1); //, seed);
-  new_sd[1] = rnorm(parms->re_sd[1], v2); //, seed);
+  new_sd[0] = Rf_rnorm(parms->re_sd[0], v1); //, seed);
+  new_sd[1] = Rf_rnorm(parms->re_sd[1], v2); //, seed);
   //------- DEBUGGING---------//
   //Rprintf("\ndebugging sd width MH algo\n");
   //Rprintf("current sd = %f\n", parms->re_sd[1]);
@@ -1053,7 +1053,7 @@ void draw_re_sd(Node_type *list,
 
       // Compute log rho, and set alpha equal to min(log rho, 0) 
       alpha = (0 < prop_ratio) ? 0 : prop_ratio;
-      draw  = log(runif(0,1));
+      draw  = log(Rf_runif(0,1));
       //------- DEBUGGING---------//
       //if (j == 1) {
       //  Rprintf("alpha  = %.20f\n", alpha);
@@ -1155,8 +1155,8 @@ void draw_random_effects(double **ts, Node_type *list, Common_parms *parms,
     nrew++;
 
     // Draw proposed values of current pulse's mass and width 
-    pRE[0] = rnorm(log(node->theta[0]), v1); //, seed);
-    pRE[1] = rnorm(log(node->theta[1]), v2); //, seed);
+    pRE[0] = Rf_rnorm(log(node->theta[0]), v1); //, seed);
+    pRE[1] = Rf_rnorm(log(node->theta[1]), v2); //, seed);
 
     // Determine if we accept or reject proposed pulse mass then determine if
     // we accept or reject proposed pulse width
@@ -1195,7 +1195,7 @@ void draw_random_effects(double **ts, Node_type *list, Common_parms *parms,
       // Calculate log rho; set alpha equal to min(0, log rho) 
       alpha = (0 < (logrho = (prior_ratio + like_ratio))) ? 0:logrho;
 
-      if (log(runif(0, 1)) < alpha) {
+      if (log(Rf_runif(0, 1)) < alpha) {
         // If log U < log rho, accept the proposed value, increase
         // acceptance counter and set current likelihood equal to
         // likelihood under proposed mass/width 
