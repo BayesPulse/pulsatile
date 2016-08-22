@@ -209,7 +209,9 @@ void mcmc(Node_type *list,
     //    distribution via Ken's derivation.  Looked at Week7 of Ed's notes, but
     //    didn't find a clear answer.
     ssq           = error_squared(ts, list, parms, N);
+    GetRNGstate();
     parms->sigma  = 1 / Rf_rgamma(priors->err_alpha + N / 2, priors->err_beta + 0.5 * ssq);
+    PutRNGstate();
     parms->lsigma = log(parms->sigma);
 
     //------------------------------------------------------
@@ -439,7 +441,9 @@ void mh_time_strauss(Node_type *list,
     ntime++;
 
     // Compute proposal time 
+    GetRNGstate();
     ptime = Rf_rnorm(node->time, sd); 
+    PutRNGstate();
 
     // Calculate sum_s_r for proposal value and current value
     sum_s_r_proposal = calc_sr_strauss(ptime, list, node, priors);
@@ -586,7 +590,9 @@ void mh_time_os(Node_type *list,
     ntime++;
 
     // Compute proposal time 
+    GetRNGstate();
     ptime = Rf_rnorm(node->time, sd);
+    PutRNGstate();
 
     // Only proceed if our proposed time is reasonable 
     if (ptime <= fitend && ptime > fitstart) {
@@ -912,7 +918,9 @@ void draw_fixed_effects(Node_type *list,
     //}
     //----DEBUGGING----//
            
+    GetRNGstate();
     parms->theta[j] = Rf_rnorm(gmean, sqrt(gvar));
+    PutRNGstate();
   }
 
 }

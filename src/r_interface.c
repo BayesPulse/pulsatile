@@ -209,9 +209,9 @@ SEXP decon_r_interface(SEXP indata,
   SEXP pulse_chains = Rf_protect(Rf_allocVector(VECSXP, iters/nthin));
 
 
-  GetRNGstate();
+  //GetRNGstate();
   mcmc(list, parms, ts, iters, nobs, nthin, priors, common1, pulse_chains, propsd);
-  PutRNGstate();
+  //PutRNGstate();
 
 
   // Column names for common1 chain --------

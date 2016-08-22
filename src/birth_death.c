@@ -224,7 +224,9 @@ void birth_death(Node_type *list,
     // Update virtual time (how long to run BD step) 
     //   Draw from exp(B+D) and add to current S 
     //-------------------------------------------
+    GetRNGstate();
     S += Rf_rexp(1/(Birth_rate + Death_rate)); //, seed);
+    PutRNGstate();
     //Rprintf("S = %f; T = %f\n", S, T);
     // If S exceeds T or if we've run this too many times, break
     if (S > T)  { 
@@ -241,10 +243,15 @@ void birth_death(Node_type *list,
     // Select Birth or Death and proceed with either
     //-------------------------------------------
     //if (kiss(seed) < max) { // If U < B/(B+D), a birth occurs 
-    if (Rf_runif(0, 1) < max) { // If U < B/(B+D), a birth occurs 
+    GetRNGstate();
+    double randnum = Rf_runif(0, 1) ;
+    PutRNGstate();
+    if (randnum < max) { // If U < B/(B+D), a birth occurs 
 
       // Generate new position
+      GetRNGstate();
       position = Rf_runif(fitstart, fitend);
+      PutRNGstate();
       int accept_pos = 1;
 
       // If using Strauss prior, run accept/reject for new position
@@ -252,7 +259,11 @@ void birth_death(Node_type *list,
         sum_s_r    = calc_sr_strauss(position, list, list, priors);
         papas_cif  = pulse_intensity * pow(priors->gamma, sum_s_r);
         b_ratio    = papas_cif / birth_rate;
-        accept_pos = (Rf_runif(0, 1) < b_ratio) ? 1 : 0;
+
+        GetRNGstate();
+        randnum = Rf_runif(0, 1);
+        PutRNGstate();
+        accept_pos = (randnum < b_ratio) ? 1 : 0;
       }
 
       // If it's a valid position, generate initial parms and insert node

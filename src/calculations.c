@@ -153,7 +153,9 @@ int rmvnorm(double *result,
 
     runiv = (double *)calloc(size_A, sizeof(double));
     for (i = 0; i < size_A; i++) {
+      GetRNGstate();
       runiv[i] = Rf_rnorm(0, 1);;
+      PutRNGstate();
     }
 
     for (i=0;i<size_A;i++) {
@@ -198,7 +200,9 @@ int one_rmultinom(double *cumprobs, int n_probs) {
     //Rprintf("Ans for pulse %d = %d\n", i, ans[i]);
   }
 
+  GetRNGstate();
   Rf_rmultinom(1, probs, n_probs, ans);
+  PutRNGstate();
 
   for (i = 0; i < n_probs; i++) {
     if (ans[i] == 1) rtn = i;
