@@ -750,7 +750,9 @@ void mh_mu_delta(Node_type *list,
   ndelta++;
 
   // Draw proposal values for b and hl 
+  GetRNGstate();
   rmvnorm(pmd, var, 2, parms->md, 1); //seed, 1);
+  PutRNGstate();
 
   // Only proceed if we draw reasonable values 
   if (pmd[0] > 0 && pmd[1] > 3) {
@@ -993,8 +995,12 @@ void draw_re_sd(Node_type *list,
   accept_counter[1] = arevw;
 
   // Draw proposed values for sigma_1 and sigma_2 
-  new_sd[0] = rnorm(parms->re_sd[0], v1); //, seed);
-  new_sd[1] = rnorm(parms->re_sd[1], v2); //, seed);
+  GetRNGstate();
+  new_sd[0] = Rf_rnorm(parms->re_sd[0], v1); //, seed);
+  PutRNGstate();
+  GetRNGstate();
+  new_sd[1] = Rf_rnorm(parms->re_sd[1], v2); //, seed);
+  PutRNGstate();
   //------- DEBUGGING---------//
   //Rprintf("\ndebugging sd width MH algo\n");
   //Rprintf("current sd = %f\n", parms->re_sd[1]);
@@ -1061,7 +1067,9 @@ void draw_re_sd(Node_type *list,
 
       // Compute log rho, and set alpha equal to min(log rho, 0) 
       alpha = (0 < prop_ratio) ? 0 : prop_ratio;
-      draw  = log(runif(0,1));
+      GetRNGstate();
+      draw  = log(Rf_runif(0,1));
+      PutRNGstate();
       //------- DEBUGGING---------//
       //if (j == 1) {
       //  Rprintf("alpha  = %.20f\n", alpha);
@@ -1163,8 +1171,12 @@ void draw_random_effects(double **ts, Node_type *list, Common_parms *parms,
     nrew++;
 
     // Draw proposed values of current pulse's mass and width 
-    pRE[0] = rnorm(log(node->theta[0]), v1); //, seed);
-    pRE[1] = rnorm(log(node->theta[1]), v2); //, seed);
+    GetRNGstate();
+    pRE[0] = Rf_rnorm(log(node->theta[0]), v1); //, seed);
+    PutRNGstate();
+    GetRNGstate();
+    pRE[1] = Rf_rnorm(log(node->theta[1]), v2); //, seed);
+    PutRNGstate();
 
     // Determine if we accept or reject proposed pulse mass then determine if
     // we accept or reject proposed pulse width
