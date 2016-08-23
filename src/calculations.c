@@ -136,7 +136,6 @@ int rmvnorm(double *result,
             //unsigned long *seed, 
             int flag) {
 
-  GetRNGstate();
   int i;
   int j;
   double *runiv;
@@ -154,9 +153,7 @@ int rmvnorm(double *result,
 
     runiv = (double *)calloc(size_A, sizeof(double));
     for (i = 0; i < size_A; i++) {
-      GetRNGstate();
       runiv[i] = Rf_rnorm(0, 1);;
-      PutRNGstate();
     }
 
     for (i=0;i<size_A;i++) {
@@ -167,12 +164,10 @@ int rmvnorm(double *result,
     }
 
     free(runiv);
-    PutRNGstate();
     return 1;
 
   } else {
 
-    PutRNGstate();
     return 0;
 
   }
@@ -188,7 +183,6 @@ int one_rmultinom(double *cumprobs, int n_probs) {
   //Rf_protect(ans = Rf_allocVector(INTSXP, n_probs));
   //probs = Rf_coerceVector(probs
  
-  GetRNGstate();
   int i;
   int rtn = 0;
   int *ans;
@@ -204,9 +198,7 @@ int one_rmultinom(double *cumprobs, int n_probs) {
     //Rprintf("Ans for pulse %d = %d\n", i, ans[i]);
   }
 
-  GetRNGstate();
   Rf_rmultinom(1, probs, n_probs, ans);
-  PutRNGstate();
 
   for (i = 0; i < n_probs; i++) {
     if (ans[i] == 1) rtn = i;
@@ -214,7 +206,6 @@ int one_rmultinom(double *cumprobs, int n_probs) {
   }
   //Rprintf("What is rtn after assignment?: %d\n", rtn);
 
-  PutRNGstate();
   return(rtn);
 }
 

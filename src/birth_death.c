@@ -84,7 +84,6 @@ void birth_death(Node_type *list,
 {
 
   // Declarations
-  GetRNGstate();
   int i;                      // Generic counter
   int remove;                 // Ordered number of pulse to remove
   int num_node;               // Number of pulses
@@ -225,9 +224,7 @@ void birth_death(Node_type *list,
     // Update virtual time (how long to run BD step) 
     //   Draw from exp(B+D) and add to current S 
     //-------------------------------------------
-    GetRNGstate();
     S += Rf_rexp(1/(Birth_rate + Death_rate)); //, seed);
-    PutRNGstate();
     //Rprintf("S = %f; T = %f\n", S, T);
     // If S exceeds T or if we've run this too many times, break
     if (S > T)  { 
@@ -243,16 +240,10 @@ void birth_death(Node_type *list,
     //-------------------------------------------
     // Select Birth or Death and proceed with either
     //-------------------------------------------
-    //if (kiss(seed) < max) { // If U < B/(B+D), a birth occurs 
-    GetRNGstate();
-    double randnum = Rf_runif(0, 1) ;
-    PutRNGstate();
-    if (randnum < max) { // If U < B/(B+D), a birth occurs 
+    if (Rf_runif(0, 1) < max) { // If U < B/(B+D), a birth occurs 
 
       // Generate new position
-      GetRNGstate();
       position = Rf_runif(fitstart, fitend);
-      PutRNGstate();
       int accept_pos = 1;
 
       // If using Strauss prior, run accept/reject for new position
@@ -261,10 +252,7 @@ void birth_death(Node_type *list,
         papas_cif  = pulse_intensity * pow(priors->gamma, sum_s_r);
         b_ratio    = papas_cif / birth_rate;
 
-        GetRNGstate();
-        double randnum2 = Rf_runif(0, 1);
-        PutRNGstate();
-        accept_pos = (randnum2 < b_ratio) ? 1 : 0;
+        accept_pos = (Rf_runif(0, 1) < b_ratio) ? 1 : 0;
       }
 
       // If it's a valid position, generate initial parms and insert node
@@ -275,12 +263,8 @@ void birth_death(Node_type *list,
         new_node               = initialize_node();
         new_node->time         = position;
 
-        GetRNGstate();
         new_node->theta[0] = exp(Rf_rnorm(parms->theta[0], parms->re_sd[0]));
-        GetRNGstate();
-        PutRNGstate();
         new_node->theta[1] = exp(Rf_rnorm(parms->theta[1], parms->re_sd[1]));
-        PutRNGstate();
 
         new_node->mean_contrib = (double *)calloc(N, sizeof(double));
         // Add it to the linklist and update values
@@ -293,10 +277,7 @@ void birth_death(Node_type *list,
     } else { // Otherwise, a death occurs 
 
       // Pick a node to remove, find and remove it and update likelihood
-      //GetRNGstate();
       remove = one_rmultinom(death_rate, num_node) + 1; 
-      //PutRNGstate();
-      //Rprintf("node to remove: %d\n", remove);
       node   = list;
 
       for (i = 0; i < remove; i++) { 
@@ -319,7 +300,6 @@ void birth_death(Node_type *list,
 
   free(death_rate);
   free(tmp);
-  PutRNGstate();
 
 }
 

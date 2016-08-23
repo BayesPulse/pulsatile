@@ -121,7 +121,6 @@ void mcmc(Node_type *list,
   long *arevw_ptr  = &arevw ; // RE pulse width SD
   long *nrevw_ptr  = &nrevw ; // RE pulse width SD
 
-  Rprintf("At start of mcmc, ntime = %d\n", ntime);
   // Allocate memory for likelihood 
   likeli = (double *)calloc(1, sizeof(double));
 
@@ -200,9 +199,6 @@ void mcmc(Node_type *list,
     // 2) Draw standard deviation of random effects 
     //    (Metropolis Hastings)
     //    Note: log(sd) with uniform prior was suggested by Gelman, 2006
-    //------ DEBUGGING ------//
-    //Rprintf("\n\n\nIteration %d\n", i);
-    //------ DEBUGGING ------//
     draw_re_sd(list, priors, parms, sdmv, sdwv, arevm_ptr, nrevm_ptr,
                arevw_ptr, nrevw_ptr); 
 
@@ -231,9 +227,7 @@ void mcmc(Node_type *list,
     //    distribution via Ken's derivation.  Looked at Week7 of Ed's notes, but
     //    didn't find a clear answer.
     ssq           = error_squared(ts, list, parms, N);
-    GetRNGstate();
     parms->sigma  = 1 / Rf_rgamma(priors->err_alpha + N / 2, priors->err_beta + 0.5 * ssq);
-    PutRNGstate();
     parms->lsigma = log(parms->sigma);
 
     //------------------------------------------------------
@@ -269,11 +263,6 @@ void mcmc(Node_type *list,
         REAL(this_pulse_chain)[num_node + num_node2*4] = new_node->theta[0];
         REAL(this_pulse_chain)[num_node + num_node2*5] = new_node->theta[1];
 
-        //SEXP common1 = Rf_protect(Rf_allocMatrix(REALSXP, iter/NN, 8));
-        //Rprintf(pulse_chain, "%d %d %d %lf %lf %lf\n", 
-        //        i/NN, num_node2, num_node, new_node->time, 
-        //        new_node->theta[0], new_node->theta[1]);
-
         num_node++;
         new_node = new_node->succ;
         j++;
@@ -299,7 +288,6 @@ void mcmc(Node_type *list,
       // Insert 'this_pulse_chain' into list pulse_chain
       SET_VECTOR_ELT(pulse_chains, i/NN, this_pulse_chain);
 
-
       // Save common parms from iteration i/NN to SEXP matrix obj -------
       REAL(common)[(i/NN) + (iter/NN)*0] = num_node2;
       REAL(common)[(i/NN) + (iter/NN)*1] = parms->md[0];
@@ -310,44 +298,30 @@ void mcmc(Node_type *list,
       REAL(common)[(i/NN) + (iter/NN)*6] = parms->re_sd[0];
       REAL(common)[(i/NN) + (iter/NN)*7] = parms->re_sd[1];
 
-      //Rprintf("chain version = %f and parm version = %f\n", REAL(common)[(i/NN) + 2], parms->theta[0]);
-
-
-      //Rprintf(common, "%d %lf %lf %lf %lf %lf %lf %lf \n", 
-      //        num_node2, parms->md[0], parms->theta[0], parms->theta[1],
-      //        parms->md[1], parms->sigma, parms->re_sd[0], parms->re_sd[1]);
-      
-      //for (j = 0; j < num_node+1; j++) {
-      //  for (k = 0; k < 5; j++) {
-      //    REAL(common)[j + k] = 0;
-      //  }
-      //}
-
       Rf_unprotect(4);
 
     }
 
 
     // Print to STDOUT
-    //if (!(i % NNN)) {
-    //  Rprintf("\n\n");
-    //  Rprintf("iter = %d likelihood = %lf\n", i, *likeli);
-    //  Rprintf("mu %.2lf A %.2lf s %.2lf d %.4lf  v %.4le\n", 
-    //          parms->md[0], parms->theta[0], parms->theta[1], parms->md[1],
-    //          parms->sigma);
-    //  Rprintf("pmdvar00 %.2lf pmdvar11 %.2lf pmdvar01 %.2lf \n",
-    //          pmd_var[0][0], pmd_var[1][1], pmd_var[0][1]);
-    //  print_list(list);
-    //  Rprintf("pct rem = %.2lf pct rew = %.2lf pct time = %.2lf\n",
-    //          (double)arem  / (double)nrem, 
-    //          (double)arew  / (double)nrew,
-    //          (double)atime / (double)ntime);
-    //  Rprintf("pct md = %.2lf revm = %.2lf revw = %.2lf\n", 
-    //         (double)adelta / (double)ndelta, 
-    //         (double)arevm  / (double)nrevm,
-    //         (double)arevw  / (double)nrevw);
-    //  fflush(stdout);
-    //}
+    if (!(i % NNN)) {
+      Rprintf("\n\n");
+      Rprintf("iter = %d likelihood = %lf\n", i, *likeli);
+      Rprintf("mu %.2lf A %.2lf s %.2lf d %.4lf  v %.4le\n", 
+              parms->md[0], parms->theta[0], parms->theta[1], parms->md[1],
+              parms->sigma);
+      Rprintf("pmdvar00 %.2lf pmdvar11 %.2lf pmdvar01 %.2lf \n",
+              pmd_var[0][0], pmd_var[1][1], pmd_var[0][1]);
+      print_list(list);
+      Rprintf("pct rem = %.2lf pct rew = %.2lf pct time = %.2lf\n",
+              (double)arem  / (double)nrem, 
+              (double)arew  / (double)nrew,
+              (double)atime / (double)ntime);
+      Rprintf("pct md = %.2lf revm = %.2lf revw = %.2lf\n", 
+             (double)adelta / (double)ndelta, 
+             (double)arevm  / (double)nrevm,
+             (double)arevw  / (double)nrevw);
+    }
 
     //----------------------------------------
     // Check for R user interrupt
@@ -360,8 +334,6 @@ void mcmc(Node_type *list,
     //------------------------------------------------------
     if (!(i % 500) && i < 25000 && i > 0) {
 
-      Rprintf("iteration %d", i);
-      Rprintf("for iteration %d: atime = %d; ntime = %d; sdt = %f\n", i, atime, ntime, sdt);
       adjust2_acceptance((double) *adelta_ptr / (double) *ndelta_ptr, pmd_var, -0.90);
       adjust_acceptance( (double) *atime_ptr  / (double) *ntime_ptr,  &sdt);
       adjust_acceptance( (double) *arem_ptr   / (double) *nrem_ptr,   &sdrem);
@@ -461,19 +433,13 @@ void mh_time_strauss(Node_type *list,
   // Set pointer to first node in linked list 
   node = list->succ;
 
-  Rprintf("ntime before strauss mh = %d\n", *ntime);
-
   while (node != NULL) {
 
     // Increase denominator of acceptance rate for time 
     (*ntime)++;
 
     // Compute proposal time 
-    GetRNGstate();
     ptime = Rf_rnorm(node->time, sd); 
-    PutRNGstate();
-
-    //Rprintf("pulse location = %f; sd = %f; ptime = %f\n", node->time, sd, ptime);
 
     // Calculate sum_s_r for proposal value and current value
     sum_s_r_proposal = calc_sr_strauss(ptime, list, node, priors);
@@ -555,10 +521,8 @@ void mh_time_strauss(Node_type *list,
 
   } // End of loop through pulses
 
-  Rprintf("ntime after strauss mh = %d\n", *ntime);
   // Free Memory
   free(tmp_mean_contrib);
-  //PutRNGstate();
 
 }
 
@@ -597,7 +561,6 @@ void mh_time_os(Node_type *list,
                 long *atime,
                 long *ntime) {
 
-  GetRNGstate();
   int i;                     // Generic counter
   Node_type *node;           // Pointer for current list of pulses
   double alpha;              // min(0, log(rho)) - acceptance ratio
@@ -624,9 +587,7 @@ void mh_time_os(Node_type *list,
     (*ntime)++;
 
     // Compute proposal time 
-    GetRNGstate();
     ptime = Rf_rnorm(node->time, sd);
-    PutRNGstate();
 
     // Only proceed if our proposed time is reasonable 
     if (ptime <= fitend && ptime > fitstart) {
@@ -713,7 +674,6 @@ void mh_time_os(Node_type *list,
 
   // Free Memory
   free(curr_mean_contrib);
-  PutRNGstate();
 
 }
 
@@ -757,7 +717,6 @@ void mh_mu_delta(Node_type *list,
                  long *adelta,
                  long *ndelta) {
 
-  GetRNGstate();
   int i;                // Generic counter
   int j;                // Generic counter
   int k;                // Generic counter
@@ -787,9 +746,7 @@ void mh_mu_delta(Node_type *list,
   (*ndelta)++;
 
   // Draw proposal values for b and hl 
-  GetRNGstate();
   rmvnorm(pmd, var, 2, parms->md, 1); //seed, 1);
-  PutRNGstate();
 
   // Only proceed if we draw reasonable values 
   if (pmd[0] > 0 && pmd[1] > 3) {
@@ -875,7 +832,6 @@ void mh_mu_delta(Node_type *list,
   }
   free(currentmc);
   free(pmd);
-  PutRNGstate();
 
 }
 
@@ -911,7 +867,6 @@ void draw_fixed_effects(Node_type *list,
                         ) {
 
   // Declarations
-  GetRNGstate();
   int j;           // Generic counter
   int numnode;     // Count of pulses
   double gmean;    // Mean for Gibbs sampler 
@@ -951,18 +906,8 @@ void draw_fixed_effects(Node_type *list,
     gvar  /= (priors->fe_variance[j] * numnode) + 
              (parms->re_sd[j] * parms->re_sd[j]);
 
-    //----DEBUGGING----//
-    //if (j == 1) {
-    //Rprintf("mean of gibbs draw for width posterior = %f\n", gmean);
-    //Rprintf("SD of gibbs draw for width posterior = %f\n", sqrt(gvar));
-    //}
-    //----DEBUGGING----//
-           
-    GetRNGstate();
     parms->theta[j] = Rf_rnorm(gmean, sqrt(gvar));
-    PutRNGstate();
   }
-  PutRNGstate();
 
 }
 
@@ -1034,18 +979,8 @@ void draw_re_sd(Node_type *list,
   accept_counter[1] = *arevw;
 
   // Draw proposed values for sigma_1 and sigma_2 
-  GetRNGstate();
   new_sd[0] = Rf_rnorm(parms->re_sd[0], v1); //, seed);
-  PutRNGstate();
-  GetRNGstate();
   new_sd[1] = Rf_rnorm(parms->re_sd[1], v2); //, seed);
-  PutRNGstate();
-  //------- DEBUGGING---------//
-  //Rprintf("\ndebugging sd width MH algo\n");
-  //Rprintf("current sd = %f\n", parms->re_sd[1]);
-  //Rprintf("proposed new sd = %f\n", new_sd[1]);
-  //Rprintf("sd for width proposal = %f\n", v2);
-  //------- DEBUGGING---------//
 
   // Accept/reject step
   for (j = 0; j < 2; j++) {
@@ -1062,25 +997,9 @@ void draw_re_sd(Node_type *list,
     while (node != NULL) {
       psum += (log(node->theta[j]) - parms->theta[j]) *
               (log(node->theta[j]) - parms->theta[j]);
-      //------- DEBUGGING---------//
-      //if (j == 1) {
-      //  Rprintf("node %d\n", npulse);
-      //  Rprintf("pulse width = %0.20f\n", node->theta[j]);
-      //  Rprintf("mean width = %0.20f\n", parms->theta[j]);
-      //}
-      //------- DEBUGGING---------//
       npulse++;
       node  = node->succ;
     }
-
-    //------- DEBUGGING---------//
-    //if (j == 1) {
-    //  //debug1 = node->theta[j]-parms->theta[j];
-    //  //Rprintf("node->theta - parms->theta = %f\n", debug1);
-    //  Rprintf("psum (sum of squared diffs) = %.20f\n", psum);
-    //  Rprintf("npulses = %d\n", npulse);
-    //}
-    //------- DEBUGGING---------//
 
     // Logic is the uniform prior [U(0, re_sdmax)] portion of accept ratio
     if (new_sd[j] > 0 && new_sd[j] < priors->re_sdmax[j]) {
@@ -1093,38 +1012,15 @@ void draw_re_sd(Node_type *list,
       prop_ratio   = psum * 0.5 * (prop_old - prop_new);
       prop_ratio  += (double)npulse * log(parms->re_sd[j] / new_sd[j]);
 
-      //------- DEBUGGING---------//
-      //if (j == 1) {
-      ////  Rprintf("new_sd[1]=%f is within U(0,re_sdmax)\n", new_sd[j]);
-      //  Rprintf("re_sd[1]=%.20f\n", parms->re_sd[j]);
-      //  Rprintf("prop_old = %.20f\n", 1.0/(parms->re_sd[j] * parms->re_sd[j]));
-      //  Rprintf("prop_new = %.20f\n", 1.0 / (new_sd[j] * new_sd[j]));
-      //  Rprintf("prop_ratio1 = %.20f\n", psum * 0.5 * (prop_old - prop_new));
-      //  Rprintf("prop_ratio2 = %.20f\n", prop_ratio);
-      //}
-      //------- DEBUGGING---------//
 
       // Compute log rho, and set alpha equal to min(log rho, 0) 
       alpha = (0 < prop_ratio) ? 0 : prop_ratio;
-      GetRNGstate();
       draw  = log(Rf_runif(0,1));
-      PutRNGstate();
-      //------- DEBUGGING---------//
-      //if (j == 1) {
-      //  Rprintf("alpha  = %.20f\n", alpha);
-      //  Rprintf("draw  = %.20f\n", draw);
-      //}
-      //------- DEBUGGING---------//
 
       // If log(U) < log rho, accept the proposed value 
       if (draw < alpha) {
         parms->re_sd[j] = new_sd[j];
         accept_counter[j]++;
-        //------- DEBUGGING---------//
-        //if (j == 1) {
-        //  Rprintf("New sd = %f accepted.\n", new_sd[j]);
-        //}
-        //------- DEBUGGING---------//
       }
 
     }
@@ -1174,7 +1070,6 @@ void draw_random_effects(double **ts, Node_type *list, Common_parms *parms,
                          int N, double *like, double v1,  double v2,
                          long *arem, long *nrem, 
                          long *arew, long *nrew) {
-  GetRNGstate();
   int i;                  // Generic counters
   int j;                  // Generic counters
   double logrho;          // Acceptance ratio prior to min(0,logrho)
@@ -1210,12 +1105,8 @@ void draw_random_effects(double **ts, Node_type *list, Common_parms *parms,
     (*nrew)++;
 
     // Draw proposed values of current pulse's mass and width 
-    GetRNGstate();
     pRE[0] = Rf_rnorm(log(node->theta[0]), v1); //, seed);
-    PutRNGstate();
-    GetRNGstate();
     pRE[1] = Rf_rnorm(log(node->theta[1]), v2); //, seed);
-    PutRNGstate();
 
     // Determine if we accept or reject proposed pulse mass then determine if
     // we accept or reject proposed pulse width
@@ -1286,7 +1177,6 @@ void draw_random_effects(double **ts, Node_type *list, Common_parms *parms,
   free(accept_counter);
   free(pRE);
   free(old_contrib);
-  PutRNGstate();
 
 }
 
