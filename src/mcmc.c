@@ -31,18 +31,6 @@
 extern int mmm;         // Order statistic for distribution of pulse locations.
 extern double fitstart; // First time in 10min increments a pulse can occur
 extern double fitend;   // Last time in 10min increments a pulse can occur
-long adelta = 0;        // Counter for number of halflife MH acceptances
-long ndelta = 0;        // Counter for number of halflife MH draws
-long atime = 0;         // Counter for pulse location MH acceptances
-long ntime = 0;         // Counter for pulse location MH draws
-long arem = 0;          // Counter for RE pulse mass acceptances
-long nrem = 0;          // Counter for RE pulse mass draws
-long arew = 0;          // Counter for RE pulse width acceptances
-long nrew = 0;          // Counter for RE pulse width draws
-long arevm = 0;         // Counter for RE pulse mass SD acceptances
-long nrevm = 0;         // Counter for RE pulse mass SD draws
-long arevw = 0;         // Counter for RE pulse width SD acceptances
-long nrevw = 0;         // Counter for RE pulse width SD draws
 
 
 
@@ -82,7 +70,10 @@ void mcmc(Node_type *list,
           SEXP pulse_chains, //char *file2, 
           double propsd[]) {
 
-  // Declarations ----------------------
+  //
+  // Declarations 
+  //
+  GetRNGstate();
   int i;               // Generic counter
   int	j;               // Generic counter
   int	k;               // Generic counter
@@ -102,6 +93,35 @@ void mcmc(Node_type *list,
   double **pmd_vch;    // Cholesky decomposed var-cov matrix for baseline/half-life
   Node_type *new_node; // Node structure for new pulse
 
+  //
+  // Counters for acceptences (a) and draws (n)
+  //
+  long adelta = 0; // halflife MH
+  long ndelta = 0; // halflife MH
+  long atime  = 0; // pulse location MH
+  long ntime  = 0; // pulse location MH
+  long arem   = 0; // RE pulse mass
+  long nrem   = 0; // RE pulse mass
+  long arew   = 0; // RE pulse width
+  long nrew   = 0; // RE pulse width
+  long arevm  = 0; // RE pulse mass SD
+  long nrevm  = 0; // RE pulse mass SD
+  long arevw  = 0; // RE pulse width SD
+  long nrevw  = 0; // RE pulse width SD
+  long *adelta_ptr = &adelta; // halflife MH
+  long *ndelta_ptr = &ndelta; // halflife MH
+  long *atime_ptr  = &atime ; // pulse location MH
+  long *ntime_ptr  = &ntime ; // pulse location MH
+  long *arem_ptr   = &arem  ; // RE pulse mass
+  long *nrem_ptr   = &nrem  ; // RE pulse mass
+  long *arew_ptr   = &arew  ; // RE pulse width
+  long *nrew_ptr   = &nrew  ; // RE pulse width
+  long *arevm_ptr  = &arevm ; // RE pulse mass SD
+  long *nrevm_ptr  = &nrevm ; // RE pulse mass SD
+  long *arevw_ptr  = &arevw ; // RE pulse width SD
+  long *nrevw_ptr  = &nrevw ; // RE pulse width SD
+
+  Rprintf("At start of mcmc, ntime = %d\n", ntime);
   // Allocate memory for likelihood 
   likeli = (double *)calloc(1, sizeof(double));
 
@@ -175,7 +195,7 @@ void mcmc(Node_type *list,
 
     // 1) Draw the fixed effects   
     //    (Gibbs sampler)
-    draw_fixed_effects(list, priors, parms); //, seed); 
+    draw_fixed_effects(list, priors, parms);  
 
     // 2) Draw standard deviation of random effects 
     //    (Metropolis Hastings)
@@ -183,25 +203,27 @@ void mcmc(Node_type *list,
     //------ DEBUGGING ------//
     //Rprintf("\n\n\nIteration %d\n", i);
     //------ DEBUGGING ------//
-    draw_re_sd(list, priors, parms, sdmv, sdwv); //, seed);
+    draw_re_sd(list, priors, parms, sdmv, sdwv, arevm_ptr, nrevm_ptr,
+               arevw_ptr, nrevw_ptr); 
 
     // 3) Draw the random effects 
     //    (Metropolis Hastings)
-    draw_random_effects(ts, list, parms, N, likeli, sdrem, sdrew); //, seed);
+    draw_random_effects(ts, list, parms, N, likeli, sdrem, sdrew, arem_ptr,
+                        nrem_ptr, arew_ptr, nrew_ptr); 
 
     // 4) Draw the pulse locations 
     //    (Metropolis Hastings)
     if (priors->gamma < -0.001) {
-      mh_time_os(list, parms, ts, likeli, N, sdt); //, seed, sdt); 
+      mh_time_os(list, parms, ts, likeli, N, sdt, atime_ptr, ntime_ptr); 
     } else {
-      mh_time_strauss(list, parms, ts, likeli, N, //seed, 
-                      sdt, priors);
+      mh_time_strauss(list, parms, ts, likeli, N, sdt, priors, atime_ptr,
+                      ntime_ptr);
     }
 
     // 5) Draw baseline and halflife
     //    (Metropolis-Hastings)
-    mh_mu_delta(list, parms, priors, ts, likeli, N, num_node2, //seed,
-                pmd_vch);
+    mh_mu_delta(list, parms, priors, ts, likeli, N, num_node2, pmd_vch,
+                adelta_ptr, ndelta_ptr);
 
     // 6) Draw the model error variance from the inverse Gamma distribution 
     //    (Gibbs) 
@@ -307,25 +329,25 @@ void mcmc(Node_type *list,
 
 
     // Print to STDOUT
-    if (!(i % NNN)) {
-      Rprintf("\n\n");
-      Rprintf("iter = %d likelihood = %lf\n", i, *likeli);
-      Rprintf("mu %.2lf A %.2lf s %.2lf d %.4lf  v %.4le\n", 
-              parms->md[0], parms->theta[0], parms->theta[1], parms->md[1],
-              parms->sigma);
-      Rprintf("pmdvar00 %.2lf pmdvar11 %.2lf pmdvar01 %.2lf \n",
-              pmd_var[0][0], pmd_var[1][1], pmd_var[0][1]);
-      print_list(list);
-      Rprintf("pct rem = %.2lf pct rew = %.2lf pct time = %.2lf\n",
-              (double)arem  / (double)nrem, 
-              (double)arew  / (double)nrew,
-              (double)atime / (double)ntime);
-      Rprintf("pct md = %.2lf revm = %.2lf revw = %.2lf\n", 
-             (double)adelta / (double)ndelta, 
-             (double)arevm  / (double)nrevm,
-             (double)arevw  / (double)nrevw);
-      fflush(stdout);
-    }
+    //if (!(i % NNN)) {
+    //  Rprintf("\n\n");
+    //  Rprintf("iter = %d likelihood = %lf\n", i, *likeli);
+    //  Rprintf("mu %.2lf A %.2lf s %.2lf d %.4lf  v %.4le\n", 
+    //          parms->md[0], parms->theta[0], parms->theta[1], parms->md[1],
+    //          parms->sigma);
+    //  Rprintf("pmdvar00 %.2lf pmdvar11 %.2lf pmdvar01 %.2lf \n",
+    //          pmd_var[0][0], pmd_var[1][1], pmd_var[0][1]);
+    //  print_list(list);
+    //  Rprintf("pct rem = %.2lf pct rew = %.2lf pct time = %.2lf\n",
+    //          (double)arem  / (double)nrem, 
+    //          (double)arew  / (double)nrew,
+    //          (double)atime / (double)ntime);
+    //  Rprintf("pct md = %.2lf revm = %.2lf revw = %.2lf\n", 
+    //         (double)adelta / (double)ndelta, 
+    //         (double)arevm  / (double)nrevm,
+    //         (double)arevw  / (double)nrevw);
+    //  fflush(stdout);
+    //}
 
     //----------------------------------------
     // Check for R user interrupt
@@ -338,12 +360,14 @@ void mcmc(Node_type *list,
     //------------------------------------------------------
     if (!(i % 500) && i < 25000 && i > 0) {
 
-      adjust2_acceptance((double) adelta / (double) ndelta, pmd_var, -0.90);
-      adjust_acceptance( (double) atime  / (double) ntime,  &sdt);
-      adjust_acceptance( (double) arem   / (double) nrem,   &sdrem);
-      adjust_acceptance( (double) arew   / (double) nrew,   &sdrew);
-      adjust_acceptance( (double) arevm  / (double) nrevm,  &sdmv);
-      adjust_acceptance( (double) arevw  / (double) nrevw,  &sdwv);
+      Rprintf("iteration %d", i);
+      Rprintf("for iteration %d: atime = %d; ntime = %d; sdt = %f\n", i, atime, ntime, sdt);
+      adjust2_acceptance((double) *adelta_ptr / (double) *ndelta_ptr, pmd_var, -0.90);
+      adjust_acceptance( (double) *atime_ptr  / (double) *ntime_ptr,  &sdt);
+      adjust_acceptance( (double) *arem_ptr   / (double) *nrem_ptr,   &sdrem);
+      adjust_acceptance( (double) *arew_ptr   / (double) *nrew_ptr,   &sdrew);
+      adjust_acceptance( (double) *arevm_ptr  / (double) *nrevm_ptr,  &sdmv);
+      adjust_acceptance( (double) *arevw_ptr  / (double) *nrevw_ptr,  &sdwv);
 
       adelta = ndelta = 0;
       atime  = ntime  = 0;
@@ -372,6 +396,7 @@ void mcmc(Node_type *list,
   //fclose(common);
   //fclose(parm);
   free(likeli);
+  PutRNGstate();
 
 } 
 
@@ -410,9 +435,10 @@ void mh_time_strauss(Node_type *list,
                      double **ts, 
                      double *like, 
                      int N, 
-                     //unsigned long *seed, 
                      double sd, 
-                     Priors *priors) {
+                     Priors *priors,
+                     long *atime,
+                     long *ntime) {
 
   // Declarations ----------------------
   int i;                    // Generic counter
@@ -435,15 +461,19 @@ void mh_time_strauss(Node_type *list,
   // Set pointer to first node in linked list 
   node = list->succ;
 
+  Rprintf("ntime before strauss mh = %d\n", *ntime);
+
   while (node != NULL) {
 
     // Increase denominator of acceptance rate for time 
-    ntime++;
+    (*ntime)++;
 
     // Compute proposal time 
     GetRNGstate();
     ptime = Rf_rnorm(node->time, sd); 
     PutRNGstate();
+
+    //Rprintf("pulse location = %f; sd = %f; ptime = %f\n", node->time, sd, ptime);
 
     // Calculate sum_s_r for proposal value and current value
     sum_s_r_proposal = calc_sr_strauss(ptime, list, node, priors);
@@ -467,7 +497,7 @@ void mh_time_strauss(Node_type *list,
 
         // Save current time and set its time to proposed value
         current_time = node->time;
-        node->time = ptime;
+        node->time   = ptime;
 
         // Save mean_contrib of this pulse 
         for (i = 0; i < N; i++) {
@@ -499,7 +529,7 @@ void mh_time_strauss(Node_type *list,
         // If log U < log rho, we accept proposed value. Increase
         // acceptance count by one and set likelihood equal to
         // likelihood under proposal 
-        atime++;
+        (*atime)++;
         *like = plikelihood;
 
       } else if (fabs(prior_ratio) > EPS) {
@@ -512,7 +542,7 @@ void mh_time_strauss(Node_type *list,
         node->time = current_time;
 
         // Set mean_contrib of this pulse back to current value 
-        for (i=0; i<N; i++) {
+        for (i = 0; i < N; i++) {
           node->mean_contrib[i] = tmp_mean_contrib[i];
         }
 
@@ -525,8 +555,10 @@ void mh_time_strauss(Node_type *list,
 
   } // End of loop through pulses
 
+  Rprintf("ntime after strauss mh = %d\n", *ntime);
   // Free Memory
   free(tmp_mean_contrib);
+  //PutRNGstate();
 
 }
 
@@ -561,9 +593,11 @@ void mh_time_os(Node_type *list,
                 double **ts, 
                 double *like,
                 int N, 
-                //unsigned long *seed, 
-                double sd) {
+                double sd,
+                long *atime,
+                long *ntime) {
 
+  GetRNGstate();
   int i;                     // Generic counter
   Node_type *node;           // Pointer for current list of pulses
   double alpha;              // min(0, log(rho)) - acceptance ratio
@@ -587,7 +621,7 @@ void mh_time_os(Node_type *list,
   while (node != NULL) {
 
     // Increase denominator of acceptance rate for time 
-    ntime++;
+    (*ntime)++;
 
     // Compute proposal time 
     GetRNGstate();
@@ -653,7 +687,7 @@ void mh_time_os(Node_type *list,
       if (log(runif(0, 1)) < alpha) {
         // If log U < log rho, we accept proposed value. Increase acceptance
         // count by one and set likelihood equal to likelihood under proposal 
-        atime++;
+        (*atime)++;
         *like = plikelihood;
       } else {
         // Otherwise, we reject, and we have to revert back to current
@@ -679,6 +713,7 @@ void mh_time_os(Node_type *list,
 
   // Free Memory
   free(curr_mean_contrib);
+  PutRNGstate();
 
 }
 
@@ -718,9 +753,11 @@ void mh_mu_delta(Node_type *list,
                  double *like, 
                  int N, 
                  int num_node, 
-                 //unsigned long *seed, 
-                 double **var) {
+                 double **var,
+                 long *adelta,
+                 long *ndelta) {
 
+  GetRNGstate();
   int i;                // Generic counter
   int j;                // Generic counter
   int k;                // Generic counter
@@ -747,7 +784,7 @@ void mh_mu_delta(Node_type *list,
   pmd = (double *)calloc(2, sizeof(double));
 
   // Increase denominator of acceptance rate for b and hl 
-  ndelta++;
+  (*ndelta)++;
 
   // Draw proposal values for b and hl 
   GetRNGstate();
@@ -805,7 +842,7 @@ void mh_mu_delta(Node_type *list,
     if (log(runif(0, 1)) < alpha) {
       // If log U < log rho, increase acceptance rate by 1 and set the
       // likelihood equal to the likelihood under proposed values 
-      adelta++;
+      (*adelta)++;
       *like = plikelihood;
     } else {
       // Otherwise, we need to revert values back to their current state 
@@ -838,6 +875,7 @@ void mh_mu_delta(Node_type *list,
   }
   free(currentmc);
   free(pmd);
+  PutRNGstate();
 
 }
 
@@ -870,10 +908,10 @@ void mh_mu_delta(Node_type *list,
 void draw_fixed_effects(Node_type *list, 
                         Priors *priors, 
                         Common_parms *parms
-                        //unsigned long *seed
                         ) {
 
   // Declarations
+  GetRNGstate();
   int j;           // Generic counter
   int numnode;     // Count of pulses
   double gmean;    // Mean for Gibbs sampler 
@@ -924,6 +962,7 @@ void draw_fixed_effects(Node_type *list,
     parms->theta[j] = Rf_rnorm(gmean, sqrt(gvar));
     PutRNGstate();
   }
+  PutRNGstate();
 
 }
 
@@ -963,8 +1002,8 @@ void draw_re_sd(Node_type *list,
                 Priors *priors, 
                 Common_parms *parms,
                 double v1, 
-                double v2 
-                //unsigned long *seed
+                double v2,
+                long *arevm, long *nrevm, long *arevw, long *nrevw
                 ) {
 
   int j;                  // Index for re_sd, theta, etc. arrays (mass=0, width=1)
@@ -987,12 +1026,12 @@ void draw_re_sd(Node_type *list,
   accept_counter = (double *)calloc(2, sizeof(double));
 
   // Add 1 to the counters for acceptance rates of sigma_1 and sigma_2 
-  nrevm++;
-  nrevw++;
+  (*nrevm)++;
+  (*nrevw)++;
 
   // Assign current acceptance counts to temporary vector 
-  accept_counter[0] = arevm;
-  accept_counter[1] = arevw;
+  accept_counter[0] = *arevm;
+  accept_counter[1] = *arevw;
 
   // Draw proposed values for sigma_1 and sigma_2 
   GetRNGstate();
@@ -1093,8 +1132,8 @@ void draw_re_sd(Node_type *list,
   }
 
   // Reassign acceptance counters and free memory
-  arevm = accept_counter[0];
-  arevw = accept_counter[1];
+  *arevm = accept_counter[0];
+  *arevw = accept_counter[1];
   free(new_sd);
   free(accept_counter);
 
@@ -1132,10 +1171,10 @@ void draw_re_sd(Node_type *list,
 // 
 //-----------------------------------------------------------------------------
 void draw_random_effects(double **ts, Node_type *list, Common_parms *parms, 
-                         int N, double *like, double v1,  double v2 
-                         //unsigned long *seed
-                         ) {
-
+                         int N, double *like, double v1,  double v2,
+                         long *arem, long *nrem, 
+                         long *arew, long *nrew) {
+  GetRNGstate();
   int i;                  // Generic counters
   int j;                  // Generic counters
   double logrho;          // Acceptance ratio prior to min(0,logrho)
@@ -1157,8 +1196,8 @@ void draw_random_effects(double **ts, Node_type *list, Common_parms *parms,
   pRE         = (double *)calloc(2, sizeof(double));
 
   // Set acceptance counts equal to temporary vector 
-  accept_counter[0] = arem;
-  accept_counter[1] = arew;
+  accept_counter[0] = *arem;
+  accept_counter[1] = *arew;
 
   // Go to start of node list 
   node = list->succ;
@@ -1167,8 +1206,8 @@ void draw_random_effects(double **ts, Node_type *list, Common_parms *parms,
   while (node != NULL) {
 
     // Increase the denominators of the acceptance rates 
-    nrem++;
-    nrew++;
+    (*nrem)++;
+    (*nrew)++;
 
     // Draw proposed values of current pulse's mass and width 
     GetRNGstate();
@@ -1240,13 +1279,14 @@ void draw_random_effects(double **ts, Node_type *list, Common_parms *parms,
   // end of loop through pulses 
 
   // Set counter equal to temporary vector values 
-  arem = accept_counter[0];
-  arew = accept_counter[1];
+  *arem = accept_counter[0];
+  *arew = accept_counter[1];
 
   // free memory 
   free(accept_counter);
   free(pRE);
   free(old_contrib);
+  PutRNGstate();
 
 }
 

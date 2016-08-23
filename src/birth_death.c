@@ -84,6 +84,7 @@ void birth_death(Node_type *list,
 {
 
   // Declarations
+  GetRNGstate();
   int i;                      // Generic counter
   int remove;                 // Ordered number of pulse to remove
   int num_node;               // Number of pulses
@@ -318,6 +319,7 @@ void birth_death(Node_type *list,
 
   free(death_rate);
   free(tmp);
+  PutRNGstate();
 
 }
 

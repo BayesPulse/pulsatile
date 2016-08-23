@@ -23,7 +23,7 @@ library(pulsatile)
 dat <- read_delim("test/pulse_reference_001.dat", delim = " ") %>% tbl_df %>%
   select(-observation)
 
-model_spec <- pulse_spec(.data = dat, iterations = 20000) #, prior_location_gamma = -1)
+model_spec <- pulse_spec(.data = dat, iterations = 10000, thin = 1)
 model_spec
 
 # Test C functions
@@ -44,8 +44,12 @@ fit_round2 <- fit_pulse(model_spec)
 stop_time <- proc.time()
 time_round2 <- (stop_time - start_time)/60
 
-(fit_round1[[1]] == fit_round2[[1]])
+all(fit_round1[[1]] == fit_round2[[1]])#[1:1000, ]
 time_round1 == time_round2
+
+(fit_round1[[1]] == fit_round2[[1]])[491:512, ]
+(fit_round1[[2]][[502]] == fit_round2[[2]][[502]])
+
 
 
 
