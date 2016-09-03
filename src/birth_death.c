@@ -240,7 +240,6 @@ void birth_death(Node_type *list,
     //-------------------------------------------
     // Select Birth or Death and proceed with either
     //-------------------------------------------
-    //if (kiss(seed) < max) { // If U < B/(B+D), a birth occurs 
     if (Rf_runif(0, 1) < max) { // If U < B/(B+D), a birth occurs 
 
       // Generate new position
@@ -252,6 +251,7 @@ void birth_death(Node_type *list,
         sum_s_r    = calc_sr_strauss(position, list, list, priors);
         papas_cif  = pulse_intensity * pow(priors->gamma, sum_s_r);
         b_ratio    = papas_cif / birth_rate;
+
         accept_pos = (Rf_runif(0, 1) < b_ratio) ? 1 : 0;
       }
 
@@ -262,8 +262,10 @@ void birth_death(Node_type *list,
         // Initialize a new node
         new_node               = initialize_node();
         new_node->time         = position;
-        new_node->theta[0]     = exp(rnorm(parms->theta[0], parms->re_sd[0])); //, seed));
-        new_node->theta[1]     = exp(rnorm(parms->theta[1], parms->re_sd[1])); //, seed));
+
+        new_node->theta[0] = exp(Rf_rnorm(parms->theta[0], parms->re_sd[0]));
+        new_node->theta[1] = exp(Rf_rnorm(parms->theta[1], parms->re_sd[1]));
+
         new_node->mean_contrib = (double *)calloc(N, sizeof(double));
         // Add it to the linklist and update values
         mean_contribution(new_node, ts, parms, N);
@@ -276,7 +278,6 @@ void birth_death(Node_type *list,
 
       // Pick a node to remove, find and remove it and update likelihood
       remove = one_rmultinom(death_rate, num_node) + 1; 
-      //Rprintf("node to remove: %d\n", remove);
       node   = list;
 
       for (i = 0; i < remove; i++) { 
@@ -311,8 +312,6 @@ void birth_death(Node_type *list,
 //
 //   this updates a pulse's mean_contrib vector based on current values of
 //   parameters
-// 
-//   Two version: Phi version and built-in erf version
 // 
 //   ARGUMENTS: 
 //     Node_type *node     - what pulse are we updating
