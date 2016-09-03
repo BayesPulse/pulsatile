@@ -313,8 +313,6 @@ void birth_death(Node_type *list,
 //   this updates a pulse's mean_contrib vector based on current values of
 //   parameters
 // 
-//   Two version: Phi version and built-in erf version
-// 
 //   ARGUMENTS: 
 //     Node_type *node     - what pulse are we updating
 //     double **ts         - this is the matrix of observed data (a column
