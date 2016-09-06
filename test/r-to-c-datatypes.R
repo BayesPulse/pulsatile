@@ -47,9 +47,15 @@ time_round2 <- (stop_time - start_time)/60
 all(fit_round1[[1]] == fit_round2[[1]])#[1:1000, ]
 time_round1 == time_round2
 
+identical(fit_round1, fit_round2)
 (fit_round1[[1]] == fit_round2[[1]])[491:512, ]
 (fit_round1[[2]][[502]] == fit_round2[[2]][[502]])
 
+
+
+
+
+#sorted_fit <- fit_round1
 
 
 
