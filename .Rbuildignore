@@ -1,2 +1,7 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+.git
+.vimrc
+.travis.yml
+..Rcheck
+.gitignore

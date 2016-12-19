@@ -1,3 +1,4 @@
+
 #-------------------------------------------------------------------------------
 # Functions for creating a pulse model specification
 #-------------------------------------------------------------------------------
@@ -25,9 +26,9 @@
 #' @param prior_error_beta placeholder
 #' @param prior_location_gamma placeholder
 #' @param prior_location_range placeholder
-#' @param max_sd_mass placeholder
-#' @param max_sd_width placeholder
-#' @param prior_mean_num_pulses placeholder
+#' @param prior_max_sd_mass placeholder
+#' @param prior_max_sd_width placeholder
+#' @param prior_mean_pulse_count placeholder
 #' @param sv_mass_mean placeholder
 #' @param sv_width_mean placeholder
 #' @param sv_baseline_mean placeholder
@@ -37,15 +38,13 @@
 #' @param sv_width_sd placeholder
 #' @param pv_baseline placeholder
 #' @param pv_halflife placeholder
-#' @param pv_mass placeholder
-#' @param pv_width placeholder
-#' @param pv_re_mass placeholder
-#' @param pv_re_width placeholder
-#' @param pv_pulselocations placeholder
-#' @keywords pulse simulation
+#' @param pv_mean_pulse_mass placeholder
+#' @param pv_mean_pulse_width placeholder
+#' @param pv_pulse_mass placeholder
+#' @param pv_pulse_width placeholder
+#' @param pv_pulse_location placeholder
 #' @export
-#' @examples none currently
-#' @seealso \code{\link{summary.pulse_spec}} \code{\link{print.pulse_spec}} 
+#' @keywords pulse simulation
 #' pulse_spec()
 pulse_spec <-
   function(.data,
@@ -130,16 +129,8 @@ pulse_spec <-
   }
 
 
-#' Print pulse_spec object
-#'
-#' This is a generic method that dispatches based on the first argument.
-#'
-#' @param x pulse_spec object
-#' @param ... Other arguments passed on to the individual methods
-#' @export
-#' @examples none currently
-#' print.pulse_spec()
-print.pulse_spec <- function(x) {
+#' @export 
+print.pulse_spec <- function(x, ...) {
 
   cat("\nBayesian time-series analysis of pulsatile hormone data: 
       Model Specification Object\n\n")
@@ -155,7 +146,6 @@ print.pulse_spec <- function(x) {
   cat("   mean proposal variance =", x$proposal_variances$mean_pulse_mass, "\n")
 
 }
-
 
 
 ################################################################################

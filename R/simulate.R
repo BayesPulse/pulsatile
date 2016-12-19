@@ -15,12 +15,10 @@
 #' ipimin, mua, sda, muw, and sdw are required.  Either muh and varh or
 #' constant.halflife must be specified.  Same for mub and varb or
 #' constant_baseline.
-#' @keywords pulse simulation
-#' @importFrom dplyr "%>%"
 #' @export
-#' @examples
+#' @keywords pulse simulation
 #' simulate_pulsets()
-simulate_pulsets <- function(parms_list = NULL) {
+simulate_pulsets <- function(parms_list) {
     
 
     # Handle vector of parameters
@@ -44,6 +42,9 @@ simulate_pulsets <- function(parms_list = NULL) {
             constant_halflife = parms_list[["constant_halflife"]]
             constant_baseline = parms_list[["constant_baseline"]]
         }
+    } else {
+      stop("parms_list argument NULL or invalid")
+
     }
 
 
@@ -78,7 +79,7 @@ simulate_pulsets <- function(parms_list = NULL) {
     #---------------------------------------
     # Normal CDF 
     erfFn <- function(x){
-    	    y <- 2 * pnorm(x * sqrt(2), 0, 1) - 1
+    	    y <- 2 * stats::pnorm(x * sqrt(2), 0, 1) - 1
     	    y
     	}
     
@@ -104,7 +105,7 @@ simulate_pulsets <- function(parms_list = NULL) {
     # Get subject specific parameters
     if (is.null(constant_baseline)) {
         while(B <= 0){
-            B <- rnorm(1, mub, sqrt(varb))
+            B <- stats::rnorm(1, mub, sqrt(varb))
         }
     } else {
         B <- constant_baseline
@@ -114,7 +115,7 @@ simulate_pulsets <- function(parms_list = NULL) {
     #   H is half-life, H=ln(2)/lambda_x, where lambda_x is the decay constant
     if (is.null(constant_halflife)) {
         while(H <= 8){
-            H <- rnorm(1, muh, sqrt(varh))
+            H <- stats::rnorm(1, muh, sqrt(varh))
         }
     } else {
         # set constant half-life if 
@@ -128,13 +129,13 @@ simulate_pulsets <- function(parms_list = NULL) {
     # pulse location vector - max 25 pulses per day
     tau <- rep(0, 25)
     # generate initial pulse location
-    tau[1] <- t * (rgamma(1, alpha, beta) - 10)
+    tau[1] <- t * (stats::rgamma(1, alpha, beta) - 10)
     
     # generate i+1, i+2,... pulse locations
     i <- 1
     while (tau[i] < (T * t)){
     	  i      <- i + 1
-    	  tmp    <- ipimin + rgamma(1, alpha, beta)
+    	  tmp    <- ipimin + stats::rgamma(1, alpha, beta)
     	  tau[i] <- tau[i-1] + (t * tmp)
     }
     
@@ -157,10 +158,10 @@ simulate_pulsets <- function(parms_list = NULL) {
     # Generate parameters
     for (i in 1:np) {
         #while (A[i] <= 0) {
-            A[i] <- exp(rnorm(1, mua, sda))
+            A[i] <- exp(stats::rnorm(1, mua, sda))
         #}
         #while (s2p[i] <= 0) {
-            s2p[i] <- exp(rnorm(1, muw, sdw))
+            s2p[i] <- exp(stats::rnorm(1, muw, sdw))
         #}
         # Truncated T /gamma normal mixture
         #kappa1 = rgamma(1, 2, 2)
@@ -187,7 +188,8 @@ simulate_pulsets <- function(parms_list = NULL) {
     allpulseparms <- cbind("pulse_no" = seq(1, np),
                            "mass"     = A,
                            "width"    = s2p,
-                           "location" = tau) %>% as_data_frame
+                           "location" = tau)
+    allpulseparms <- tibble::as_data_frame(allpulseparms)
     
     
     #---------------------------------------
@@ -201,11 +203,12 @@ simulate_pulsets <- function(parms_list = NULL) {
     #error_var <- mean(ysim) * vare
     error_var <- vare
     # Generate and add random noise on log scale
-    errors    <- rnorm((length(taxis)), 0, sqrt(error_var))
+    errors    <- stats::rnorm((length(taxis)), 0, sqrt(error_var))
     ysimerror <- ysim * exp(errors)
     ysim_df   <- cbind("observation"   = 1:length(taxis),
                        "time"          = taxis,
-                       "concentration" = ysimerror) %>% as_data_frame
+                       "concentration" = ysimerror) 
+    ysim_df   <- tibble::as_data_frame(ysim_df)
 
     return(list("pulse_data" = ysim_df, "pulse_parms" = allpulseparms))
 

@@ -5,6 +5,9 @@ Authors@R: person("Matt", "Mulvahill", email = "matthew.mulvahill@ucdenver.edu",
 Description: What the package does (one paragraph).
 Depends:
     R (>= 3.2.3)
+Imports:
+    stats,
+    tibble
 License: What license is it under?
 LazyData: true
 SystemRequirements: GNU make
