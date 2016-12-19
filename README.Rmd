@@ -1,3 +1,8 @@
+---
+output: 
+  md_document:
+    variant: markdown_github
+---
 # Pulsatile
 
 [![Build Status](https://travis-ci.com/mmulvahill/pulsatile.svg?token=Vzy3B4WH2SvZ4ybN4Uzy&branch=master)](https://travis-ci.com/mmulvahill/pulsatile)
