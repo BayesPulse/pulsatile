@@ -6,6 +6,16 @@
 An R package for analyzing time series of hormone concentrations using Bayesian
 deconvolution analysis.
 
+Run the following code to install the development version:
+```{r}
+# Need devtools package to install from GitHub
+install.packages("devtools")
+library(devtools)
+
+# install from github
+install_github("mmulvahill/pulsatile", auth_token)
+```
+
 
 # References
 [R source (math.h and internal.h)]<https://github.com/wch/r-source>
@@ -14,10 +24,4 @@ deconvolution analysis.
 [C interface in Advanced R]<http://adv-r.had.co.nz/C-interface.html>
 [R's RNG wrappers]<https://svn.r-project.org/R/trunk/src/library/stats/R/distn.R>
 [R's rmultinom]<https://svn.r-project.org/R/trunk/src/nmath/rmultinom.c>
-
-## Qt 
-[Designing Qt GUIs]<http://stackoverflow.com/questions/4114389/qt-designer-vs-handcoding>
-
-## Existing decon/BDMCMC code
-[Nichole's Repo]<https://ucdcarlsonn.repositoryhosting.com/account>
 
