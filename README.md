@@ -1,6 +1,7 @@
 # Pulsatile
 
 [![Build Status](https://travis-ci.com/mmulvahill/pulsatile.svg?token=Vzy3B4WH2SvZ4ybN4Uzy&branch=master)](https://travis-ci.com/mmulvahill/pulsatile)
+[![codecov](https://codecov.io/gh/mmulvahill/pulsatile/branch/master/graph/badge.svg?token=WeMubsj4Is)](https://codecov.io/gh/mmulvahill/pulsatile)
 
 An R package for analyzing time series of hormone concentrations using Bayesian
 deconvolution analysis.
