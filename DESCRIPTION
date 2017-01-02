@@ -1,11 +1,15 @@
 Package: pulsatile
-Title: What the Package Does (one line, title case)
+Title: Bayesian Deconvolution for the Analysis of Pulsatile Hormone Time-series Data
 Version: 0.0.0.9000
-Authors@R: person("First", "Last", email = "first.last@example.com", role = c("aut", "cre"))
+Authors@R: person("Matt", "Mulvahill", email = "matthew.mulvahill@ucdenver.edu", role = c("aut", "cre"))
 Description: What the package does (one paragraph).
 Depends:
     R (>= 3.2.3)
-License: What license is it under?
+Imports:
+    stats,
+    tibble
+License: GPL-3
+Encoding: UTF-8
 LazyData: true
 SystemRequirements: GNU make
 RoxygenNote: 5.0.1

@@ -160,7 +160,7 @@ void mcmc(Node_type *list,
 
   if (!cholesky_decomp(pmd_vch, 2)){
     Rprintf("not PSD matrix A\n");
-    exit(0);
+    Rf_error("0");
   }
 
 
@@ -357,7 +357,7 @@ void mcmc(Node_type *list,
 
       if (!cholesky_decomp(pmd_vch, 2)){
         Rprintf("pmd not PSD matrix\n");
-        exit(0);
+        Rf_error("0");
       }
 
     } 

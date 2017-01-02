@@ -8,8 +8,8 @@ pulse_spec(.data, iterations = 2500, model = c("single-series"),
   thin = 50, prior_mass_mean = 1.5, prior_mass_var = 10,
   prior_width_mean = 3.5, prior_width_var = 10, prior_baseline_mean = 2.6,
   prior_baseline_var = 100, prior_halflife_mean = 45,
-  prior_halflife_var = 100, prior_error_alpha = 0.0001,
-  prior_error_beta = 0.0001, prior_location_gamma = 0,
+  prior_halflife_var = 100, prior_error_alpha = 1e-04,
+  prior_error_beta = 1e-04, prior_location_gamma = 0,
   prior_location_range = 40, prior_max_sd_mass = 10,
   prior_max_sd_width = 10, prior_mean_pulse_count = 12,
   sv_mass_mean = 1.5, sv_width_mean = 3.5, sv_baseline_mean = 2.6,
@@ -52,6 +52,12 @@ pulse_spec(.data, iterations = 2500, model = c("single-series"),
 
 \item{prior_location_range}{placeholder}
 
+\item{prior_max_sd_mass}{placeholder}
+
+\item{prior_max_sd_width}{placeholder}
+
+\item{prior_mean_pulse_count}{placeholder}
+
 \item{sv_mass_mean}{placeholder}
 
 \item{sv_width_mean}{placeholder}
@@ -70,33 +76,21 @@ pulse_spec(.data, iterations = 2500, model = c("single-series"),
 
 \item{pv_halflife}{placeholder}
 
-\item{max_sd_mass}{placeholder}
+\item{pv_mean_pulse_mass}{placeholder}
 
-\item{max_sd_width}{placeholder}
+\item{pv_mean_pulse_width}{placeholder}
 
-\item{prior_mean_num_pulses}{placeholder}
+\item{pv_pulse_mass}{placeholder}
 
-\item{pv_mass}{placeholder}
+\item{pv_pulse_width}{placeholder}
 
-\item{pv_width}{placeholder}
-
-\item{pv_re_mass}{placeholder}
-
-\item{pv_re_width}{placeholder}
-
-\item{pv_pulselocations}{placeholder}
+\item{pv_pulse_location}{placeholder}
 }
 \description{
 Generates a pulse_spec object -- the specification object required for
 fitting a fit_pulse model.
 }
-\examples{
-none currently
-}
-\seealso{
-\code{\link{summary.pulse_spec}} \code{\link{print.pulse_spec}} 
-pulse_spec()
-}
 \keyword{pulse}
+\keyword{pulse_spec()}
 \keyword{simulation}
 

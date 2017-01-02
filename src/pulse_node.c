@@ -46,7 +46,7 @@ Node_type *initialize_node(void) {
   /* initialize memory for a node */
   if ((p = (Node_type *)malloc(sizeof(Node_type))) == NULL) {
     Rprintf("Initialize_node: out of memory, can't allocate node\n");
-    exit(1);
+    Rf_error("1");
   }
 
   /* all nodes initialized with a pointer to the NULL pointer and time = 0,

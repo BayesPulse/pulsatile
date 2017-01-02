@@ -7,16 +7,13 @@
 fit_pulse(pulse_spec_obj)
 }
 \arguments{
-\item{pulse_spec_obj}{}
+\item{pulse_spec_obj}{Placeholder}
 }
 \description{
 Primary function for fitting deconvulation model for time series of pulsatile
 hormone data
 }
-\examples{
-none currently
-fit_pulse()
-}
 \keyword{fit}
+\keyword{fit_pulse()}
 \keyword{pulse}
 

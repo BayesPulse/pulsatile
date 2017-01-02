@@ -9,10 +9,9 @@
 #' hormone data
 #' 
 #' @useDynLib pulsatile decon_r_interface
-#' @param pulse_spec_obj 
-#' @keywords pulse fit
+#' @param pulse_spec_obj Placeholder
 #' @export
-#' @examples none currently
+#' @keywords pulse fit
 #' fit_pulse()
 fit_pulse <- function(pulse_spec_obj) {
 
