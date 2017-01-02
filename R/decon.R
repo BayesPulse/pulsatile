@@ -50,6 +50,17 @@ fit_pulse <- function(pulse_spec_obj) {
                pulse_spec_obj$proposal_variances$baseline,
                pulse_spec_obj$proposal_variances$halflife)
 
-  return(rtn)
+  common_chain <- as.data.frame(rtn[[1]])
+  pulse_chain  <- as.data.frame(do.call(rbind, rtn[[2]]))
+
+
+
+  rtn_obj <- 
+    structure(list("spec" = pulse_spec_obj,
+                   "common_chain" = common_chain,
+                   "pulse_chain"  = pulse_chain),
+              class = "pulse_fit")
+
+  return(rtn_obj)
 
 }
