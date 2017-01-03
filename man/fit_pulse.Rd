@@ -4,10 +4,26 @@
 \alias{fit_pulse}
 \title{fit_pulse}
 \usage{
-fit_pulse(pulse_spec_obj)
+fit_pulse(formula, data, iterations = 2500, thin = 50,
+  pulse_spec_obj = pulse_spec(), use_tibble = TRUE)
 }
 \arguments{
-\item{pulse_spec_obj}{Placeholder}
+\item{formula}{A formula of the form 'observed concentration ~ time'.}
+
+\item{data}{A dataset containing the variables in formula.}
+
+\item{iterations}{Number of iterations for MCMC}
+
+\item{thin}{Thinning to apply to MCMC chains (i.e. Keep every 'thin'th
+sample).}
+
+\item{pulse_spec_obj}{An object of class 'pulse_spec_obj', created by
+pulse_spec(), specifying the priors, starting values, and proposal variances
+to use.}
+
+\item{use_tibble}{Return chains as tbl_df class data frames, from the tibble
+package.  Mostly used for the print.tbl_df method, which limits the rows and
+columns printed to those which fit in the console.}
 }
 \description{
 Primary function for fitting deconvulation model for time series of pulsatile

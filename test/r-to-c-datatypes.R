@@ -15,15 +15,16 @@ library(ggthemes)
 theme_set(theme_tufte())
 
 document()
-install("../pulsatile")
+install("../pulsatile", build_vignettes = TRUE)
 
 library(pulsatile)
 
 # Read in dataset
-dat <- read_delim("test/pulse_reference_001.dat", delim = " ") %>% tbl_df %>%
+dat <- read_delim("test/pulse_reference_001.dat", delim = " ") %>% 
+  tbl_df %>%
   select(-observation)
 
-model_spec <- pulse_spec(.data = dat, iterations = 10000, thin = 1)
+model_spec <- pulse_spec()
 model_spec
 
 # Test C functions
@@ -34,21 +35,24 @@ model_spec
 #
 start_time <- proc.time()
 set.seed(999999)
-fit_round1 <- fit_pulse(model_spec)
+fit_round1 <- fit_pulse(data = dat, iterations = 10000, thin = 1,
+                        pulse_spec_obj = model_spec)
 stop_time <- proc.time()
 time_round1 <- (stop_time - start_time)/60
 
 start_time <- proc.time()
 set.seed(999999)
-fit_round2 <- fit_pulse(model_spec)
+fit_round2 <- fit_pulse(data = dat, iterations = 10000, thin = 1,
+                        pulse_spec_obj = model_spec)
 stop_time <- proc.time()
 time_round2 <- (stop_time - start_time)/60
 
-all(fit_round1[[1]] == fit_round2[[1]])#[1:1000, ]
+all(fit_round1[[3]] == fit_round2[[3]])#[1:1000, ]
+all(fit_round1[[4]] == fit_round2[[4]])#[1:1000, ]
 time_round1 == time_round2
 
-(fit_round1[[1]] == fit_round2[[1]])[491:512, ]
-(fit_round1[[2]][[502]] == fit_round2[[2]][[502]])
+all((fit_round1[[3]] == fit_round2[[3]])[491:512, ])
+#(fit_round1[[4]][[502]] == fit_round2[[4]][[502]])
 
 
 

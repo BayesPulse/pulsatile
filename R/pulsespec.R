@@ -9,11 +9,13 @@
 #' fitting a fit_pulse model.
 #'   
 #' 
-#' @param .data Time-series of hormone concentration data
-#' @param iterations Number of iterations to run MCMC_
-#' @param model Model type to fit. One of "single-series", "population",
-#' "single-series associational", "population associational".
-#' @param thin Keep every 'thin' sample
+#' @param location_prior_type Takes on two values: "order-statistic" and
+#' "strauss". "order-statistic" uses every third order statistic of a Uniform
+#' distribution for the pulse location prior and requires specification of the
+#' prior parameter for mean pulse count ("prior_mean_pulse_count").
+#' "strauss" uses the Strauss interacting point-process as a prior and requires
+#' specification of "prior_mean_pulse_count", "prior_location_gamma", and
+#' "prior_location_range".
 #' @param prior_mass_mean mass mean hyperparm
 #' @param prior_mass_var mass variance hyperparm
 #' @param prior_width_mean width mean hyperparm
@@ -47,11 +49,7 @@
 #' @keywords pulse simulation
 #' pulse_spec()
 pulse_spec <-
-  function(.data,
-           iterations = 2500,
-           model      = c("single-series"), #, "population", "single-series
-                     #associational", "population associational"),
-           thin       = 50,
+  function(location_prior_type = "order-statistic",
            prior_mass_mean        = 1.50,
            prior_mass_var         = 10,
            prior_width_mean       = 3.5,
@@ -62,8 +60,8 @@ pulse_spec <-
            prior_halflife_var     = 100,
            prior_error_alpha      = 0.0001,
            prior_error_beta       = 0.0001,
-           prior_location_gamma   = 0,
-           prior_location_range   = 40,
+           prior_location_gamma   = NULL,
+           prior_location_range   = NULL,
            prior_max_sd_mass      = 10,
            prior_max_sd_width     = 10,
            prior_mean_pulse_count = 12,
@@ -89,10 +87,7 @@ pulse_spec <-
     # NOTE: need more clear label for max_sd's 
     ps_obj <- 
       structure(
-        list(model = list(model      = model, 
-                          iterations = iterations, 
-                          data       = .data,
-                          thin       = thin),
+        list(location_prior_type = location_prior_type,
              priors = list(pulse_mass     = list(mean  = prior_mass_mean,
                                                  var   = prior_mass_var),
                            pulse_width    = list(mean  = prior_width_mean,
