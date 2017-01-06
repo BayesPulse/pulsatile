@@ -53,6 +53,7 @@ fit_pulse <- function(formula,
                "single-series",
                as.integer(thin),
                as.integer(iterations),
+               pulse_spec_obj$location_prior_type,
                pulse_spec_obj$priors$pulse_mass$mean,
                pulse_spec_obj$priors$pulse_mass$var,
                pulse_spec_obj$priors$pulse_width$mean,
@@ -85,6 +86,7 @@ fit_pulse <- function(formula,
 
   common_chain <- as.data.frame(rtn[[1]])
   pulse_chain  <- as.data.frame(do.call(rbind, rtn[[2]]))
+
   if (use_tibble) {
     common_chain = tibble::as_data_frame(common_chain)
     pulse_chain = tibble::as_data_frame(pulse_chain)

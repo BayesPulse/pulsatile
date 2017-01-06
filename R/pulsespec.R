@@ -81,6 +81,12 @@ pulse_spec <-
            pv_pulse_location      = 10) 
   {
 
+    # TODO: Add check on value of location_prior_type and on correct prior parms
+    # specified for each
+    location_prior_type <- match.arg(location_prior_type)
+
+    switch(
+
     # Structure for single-subject, strauss prior model.
     # NOTE: sv's use std dev, while priors use variances (want this consistent
     # for any reason?)

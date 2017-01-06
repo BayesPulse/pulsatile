@@ -18,11 +18,13 @@ document()
 install("../pulsatile", build_vignettes = TRUE)
 
 library(pulsatile)
+data(simpulse_reference001)
 
+# Replace by above^
 # Read in dataset
-dat <- read_delim("test/pulse_reference_001.dat", delim = " ") %>% 
-  tbl_df %>%
-  select(-observation)
+#dat <- read_delim("test/pulse_reference_001.dat", delim = " ") %>% 
+#  tbl_df %>%
+#  select(-observation)
 
 model_spec <- pulse_spec()
 model_spec
@@ -35,7 +37,9 @@ model_spec
 #
 start_time <- proc.time()
 set.seed(999999)
-fit_round1 <- fit_pulse(data = dat, iterations = 10000, thin = 1,
+fit_round1 <- fit_pulse(data           = simpulse_reference001,
+                        iterations     = 10000,
+                        thin           = 1,
                         pulse_spec_obj = model_spec)
 stop_time <- proc.time()
 time_round1 <- (stop_time - start_time)/60

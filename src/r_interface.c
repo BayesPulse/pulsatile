@@ -27,6 +27,7 @@ SEXP decon_r_interface(SEXP indata,
                  SEXP model,
                  SEXP thin,
                  SEXP iterations,
+                 SEXP location_prior_type,
                  SEXP prior_pulse_mass_mean,
                  SEXP prior_pulse_mass_var,
                  SEXP prior_pulse_width_mean,
@@ -69,8 +70,9 @@ SEXP decon_r_interface(SEXP indata,
   ts = convert_data(indata, nobs);
 
   // Algo arguments SEXP to C;
-  long iters  = Rf_asInteger(iterations); 
+  long iters = Rf_asInteger(iterations); 
   long nthin = Rf_asInteger(thin);
+  
 
 
   //Print to check values
