@@ -16,7 +16,7 @@
 // Birth-death algorithm for poisson/order-statistic or Strauss priors on pulse
 // count/location
 void birth_death(Node_type *list,  double **ts, Common_parms *parms, int N,
-                 double *likeli, int iter, Priors *priors);
+                 double *likeli, int iter, int strauss, Priors *priors);
 
 // Calculates mean contribution for a given pulse at each time point
 void mean_contribution(Node_type *node, double **ts, Common_parms *parms, 

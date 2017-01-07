@@ -80,6 +80,7 @@ void birth_death(Node_type *list,
                  double *likeli, 
                  //unsigned long *seed, 
                  int iter, 
+                 int strauss,
                  Priors *priors) 
 {
 
@@ -118,7 +119,7 @@ void birth_death(Node_type *list,
   tmp = (double *)calloc(2, sizeof(double));
 
   // If Strauss, calculate instantaneous birth rate and prior intensity
-  if (priors->gamma >= -0.001) {
+  if (strauss == 1) {
     birth_rate      = Birth_rate/(fitend-fitstart);
     pulse_intensity = parms->nprior/(fitend-fitstart);
   } 
@@ -156,7 +157,7 @@ void birth_death(Node_type *list,
 
     // Calculate death rate
     death_rate = NULL;
-    if (priors->gamma > -0.001) {
+    if (strauss == 1) {
       death_rate = calc_death_rate_strauss(list, num_node, partial_likelihood,
                                            full_likelihood, birth_rate,
                                            pulse_intensity, priors);
@@ -247,7 +248,7 @@ void birth_death(Node_type *list,
       int accept_pos = 1;
 
       // If using Strauss prior, run accept/reject for new position
-      if (priors->gamma > -0.001) {
+      if (strauss == 1) {
         sum_s_r    = calc_sr_strauss(position, list, list, priors);
         papas_cif  = pulse_intensity * pow(priors->gamma, sum_s_r);
         b_ratio    = papas_cif / birth_rate;

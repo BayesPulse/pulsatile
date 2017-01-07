@@ -14,6 +14,8 @@
 #' @param iterations Number of iterations for MCMC
 #' @param thin Thinning to apply to MCMC chains (i.e. Keep every 'thin'th
 #' sample).
+#' # param burnin Burn-in to apply to MCMC chains (i.e. remove first 'burnin'
+#' # samples). Applied prior to thinning.
 #' @param pulse_spec_obj An object of class 'pulse_spec_obj', created by
 #' pulse_spec(), specifying the priors, starting values, and proposal variances
 #' to use.
@@ -30,6 +32,7 @@ fit_pulse <- function(formula,
                       #model_type = c("single-series"), #, "population", "single-series
                       #associational", "population associational"),
                       thin       = 50,
+                      #burnin     = 1000,
                       pulse_spec_obj = pulse_spec(),
                       use_tibble = TRUE) {
 
@@ -52,8 +55,9 @@ fit_pulse <- function(formula,
                data,
                "single-series",
                as.integer(thin),
+               #as.integer(burnin),
                as.integer(iterations),
-               pulse_spec_obj$location_prior_type,
+               pulse_spec_obj$strauss_location_prior,
                pulse_spec_obj$priors$pulse_mass$mean,
                pulse_spec_obj$priors$pulse_mass$var,
                pulse_spec_obj$priors$pulse_width$mean,

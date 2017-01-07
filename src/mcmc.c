@@ -6,10 +6,8 @@
 //
 // DESCRIPTION: 
 //   Contains birth-death algorithm, expanded to spatial birth-death with the
-//   option to use the older order-statistic prior approach.  To use the order
-//   statistic, priors->gamma should be less than some very small negative
-//   number.  I'm setting it to -1 in the arguments file (see
-//   deconvolution_main.c for more detail). 
+//   option to use the order-statistic or strauss prior on pulse location.  To
+//   use the order statistic, set strauss=0; strauss=1 for the strauss prior. 
 // 
 //------------------------------------------------------------------------------
 
@@ -47,6 +45,8 @@ extern double fitend;   // Last time in 10min increments a pulse can occur
 //                           of times and a column of log(concentration) 
 //     long iter           - the number of iterations to run
 //     int N               - the number of observations in **ts
+//     int strauss         - indicator for whether to use the strauss (=1) or
+//                           order-stat (=0) pulse location prior 
 //     Priors *priors      - the parameters of the prior distributions
 //     char *file1         - the output file name for common parameters
 //     char *file2         - the output file name for pulse specific
@@ -61,10 +61,11 @@ extern double fitend;   // Last time in 10min increments a pulse can occur
 void mcmc(Node_type *list, 
           Common_parms *parms, 
           double **ts, 
-          long iter, 
+          long iter,
           int N,
           int NN,
-          Priors *priors, 
+          int strauss,
+          Priors *priors,
           //unsigned long *seed, 
           SEXP common, //char *file1, 
           SEXP pulse_chains, //char *file2, 
@@ -174,8 +175,7 @@ void mcmc(Node_type *list,
     //   selection of prior occurs within function based on 
     //   priors->gamma < -0.001
     //------------------------------------------------------
-    birth_death(list, ts, parms, N, likeli, //seed, 
-                i, priors);
+    birth_death(list, ts, parms, N, likeli, i, strauss, priors);
 
     // Count number of pulses
     // **NOTE**: could remove this traversing of the linked-list by having
@@ -209,11 +209,11 @@ void mcmc(Node_type *list,
 
     // 4) Draw the pulse locations 
     //    (Metropolis Hastings)
-    if (priors->gamma < -0.001) {
-      mh_time_os(list, parms, ts, likeli, N, sdt, atime_ptr, ntime_ptr); 
-    } else {
+    if (strauss == 1) {
       mh_time_strauss(list, parms, ts, likeli, N, sdt, priors, atime_ptr,
                       ntime_ptr);
+    } else {
+      mh_time_os(list, parms, ts, likeli, N, sdt, atime_ptr, ntime_ptr); 
     }
 
     // 5) Draw baseline and halflife
@@ -256,7 +256,7 @@ void mcmc(Node_type *list,
 
       while (new_node != NULL) {
 
-        REAL(this_pulse_chain)[num_node + num_node2*0] = (i/NN);
+        REAL(this_pulse_chain)[num_node + num_node2*0] = (i + 1);
         REAL(this_pulse_chain)[num_node + num_node2*1] = num_node2;
         REAL(this_pulse_chain)[num_node + num_node2*2] = num_node;
         REAL(this_pulse_chain)[num_node + num_node2*3] = new_node->time;
@@ -289,14 +289,15 @@ void mcmc(Node_type *list,
       SET_VECTOR_ELT(pulse_chains, i/NN, this_pulse_chain);
 
       // Save common parms from iteration i/NN to SEXP matrix obj -------
-      REAL(common)[(i/NN) + (iter/NN)*0] = num_node2;
-      REAL(common)[(i/NN) + (iter/NN)*1] = parms->md[0];
-      REAL(common)[(i/NN) + (iter/NN)*2] = parms->theta[0];
-      REAL(common)[(i/NN) + (iter/NN)*3] = parms->theta[1];
-      REAL(common)[(i/NN) + (iter/NN)*4] = parms->md[1];
-      REAL(common)[(i/NN) + (iter/NN)*5] = parms->sigma;
-      REAL(common)[(i/NN) + (iter/NN)*6] = parms->re_sd[0];
-      REAL(common)[(i/NN) + (iter/NN)*7] = parms->re_sd[1];
+      REAL(common)[(i/NN) + (iter/NN)*0] = (i) + 1;
+      REAL(common)[(i/NN) + (iter/NN)*1] = num_node2;
+      REAL(common)[(i/NN) + (iter/NN)*2] = parms->md[0];
+      REAL(common)[(i/NN) + (iter/NN)*3] = parms->theta[0];
+      REAL(common)[(i/NN) + (iter/NN)*4] = parms->theta[1];
+      REAL(common)[(i/NN) + (iter/NN)*5] = parms->md[1];
+      REAL(common)[(i/NN) + (iter/NN)*6] = parms->sigma;
+      REAL(common)[(i/NN) + (iter/NN)*7] = parms->re_sd[0];
+      REAL(common)[(i/NN) + (iter/NN)*8] = parms->re_sd[1];
 
       Rf_unprotect(4);
 

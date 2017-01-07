@@ -26,8 +26,9 @@ double mmm = 3;
 SEXP decon_r_interface(SEXP indata,
                  SEXP model,
                  SEXP thin,
+                 //SEXP burnin,
                  SEXP iterations,
-                 SEXP location_prior_type,
+                 SEXP strauss_location_prior,
                  SEXP prior_pulse_mass_mean,
                  SEXP prior_pulse_mass_var,
                  SEXP prior_pulse_width_mean,
@@ -70,8 +71,10 @@ SEXP decon_r_interface(SEXP indata,
   ts = convert_data(indata, nobs);
 
   // Algo arguments SEXP to C;
-  long iters = Rf_asInteger(iterations); 
-  long nthin = Rf_asInteger(thin);
+  long iters  = Rf_asInteger(iterations); 
+  int nthin  = Rf_asInteger(thin);
+  //int nburnin  = Rf_asInteger(burnin);
+  int strauss = Rf_asInteger(strauss_location_prior);
   
 
 
@@ -203,7 +206,7 @@ SEXP decon_r_interface(SEXP indata,
 
   // R lists for chains ------------------
   // Common parameters -- 1 record per saved iteration
-  SEXP common1 = Rf_protect(Rf_allocMatrix(REALSXP, iters/nthin, 8));
+  SEXP common1 = Rf_protect(Rf_allocMatrix(REALSXP, iters/nthin, 9));
   //double * commonptr = REAL(common1);
   // Pulse-specific parameters -- 1 record per pulse per iteration
   //   list object defined here, each iteration will differ in length, so the
@@ -211,7 +214,8 @@ SEXP decon_r_interface(SEXP indata,
   SEXP pulse_chains = Rf_protect(Rf_allocVector(VECSXP, iters/nthin));
 
 
-  mcmc(list, parms, ts, iters, nobs, nthin, priors, common1, pulse_chains, propsd);
+  mcmc(list, parms, ts, iters, nobs, nthin, strauss, priors, common1,
+       pulse_chains, propsd);
 
 
   // Column names for common1 chain --------
@@ -219,18 +223,19 @@ SEXP decon_r_interface(SEXP indata,
   // create 'dim' attribute (dimension of matrix)
   Rf_protect(dim = Rf_allocVector(INTSXP, 2));
   INTEGER(dim)[0] = iters/nthin; 
-  INTEGER(dim)[1] = 8;
+  INTEGER(dim)[1] = 9;
   Rf_setAttrib(common1, R_DimSymbol, dim);
   // create column names for common parms matrix
-  SEXP common_names = Rf_protect(Rf_allocVector(STRSXP, 8));
-  SET_STRING_ELT(common_names, 0, Rf_mkChar("num_pulses"));
-  SET_STRING_ELT(common_names, 1, Rf_mkChar("baseline"));
-  SET_STRING_ELT(common_names, 2, Rf_mkChar("mean_pulse_mass"));
-  SET_STRING_ELT(common_names, 3, Rf_mkChar("mean_pulse_width"));
-  SET_STRING_ELT(common_names, 4, Rf_mkChar("halflife"));
-  SET_STRING_ELT(common_names, 5, Rf_mkChar("model_error"));
-  SET_STRING_ELT(common_names, 6, Rf_mkChar("sd_mass"));
-  SET_STRING_ELT(common_names, 7, Rf_mkChar("sd_widths"));
+  SEXP common_names = Rf_protect(Rf_allocVector(STRSXP, 9));
+  SET_STRING_ELT(common_names, 0, Rf_mkChar("iteration"));
+  SET_STRING_ELT(common_names, 1, Rf_mkChar("num_pulses"));
+  SET_STRING_ELT(common_names, 2, Rf_mkChar("baseline"));
+  SET_STRING_ELT(common_names, 3, Rf_mkChar("mean_pulse_mass"));
+  SET_STRING_ELT(common_names, 4, Rf_mkChar("mean_pulse_width"));
+  SET_STRING_ELT(common_names, 5, Rf_mkChar("halflife"));
+  SET_STRING_ELT(common_names, 6, Rf_mkChar("model_error"));
+  SET_STRING_ELT(common_names, 7, Rf_mkChar("sd_mass"));
+  SET_STRING_ELT(common_names, 8, Rf_mkChar("sd_widths"));
   // assign names to vector
   Rf_protect(dimnames = Rf_allocVector(VECSXP, 2));
   // assign names vector to columns (1) names attribute, leaving rows (0) NULL;

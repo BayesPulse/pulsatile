@@ -15,7 +15,9 @@ fit_pulse(formula, data, iterations = 2500, thin = 50,
 \item{iterations}{Number of iterations for MCMC}
 
 \item{thin}{Thinning to apply to MCMC chains (i.e. Keep every 'thin'th
-sample).}
+sample).
+# param burnin Burn-in to apply to MCMC chains (i.e. remove first 'burnin'
+# samples). Applied prior to thinning.}
 
 \item{pulse_spec_obj}{An object of class 'pulse_spec_obj', created by
 pulse_spec(), specifying the priors, starting values, and proposal variances

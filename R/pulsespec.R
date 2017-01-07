@@ -49,7 +49,7 @@
 #' @keywords pulse simulation
 #' pulse_spec()
 pulse_spec <-
-  function(location_prior_type = "order-statistic",
+  function(location_prior_type = c("order-statistic", "strauss"),
            prior_mass_mean        = 1.50,
            prior_mass_var         = 10,
            prior_width_mean       = 3.5,
@@ -81,11 +81,37 @@ pulse_spec <-
            pv_pulse_location      = 10) 
   {
 
-    # TODO: Add check on value of location_prior_type and on correct prior parms
-    # specified for each
+    # TODO: Research better ways to do this range/valid-value checking.  Pretty
+    # much all of the args need it.
     location_prior_type <- match.arg(location_prior_type)
+    if (length(location_prior_type) > 1L) 
+      stop(paste("location_prior_type is a required argument -- choose",
+                 "'order-statistic' or 'strauss'"))
+    if (prior_mean_pulse_count <= 0)
+      stop(paste("When location_prior_type is set to 'strauss'",
+                 "prior_mean_pulse_count must be greater than 0."))
 
-    switch(
+    if (location_prior_type == "strauss") {
+
+      strauss <- 1
+      if (prior_location_gamma < 0 | prior_location_gamma > 1) 
+        stop(paste("When location_prior_type is set to 'strauss'",
+                   "prior_location_gamma must be in [0, 1]."))  
+      if (prior_location_range < 0)
+        stop(paste("When location_prior_type is set to 'strauss'",
+                   "prior_location_range must be >= 0.")) 
+
+    } else {
+
+      strauss <- 0
+      if (!is.null(prior_location_gamma))  
+        message(paste("When location_prior_type is set to 'order-statistic'",
+                      "prior_location_gamma is not used."))  
+      if (!is.null(prior_location_range))  
+        message(paste("When location_prior_type is set to 'order-statistic'",
+                      "prior_location_range is not used.")) 
+
+    }
 
     # Structure for single-subject, strauss prior model.
     # NOTE: sv's use std dev, while priors use variances (want this consistent
@@ -93,7 +119,7 @@ pulse_spec <-
     # NOTE: need more clear label for max_sd's 
     ps_obj <- 
       structure(
-        list(location_prior_type = location_prior_type,
+        list(strauss_location_prior = strauss,
              priors = list(pulse_mass     = list(mean  = prior_mass_mean,
                                                  var   = prior_mass_var),
                            pulse_width    = list(mean  = prior_width_mean,

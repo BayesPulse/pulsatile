@@ -26,58 +26,99 @@ data(simpulse_reference001)
 #  tbl_df %>%
 #  select(-observation)
 
-model_spec <- pulse_spec()
+model_spec <- pulse_spec(location_prior_type = "order-statistic")
 model_spec
+model_spec_strauss <- pulse_spec(location_prior_type = "strauss",
+                                 prior_location_range = 40,
+                                 prior_location_gamma = 0)
+model_spec_strauss
 
-# Test C functions
-#show_args(.data = dat)
 
 #
 # ---- Simple test for repeatable results ---- 
 #
+n_iters <- 5000
+n_thin  <- 1
+
 start_time <- proc.time()
 set.seed(999999)
 fit_round1 <- fit_pulse(data           = simpulse_reference001,
-                        iterations     = 10000,
-                        thin           = 1,
+                        iterations     = n_iters,
+                        thin           = n_thin,
                         pulse_spec_obj = model_spec)
 stop_time <- proc.time()
 time_round1 <- (stop_time - start_time)/60
 
 start_time <- proc.time()
 set.seed(999999)
-fit_round2 <- fit_pulse(data = dat, iterations = 10000, thin = 1,
+fit_round2 <- fit_pulse(data           = simpulse_reference001,
+                        iterations     = n_iters,
+                        thin           = n_thin,
                         pulse_spec_obj = model_spec)
 stop_time <- proc.time()
 time_round2 <- (stop_time - start_time)/60
 
+start_time <- proc.time()
+set.seed(999999)
+fit_strauss <- fit_pulse(data           = simpulse_reference001,
+                         iterations     = n_iters,
+                         thin           = n_thin,
+                         pulse_spec_obj = model_spec_strauss)
+stop_time <- proc.time()
+time_round3 <- (stop_time - start_time)/60
+
+
+
+########################################
+# Compare results
+########################################
 all(fit_round1[[3]] == fit_round2[[3]])#[1:1000, ]
 all(fit_round1[[4]] == fit_round2[[4]])#[1:1000, ]
 time_round1 == time_round2
 
-all((fit_round1[[3]] == fit_round2[[3]])[491:512, ])
-#(fit_round1[[4]][[502]] == fit_round2[[4]][[502]])
+
+
+########################################
+# Check Strauss 
+########################################
+all((fit_round1[[3]] == fit_strauss[[3]]))
+# min. distance between locations should be approx, but > 40
+fit_strauss$pulse_chain %>% 
+  group_by(iteration) %>%
+  mutate(distance = location - lag(location, k = 1)) %>%
+  ungroup %>% with(., min(distance, na.rm=T))
 
 
 
+########################################
+# Visualize results
+########################################
 
-
-
-pulses <- fit[[2]] %>% do.call(rbind, .) %>% as.data.frame %>% tbl_df  
-common <- fit[[1]] %>% as.data.frame %>% tbl_df %>% mutate(iteration = 1:n()) %>% select(iteration, everything())
+pulses <- fit_round1$pulse_chain # %>% do.call(rbind, .) %>% as.data.frame %>% tbl_df  
+common <- fit_round1$common_chain # %>% as.data.frame %>% tbl_df %>% mutate(iteration = 1:n()) %>% select(iteration, everything())
 
 timeseries <- 
   ggplot() +
-    geom_path(data = dat, aes(x = time, y = concentration)) +
+    geom_path(data = fit_round1$data, aes(x = time, y = concentration)) 
 
 location_hist <- 
-  ggplot() +
-  geom_histogram(data = pulses, aes(x = location, y = ..density..))
+  ggplot() + geom_histogram(data = as.data.frame(pulses), aes(x = location, y = ..density..))
 
 traceplots <- 
   common %>% gather(key = parameter, value = value, -iteration) %>%
   ggplot(aes(x = iteration, y = value)) +
     geom_path() +
     facet_wrap(~ parameter, ncol = 3, scales = "free")
+
+
+########################################
+# inspect object size 
+########################################
+# comparing matrix to data frame to tibble
+object.size(pulses)
+test1 <- as.data.frame(pulses)
+test2 <- as_data_frame(test1)
+object.size(test1)
+object.size(test2)
 
 
