@@ -285,7 +285,7 @@ double **convert_data(SEXP indata, int nrow) {
 
   // Read the time series into memory                          
   for (i = 0; i < nrow; i++) {
-    data[i][0] = INTEGER(getListElement(indata, "time"))[i];
+    data[i][0] = REAL(getListElement(indata, "time"))[i];
     data[i][1] = REAL(getListElement(indata, "concentration"))[i];
     data[i][1] = log(data[i][1]);
   }

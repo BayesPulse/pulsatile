@@ -4,11 +4,45 @@
 \alias{simulate_pulsets}
 \title{simulate_pulsets}
 \usage{
-simulate_pulsets(parms_list)
+simulate_pulsets(num_of_samples = 144, sampling_interval = 10,
+  error_var = 0.005, ipi_mean = 12, ipi_var = 40, ipi_min = 4,
+  mass_mean = 1.25, mass_sd = 0.5, width_mean = 3.5, width_sd = 0.5,
+  halflife_mean = NULL, halflife_var = NULL, baseline_mean = NULL,
+  baseline_var = NULL, constant_halflife = 2.6, constant_baseline = 45)
 }
 \arguments{
-\item{parms_list}{Named vector of parameters: T, t, vare, ipimean, ipivar,
-ipimin, mua, sda, muw, and sdw are required.  Either muh and varh or
+\item{ipi_mean}{Mean number of sampling units between pulses}
+
+\item{ipi_var}{Variance of gamma for drawing interpulse interval}
+
+\item{ipi_min}{Minimum number of units between pulses}
+
+\item{mass_mean}{Mean pulse mass}
+
+\item{mass_sd}{Standard deviation of pulse mass}
+
+\item{width_mean}{Mean pulse width}
+
+\item{width_sd}{Standard deviation of pulse width}
+
+\item{halflife_mean}{Mean of half-life}
+
+\item{halflife_var}{Variance of half-life}
+
+\item{baseline_mean}{Mean of baseline}
+
+\item{baseline_var}{Variance of baseline}
+
+\item{constant_halflife}{To use a constant (specified) half-life, set this to
+a constant [0,inf). Mean and variance of half-life are not used if this is
+non-null.}
+
+\item{constant_baseline}{To use a constant (specified) baseline, set this to
+a constant [0,inf). Mean and variance of baseline are not used if this is
+non-null.}
+
+\item{parms_list}{Named vector of parameters: T, t, vare, ipi_mean, ipi_var,
+ipi_min, mua, sda, muw, and sdw are required.  Either muh and varh or
 constant.halflife must be specified.  Same for mub and varb or
 constant_baseline.}
 }

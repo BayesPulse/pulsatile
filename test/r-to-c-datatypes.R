@@ -18,7 +18,10 @@ document()
 install("../pulsatile", build_vignettes = TRUE)
 
 library(pulsatile)
-data(simpulse_reference001)
+#data(simpulse_reference001)
+
+sim <- simulate_pulsets()
+dat <- sim$pulse_data
 
 # Replace by above^
 # Read in dataset
@@ -42,7 +45,7 @@ n_thin  <- 1
 
 start_time <- proc.time()
 set.seed(999999)
-fit_round1 <- fit_pulse(data           = simpulse_reference001,
+fit_round1 <- fit_pulse(data           = dat,
                         iterations     = n_iters,
                         thin           = n_thin,
                         pulse_spec_obj = model_spec)
@@ -51,7 +54,7 @@ time_round1 <- (stop_time - start_time)/60
 
 start_time <- proc.time()
 set.seed(999999)
-fit_round2 <- fit_pulse(data           = simpulse_reference001,
+fit_round2 <- fit_pulse(data           = dat,
                         iterations     = n_iters,
                         thin           = n_thin,
                         pulse_spec_obj = model_spec)
@@ -60,7 +63,7 @@ time_round2 <- (stop_time - start_time)/60
 
 start_time <- proc.time()
 set.seed(999999)
-fit_strauss <- fit_pulse(data           = simpulse_reference001,
+fit_strauss <- fit_pulse(data           = dat,
                          iterations     = n_iters,
                          thin           = n_thin,
                          pulse_spec_obj = model_spec_strauss)
@@ -72,11 +75,17 @@ time_round3 <- (stop_time - start_time)/60
 ########################################
 # Compare results
 ########################################
-all(fit_round1[[3]] == fit_round2[[3]])#[1:1000, ]
-all(fit_round1[[4]] == fit_round2[[4]])#[1:1000, ]
+all(fit_round1[[3]] == fit_round2[[3]])
+all(fit_round1[[4]] == fit_round2[[4]])
 time_round1 == time_round2
 
 
+########################################
+# Sanity check on pulse count
+########################################
+hist(fit_round1$common_chain$num_pulses) 
+# NOTE: Somethings up with the birth-death process.  Think it started with the
+# addition of the location_prior_type option in pulse_spec() and in C code.
 
 ########################################
 # Check Strauss 

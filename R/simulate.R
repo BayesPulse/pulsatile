@@ -11,42 +11,48 @@
 #'   parms_list (see function code for naming scheme).
 #'
 #'
-#' @param parms_list Named vector of parameters: T, t, vare, ipimean, ipivar,
-#' ipimin, mua, sda, muw, and sdw are required.  Either muh and varh or
+#' @param parms_list Named vector of parameters: T, t, vare, ipi_mean, ipi_var,
+#' ipi_min, mua, sda, muw, and sdw are required.  Either muh and varh or
 #' constant.halflife must be specified.  Same for mub and varb or
 #' constant_baseline.
+#' @param ipi_mean Mean number of sampling units between pulses
+#' @param ipi_var Variance of gamma for drawing interpulse interval
+#' @param ipi_min Minimum number of units between pulses
+#' @param mass_mean Mean pulse mass
+#' @param mass_sd Standard deviation of pulse mass
+#' @param width_mean Mean pulse width
+#' @param width_sd Standard deviation of pulse width
+#' @param halflife_mean Mean of half-life
+#' @param halflife_var Variance of half-life
+#' @param baseline_mean Mean of baseline
+#' @param baseline_var Variance of baseline
+#' @param constant_halflife To use a constant (specified) half-life, set this to
+#' a constant [0,inf). Mean and variance of half-life are not used if this is
+#' non-null.
+#' @param constant_baseline To use a constant (specified) baseline, set this to
+#' a constant [0,inf). Mean and variance of baseline are not used if this is
+#' non-null.
 #' @export
 #' @keywords pulse simulation
 #' simulate_pulsets()
-simulate_pulsets <- function(parms_list) {
-    
+simulate_pulsets <- function(num_of_samples    = 144,
+                             sampling_interval = 10,
+                             error_var         = 0.005,
+                             ipi_mean          = 12,
+                             ipi_var           = 40,
+                             ipi_min           = 4,
+                             mass_mean         = 1.25,
+                             mass_sd           = 0.50,
+                             width_mean        = 3.50,
+                             width_sd          = 0.50,
+                             halflife_mean     = NULL,
+                             halflife_var      = NULL,
+                             baseline_mean     = NULL,
+                             baseline_var      = NULL,
+                             constant_halflife = 2.6,
+                             constant_baseline = 45) {
 
-    # Handle vector of parameters
-    if (!is.null(parms_list)){
-        T       = parms_list[["T"]] # num. samples
-        t       = parms_list[["t"]] # sampling interval
-        vare    = parms_list[["vare"]]
-        ipimean = parms_list[["ipimean"]]
-        ipivar  = parms_list[["ipivar"]]
-        ipimin  = parms_list[["ipimin"]]
-        mua     = parms_list[["mua"]]
-        sda    = parms_list[["sda"]]
-        muw     = parms_list[["muw"]]
-        sdw    = parms_list[["sdw"]]
-        if (!is.null(parms_list[["muh"]]) & !is.na(parms_list[["muh"]])) {
-            muh     = parms_list[["muh"]]
-            varh    = parms_list[["varh"]]
-            mub     = parms_list[["mub"]]
-            varb    = parms_list[["varb"]]
-        } else {
-            constant_halflife = parms_list[["constant_halflife"]]
-            constant_baseline = parms_list[["constant_baseline"]]
-        }
-    } else {
-      stop("parms_list argument NULL or invalid")
-
-    }
-
+    #Call <- match.call()
 
     
     #---------------------------------------
@@ -58,9 +64,9 @@ simulate_pulsets <- function(parms_list) {
     # mean = alpha / beta
     # var = alpha / beta^2
     #---------------------------------------
-    gammamean <- ipimean - ipimin
-    alpha     <- gammamean * gammamean / ipivar
-    beta      <- gammamean / ipivar
+    gammamean <- ipi_mean - ipi_min
+    alpha     <- gammamean * gammamean / ipi_var
+    beta      <- gammamean / ipi_var
 
     
     
@@ -70,7 +76,9 @@ simulate_pulsets <- function(parms_list) {
     B      <- 0     # Baseline concentration
     H      <- 0     # Decay rate (in terms of half-life)
     tau    <- rep(0, 25) # 
-    ysim   <- vector(mode = "numeric", length = length(seq(10,(T*t),t)))
+    ysim   <- vector(mode = "numeric", 
+                     length = length(seq(10, (num_of_samples * sampling_interval),
+                                         sampling_interval)))
     
     
     #---------------------------------------
@@ -92,9 +100,9 @@ simulate_pulsets <- function(parms_list) {
     # s2p = pulse widths
     # NOTE: based on above and eqn, it looks to me like widths, half-life are on
     # the minutes scale, not sampling units
-    meanI <- function(t, b, a, tau1, lam, s2p){
-    	    m <- b + (a / 2) * exp((tau1 - t) * lam + 0.5 * lam^2 * s2p) * 
-                 (1 + erfFn((t - (tau1 + lam * s2p)) / sqrt(2 * s2p)))
+    meanI <- function(sampling_interval, b, a, tau1, lam, s2p){
+    	    m <- b + (a / 2) * exp((tau1 - sampling_interval) * lam + 0.5 * lam^2 * s2p) * 
+                 (1 + erfFn((sampling_interval - (tau1 + lam * s2p)) / sqrt(2 * s2p)))
     	    m
     	}
     
@@ -105,7 +113,7 @@ simulate_pulsets <- function(parms_list) {
     # Get subject specific parameters
     if (is.null(constant_baseline)) {
         while(B <= 0){
-            B <- stats::rnorm(1, mub, sqrt(varb))
+            B <- stats::rnorm(1, baseline_mean, sqrt(baseline_var))
         }
     } else {
         B <- constant_baseline
@@ -115,7 +123,7 @@ simulate_pulsets <- function(parms_list) {
     #   H is half-life, H=ln(2)/lambda_x, where lambda_x is the decay constant
     if (is.null(constant_halflife)) {
         while(H <= 8){
-            H <- stats::rnorm(1, muh, sqrt(varh))
+            H <- stats::rnorm(1, halflife_mean, sqrt(halflife_var))
         }
     } else {
         # set constant half-life if 
@@ -129,18 +137,18 @@ simulate_pulsets <- function(parms_list) {
     # pulse location vector - max 25 pulses per day
     tau <- rep(0, 25)
     # generate initial pulse location
-    tau[1] <- t * (stats::rgamma(1, alpha, beta) - 10)
+    tau[1] <- sampling_interval * (stats::rgamma(1, alpha, beta) - 10)
     
     # generate i+1, i+2,... pulse locations
     i <- 1
-    while (tau[i] < (T * t)){
+    while (tau[i] < (num_of_samples * sampling_interval)){
     	  i      <- i + 1
-    	  tmp    <- ipimin + stats::rgamma(1, alpha, beta)
-    	  tau[i] <- tau[i-1] + (t * tmp)
+    	  tmp    <- ipi_min + stats::rgamma(1, alpha, beta)
+    	  tau[i] <- tau[i-1] + (sampling_interval * tmp)
     }
     
     # reduce pulse location vector to values within time range (<0, 1440)
-    tau <- subset(tau, tau < (T * t))
+    tau <- subset(tau, tau < (num_of_samples * sampling_interval))
     tau <- subset(tau, tau != 0)
     np  <- length(tau) # No. of pulses - length of vector of pulse locations
                        #    w/in time range
@@ -152,16 +160,17 @@ simulate_pulsets <- function(parms_list) {
     # storage vectors for pulse-specific parms
     A     <- rep(0, np)             # pulse mass
     s2p   <- rep(0, np)             # pulse width
-    taxis <- seq(10, (T*t), t)      # time axis 144*10
+    taxis <- seq(10, (num_of_samples * sampling_interval), sampling_interval)
+    # time axis 144*10
     ytmp  <- rep(0, length(taxis))  # hormone concentration
     
     # Generate parameters
     for (i in 1:np) {
         #while (A[i] <= 0) {
-            A[i] <- exp(stats::rnorm(1, mua, sda))
+            A[i] <- exp(stats::rnorm(1, mass_mean, mass_sd))
         #}
         #while (s2p[i] <= 0) {
-            s2p[i] <- exp(stats::rnorm(1, muw, sdw))
+            s2p[i] <- exp(stats::rnorm(1, mass_mean, mass_sd))
         #}
         # Truncated T /gamma normal mixture
         #kappa1 = rgamma(1, 2, 2)
@@ -180,7 +189,8 @@ simulate_pulsets <- function(parms_list) {
 
     # Draw mean concentration
     for (i in 1:np) {
-       ytmp   <- ytmp + meanI(seq(10, (T*t), t), 0, A[i],
+       ytmp   <- ytmp + meanI(seq(10, (num_of_samples*sampling_interval),
+                                  sampling_interval), 0, A[i],
                               tau[i], log(2) / H, s2p[i])
     }
     
@@ -200,8 +210,8 @@ simulate_pulsets <- function(parms_list) {
     
     # Two possible formulations of error variance
     # first is using coefficient of variation, second is using explicit variance
-    #error_var <- mean(ysim) * vare
-    error_var <- vare
+    #error_var <- mean(ysim) * error_var
+
     # Generate and add random noise on log scale
     errors    <- stats::rnorm((length(taxis)), 0, sqrt(error_var))
     ysimerror <- ysim * exp(errors)
