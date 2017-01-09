@@ -88,28 +88,27 @@ pulse_spec <-
       stop(paste("location_prior_type is a required argument -- choose",
                  "'order-statistic' or 'strauss'"))
     if (prior_mean_pulse_count <= 0)
-      stop(paste("When location_prior_type is set to 'strauss'",
-                 "prior_mean_pulse_count must be greater than 0."))
+      stop(paste("prior_mean_pulse_count must be > 0."))
 
     if (location_prior_type == "strauss") {
 
       strauss <- 1
+      if (is.null(prior_location_gamma) | is.null(prior_location_range)) 
+        stop(paste("prior_location_gamma and prior_location_range are required",
+                   "arguments when location_prior_type == 'strauss'"))
       if (prior_location_gamma < 0 | prior_location_gamma > 1) 
-        stop(paste("When location_prior_type is set to 'strauss'",
-                   "prior_location_gamma must be in [0, 1]."))  
+        stop(paste("Invalid value for argument 'prior_location_gamma'; should",
+                   "be in [0,1]"))  
       if (prior_location_range < 0)
-        stop(paste("When location_prior_type is set to 'strauss'",
-                   "prior_location_range must be >= 0.")) 
+        stop(paste("Invalid value for argument 'prior_location_range'; should",
+                   "be >= 0"))  
 
     } else {
 
       strauss <- 0
-      if (!is.null(prior_location_gamma))  
+      if (!is.null(prior_location_gamma) | !is.null(prior_location_range))
         message(paste("When location_prior_type is set to 'order-statistic'",
-                      "prior_location_gamma is not used."))  
-      if (!is.null(prior_location_range))  
-        message(paste("When location_prior_type is set to 'order-statistic'",
-                      "prior_location_range is not used.")) 
+                      "prior_location_gamma and prior_location_range are not used."))  
 
     }
 
