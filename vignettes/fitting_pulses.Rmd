@@ -17,19 +17,22 @@ vignette: >
 # Introduction
 
 
-# Getting to know the multiMiR database
 
 ```{r options, echo=FALSE}
-#library(knitr)
-#opts_chunk$set(echo       = TRUE,
-#               message    = TRUE,
-#               warning    = TRUE,
-#               eval       = FALSE)
+library(knitr)
+opts_chunk$set(echo       = TRUE,
+               message    = TRUE,
+               warning    = TRUE,
+               eval       = FALSE)
 ```
 
 ```{r load-package}
 library(pulsatile)
-#model_spec <- pulse_spec()
+
+dat <- simulate_pulsets()
+
+# These args are not yet implemented
+# model_spec <- pulse_spec(time = time, conc = concentration, data = dat)
 #fit <- fit_pulse(iterations
 ```
 
