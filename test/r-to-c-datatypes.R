@@ -2,17 +2,17 @@
 # Testing getting data to the C functions
 #
 #-------------------------------------------------------------------------------
-options(scipen = 99)
+#options(scipen = 99)
 setwd("~/Projects/Rpackages/pulsatile/")
-library(readr)
-library(dplyr)
-library(tidyr)
-library(pryr)
+
+#library(dplyr)
+#library(tidyr)
+#library(pryr)
 library(devtools)
 library(roxygen2)
-library(ggplot2)
-library(ggthemes)
-theme_set(theme_tufte())
+#library(ggplot2)
+#library(ggthemes)
+#theme_set(theme_tufte())
 
 document()
 install("../pulsatile", build_vignettes = TRUE)
@@ -45,7 +45,7 @@ n_thin  <- 1
 
 start_time <- proc.time()
 set.seed(999999)
-fit_round1 <- fit_pulse(data           = dat,
+fit_round1 <- fit_pulse(data           = sim$pulse_data,
                         iterations     = n_iters,
                         thin           = n_thin,
                         pulse_spec_obj = model_spec)
@@ -54,7 +54,7 @@ time_round1 <- (stop_time - start_time)/60
 
 start_time <- proc.time()
 set.seed(999999)
-fit_round2 <- fit_pulse(data           = dat,
+fit_round2 <- fit_pulse(data           = sim$pulse_data,
                         iterations     = n_iters,
                         thin           = n_thin,
                         pulse_spec_obj = model_spec)
@@ -63,7 +63,7 @@ time_round2 <- (stop_time - start_time)/60
 
 start_time <- proc.time()
 set.seed(999999)
-fit_strauss <- fit_pulse(data           = dat,
+fit_strauss <- fit_pulse(data           = sim$pulse_data,
                          iterations     = n_iters,
                          thin           = n_thin,
                          pulse_spec_obj = model_spec_strauss)
