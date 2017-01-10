@@ -35,7 +35,7 @@ double likelihood(Node_type *list, double **ts, Common_parms *parms, int N,
 // statistic prior on pulse location
 double *calc_death_rate_os(Node_type *list, int num_node, 
                            double *partial_likelihood, double full_likelihood,
-                           double Birth_rate, double r);
+                           double Birth_rate, double r, int mmm);
 
 // Calculates death rate of each pulse in provided linklist for the Strauss
 // prior on pulse count and location

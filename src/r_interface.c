@@ -17,7 +17,6 @@
 
 double fitstart; // First time a pulse can occur (10 min. increments).
 double fitend;   // Last time a pulse can occur (10 min. increments).
-double mmm = 3;
 
 
 //
@@ -77,7 +76,6 @@ SEXP decon_r_interface(SEXP indata,
   int strauss = Rf_asInteger(strauss_location_prior);
   
 
-
   //Print to check values
   Rprintf("There are %d observations in the dataset.\n", nobs);
   Rprintf("This data is of type (model arg not yet implemented).\n");
@@ -110,6 +108,7 @@ SEXP decon_r_interface(SEXP indata,
   priors->re_sdmax[1]    = Rf_asReal(prior_max_sd_width);     // priora2;
   priors->err_alpha      = Rf_asReal(prior_error_alpha);      // prioralpha;
   priors->err_beta       = Rf_asReal(prior_error_beta);       // priorbeta;
+  priors->orderstat      = 3;                                 // hard-coded;
   priors->gamma          = Rf_asReal(prior_pulse_location_gamma);   // priorgamma;
   priors->range          = Rf_asReal(prior_pulse_location_range);   // priorrange;
 

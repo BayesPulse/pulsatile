@@ -26,7 +26,6 @@
 #define EPS 1.0e-12
 
 // Global variables
-extern int mmm;         // Order statistic for distribution of pulse locations.
 extern double fitstart; // First time in 10min increments a pulse can occur
 extern double fitend;   // Last time in 10min increments a pulse can occur
 
@@ -213,7 +212,8 @@ void mcmc(Node_type *list,
       mh_time_strauss(list, parms, ts, likeli, N, sdt, priors, atime_ptr,
                       ntime_ptr);
     } else {
-      mh_time_os(list, parms, ts, likeli, N, sdt, atime_ptr, ntime_ptr); 
+      mh_time_os(list, parms, ts, likeli, N, sdt, atime_ptr, ntime_ptr,
+                 priors->orderstat); 
     }
 
     // 5) Draw baseline and halflife
@@ -548,6 +548,8 @@ void mh_time_strauss(Node_type *list,
 //     double *like        - the current value of the likelihood
 //     int N               - the number of observations in **ts
 //     double v            - the proposal variance for pulse location
+//     int mmm             - Order stat to use for prior on location
+//                           (priors->orderstat)
 //
 //   RETURNS: 
 //       None                - all updates are made internally
@@ -560,7 +562,8 @@ void mh_time_os(Node_type *list,
                 int N, 
                 double sd,
                 long *atime,
-                long *ntime) {
+                long *ntime,
+                int mmm) {
 
   int i;                     // Generic counter
   Node_type *node;           // Pointer for current list of pulses
@@ -617,8 +620,9 @@ void mh_time_os(Node_type *list,
       }
 
       // Combine it all for the prior ratio 
-      prior_ratio = (mmm-1) * log((time_diff1_new * time_diff2_new) /
-                                  (time_diff1 * time_diff2));
+      prior_ratio = (mmm-1) * 
+                    log((time_diff1_new * time_diff2_new) / 
+                        (time_diff1 * time_diff2));
 
       // Save current time 
       current_time = node->time;

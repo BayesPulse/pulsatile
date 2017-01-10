@@ -26,7 +26,8 @@ void mh_time_strauss(Node_type *list, Common_parms *parms, double **ts,
                      long *atime, long *ntime);
 
 void mh_time_os(Node_type *list, Common_parms *parms, double **ts, 
-                double *like, int N, double v, long *atime, long *ntime);
+                double *like, int N, double v, long *atime, long *ntime,
+                int mmm);
 
 void mh_mu_delta(Node_type *list, Common_parms *parms, Priors *priors, 
                  double **ts, double *like, int N, int num_node, double **var,
