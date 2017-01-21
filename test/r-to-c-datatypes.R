@@ -14,13 +14,14 @@ library(roxygen2)
 #library(ggthemes)
 #theme_set(theme_tufte())
 
-document()
-install("../pulsatile", build_vignettes = TRUE)
+devtools::document()
+devtools::check()
+devtools::install("../pulsatile", build_vignettes = TRUE)
 
 library(pulsatile)
 #data(simpulse_reference001)
 
-sim <- simulate_pulsets()
+sim <- simulate_pulse()
 dat <- sim$pulse_data
 
 # Replace by above^

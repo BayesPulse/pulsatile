@@ -27,13 +27,23 @@ opts_chunk$set(echo       = TRUE,
 ```
 
 ```{r load-package}
+install.packages("devtools")
+library(devtools)
+install_github("mmulvahill/pulsatile")
 library(pulsatile)
+```
 
-dat <- simulate_pulsets()
+```{r simulate-pulse}
+this_pulse <- simulate_pulse()
+
+str(this_pulse)
+
+ggplot(this_pulse$pulse_data, aes(x = time, y = concentration)) +
+  geom_path()
 
 # These args are not yet implemented
-# model_spec <- pulse_spec(time = time, conc = concentration, data = dat)
-#fit <- fit_pulse(iterations
+model_spec <- pulse_spec(time = time, conc = concentration, data = dat)
+fit <- fit_pulse(iterations
 ```
 
 

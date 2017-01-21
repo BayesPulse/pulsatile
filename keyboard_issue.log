@@ -1,0 +1,100 @@
+Jan 20 15:19:52 mtevans kernel: [  259.819218] usb 3-14.4: New USB device found, idVendor=24f0, idProduct=0140
+Jan 20 15:19:52 mtevans kernel: [  259.819220] usb 3-14.4: New USB device strings: Mfr=1, Product=2, SerialNumber=0
+Jan 20 15:19:52 mtevans kernel: [  259.819221] usb 3-14.4: Product: Das Keyboard
+Jan 20 15:19:52 mtevans kernel: [  259.819222] usb 3-14.4: Manufacturer: Metadot - Das Keyboard
+Jan 20 15:19:52 mtevans kernel: [  259.819316] usb 3-14.4: ep 0x82 - rounding interval to 64 microframes, ep desc says 80 microframes
+Jan 20 15:19:52 mtevans kernel: [  259.820373] input: Metadot - Das Keyboard Das Keyboard as /devices/pci0000:00/0000:00:14.0/usb3/3-14/3-14.4/3-14.4:1.0/0003:24F0:0140.0005/input/input21
+Jan 20 15:19:52 mtevans kernel: [  259.874084] hid-generic 0003:24F0:0140.0005: input,hidraw2: USB HID v1.10 Keyboard [Metadot - Das Keyboard Das Keyboard] on usb-0000:00:14.0-14.4/input0
+Jan 20 15:19:52 mtevans kernel: [  259.875708] input: Metadot - Das Keyboard Das Keyboard as /devices/pci0000:00/0000:00:14.0/usb3/3-14/3-14.4/3-14.4:1.1/0003:24F0:0140.0006/input/input22
+Jan 20 15:19:52 mtevans kernel: [  259.929943] hid-generic 0003:24F0:0140.0006: input,hidraw3: USB HID v1.10 Device [Metadot - Das Keyboard Das Keyboard] on usb-0000:00:14.0-14.4/input1
+Jan 20 15:19:52 mtevans mtp-probe: checking bus 3, device 6: "/sys/devices/pci0000:00/0000:00:14.0/usb3/3-14/3-14.4"
+Jan 20 15:19:52 mtevans mtp-probe: bus: 3, device: 6 was not an MTP device
+Jan 20 15:20:02 mtevans kernel: [  269.942642] usb 3-14: USB disconnect, device number 5
+Jan 20 15:20:02 mtevans kernel: [  269.942645] usb 3-14.4: USB disconnect, device number 6
+Jan 20 15:20:02 mtevans acpid: input device has been disconnected, fd 11
+Jan 20 15:20:12 mtevans kernel: [  279.739802] usb 6-1: new SuperSpeed USB device number 2 using xhci_hcd
+Jan 20 15:20:12 mtevans kernel: [  279.997313] usb 6-1: New USB device found, idVendor=2109, idProduct=0812
+Jan 20 15:20:12 mtevans kernel: [  279.997316] usb 6-1: New USB device strings: Mfr=1, Product=2, SerialNumber=0
+Jan 20 15:20:12 mtevans kernel: [  279.997317] usb 6-1: Product: USB3.0 Hub             
+Jan 20 15:20:12 mtevans kernel: [  279.997318] usb 6-1: Manufacturer: VIA Labs, Inc.         
+Jan 20 15:20:12 mtevans kernel: [  279.997974] hub 6-1:1.0: USB hub found
+Jan 20 15:20:12 mtevans kernel: [  279.998317] hub 6-1:1.0: 4 ports detected
+Jan 20 15:20:12 mtevans kernel: [  280.103589] usb 5-1: new high-speed USB device number 2 using xhci_hcd
+Jan 20 15:20:13 mtevans kernel: [  280.235720] usb 5-1: New USB device found, idVendor=2109, idProduct=2812
+Jan 20 15:20:13 mtevans kernel: [  280.235722] usb 5-1: New USB device strings: Mfr=1, Product=2, SerialNumber=0
+Jan 20 15:20:13 mtevans kernel: [  280.235723] usb 5-1: Product: USB2.0 Hub             
+Jan 20 15:20:13 mtevans kernel: [  280.235724] usb 5-1: Manufacturer: VIA Labs, Inc.         
+Jan 20 15:20:13 mtevans kernel: [  280.236499] hub 5-1:1.0: USB hub found
+Jan 20 15:20:13 mtevans kernel: [  280.236967] hub 5-1:1.0: 4 ports detected
+Jan 20 15:20:13 mtevans kernel: [  280.527633] usb 5-1.4: new full-speed USB device number 3 using xhci_hcd
+Jan 20 15:20:13 mtevans kernel: [  280.636761] usb 5-1.4: New USB device found, idVendor=24f0, idProduct=0140
+Jan 20 15:20:13 mtevans kernel: [  280.636763] usb 5-1.4: New USB device strings: Mfr=1, Product=2, SerialNumber=0
+Jan 20 15:20:13 mtevans kernel: [  280.636764] usb 5-1.4: Product: Das Keyboard
+Jan 20 15:20:13 mtevans kernel: [  280.636765] usb 5-1.4: Manufacturer: Metadot - Das Keyboard
+Jan 20 15:20:13 mtevans kernel: [  280.636871] usb 5-1.4: ep 0x82 - rounding interval to 64 microframes, ep desc says 80 microframes
+Jan 20 15:20:13 mtevans kernel: [  280.642476] input: Metadot - Das Keyboard Das Keyboard as /devices/pci0000:00/0000:00:1c.4/0000:03:00.0/usb5/5-1/5-1.4/5-1.4:1.0/0003:24F0:0140.0007/input/input23
+Jan 20 15:20:13 mtevans kernel: [  280.695872] hid-generic 0003:24F0:0140.0007: input,hidraw2: USB HID v1.10 Keyboard [Metadot - Das Keyboard Das Keyboard] on usb-0000:03:00.0-1.4/input0
+Jan 20 15:20:13 mtevans kernel: [  280.704934] input: Metadot - Das Keyboard Das Keyboard as /devices/pci0000:00/0000:00:1c.4/0000:03:00.0/usb5/5-1/5-1.4/5-1.4:1.1/0003:24F0:0140.0008/input/input24
+Jan 20 15:20:13 mtevans kernel: [  280.759769] hid-generic 0003:24F0:0140.0008: input,hidraw3: USB HID v1.10 Device [Metadot - Das Keyboard Das Keyboard] on usb-0000:03:00.0-1.4/input1
+Jan 20 15:20:13 mtevans mtp-probe: checking bus 5, device 3: "/sys/devices/pci0000:00/0000:00:1c.4/0000:03:00.0/usb5/5-1/5-1.4"
+Jan 20 15:20:13 mtevans mtp-probe: bus: 5, device: 3 was not an MTP device
+Jan 20 15:20:44 mtevans kernel: [  312.013139] usb 5-1: USB disconnect, device number 2
+Jan 20 15:20:44 mtevans kernel: [  312.013142] usb 5-1.4: USB disconnect, device number 3
+Jan 20 15:20:44 mtevans acpid: input device has been disconnected, fd 11
+Jan 20 15:20:45 mtevans kernel: [  312.342424] usb 6-1: USB disconnect, device number 2
+Jan 20 15:20:45 mtevans kernel: [  312.902756] usb 6-1: new SuperSpeed USB device number 3 using xhci_hcd
+Jan 20 15:20:45 mtevans kernel: [  313.159990] usb 6-1: New USB device found, idVendor=2109, idProduct=0812
+Jan 20 15:20:45 mtevans kernel: [  313.159993] usb 6-1: New USB device strings: Mfr=1, Product=2, SerialNumber=0
+Jan 20 15:20:45 mtevans kernel: [  313.159994] usb 6-1: Product: USB3.0 Hub             
+Jan 20 15:20:45 mtevans kernel: [  313.159995] usb 6-1: Manufacturer: VIA Labs, Inc.         
+Jan 20 15:20:45 mtevans kernel: [  313.160759] hub 6-1:1.0: USB hub found
+Jan 20 15:20:45 mtevans kernel: [  313.161113] hub 6-1:1.0: 4 ports detected
+Jan 20 15:20:46 mtevans kernel: [  313.266503] usb 5-1: new high-speed USB device number 4 using xhci_hcd
+Jan 20 15:20:46 mtevans kernel: [  313.398516] usb 5-1: New USB device found, idVendor=2109, idProduct=2812
+Jan 20 15:20:46 mtevans kernel: [  313.398518] usb 5-1: New USB device strings: Mfr=1, Product=2, SerialNumber=0
+Jan 20 15:20:46 mtevans kernel: [  313.398519] usb 5-1: Product: USB2.0 Hub             
+Jan 20 15:20:46 mtevans kernel: [  313.398520] usb 5-1: Manufacturer: VIA Labs, Inc.         
+Jan 20 15:20:46 mtevans kernel: [  313.399169] hub 5-1:1.0: USB hub found
+Jan 20 15:20:46 mtevans kernel: [  313.399638] hub 5-1:1.0: 4 ports detected
+Jan 20 15:20:46 mtevans kernel: [  313.690553] usb 5-1.4: new full-speed USB device number 5 using xhci_hcd
+Jan 20 15:20:46 mtevans kernel: [  313.799681] usb 5-1.4: New USB device found, idVendor=24f0, idProduct=0140
+Jan 20 15:20:46 mtevans kernel: [  313.799683] usb 5-1.4: New USB device strings: Mfr=1, Product=2, SerialNumber=0
+Jan 20 15:20:46 mtevans kernel: [  313.799685] usb 5-1.4: Product: Das Keyboard
+Jan 20 15:20:46 mtevans kernel: [  313.799686] usb 5-1.4: Manufacturer: Metadot - Das Keyboard
+Jan 20 15:20:46 mtevans kernel: [  313.799792] usb 5-1.4: ep 0x82 - rounding interval to 64 microframes, ep desc says 80 microframes
+Jan 20 15:20:46 mtevans kernel: [  313.805349] input: Metadot - Das Keyboard Das Keyboard as /devices/pci0000:00/0000:00:1c.4/0000:03:00.0/usb5/5-1/5-1.4/5-1.4:1.0/0003:24F0:0140.0009/input/input25
+Jan 20 15:20:46 mtevans kernel: [  313.858827] hid-generic 0003:24F0:0140.0009: input,hidraw2: USB HID v1.10 Keyboard [Metadot - Das Keyboard Das Keyboard] on usb-0000:03:00.0-1.4/input0
+Jan 20 15:20:46 mtevans kernel: [  313.867856] input: Metadot - Das Keyboard Das Keyboard as /devices/pci0000:00/0000:00:1c.4/0000:03:00.0/usb5/5-1/5-1.4/5-1.4:1.1/0003:24F0:0140.000A/input/input26
+Jan 20 15:20:46 mtevans kernel: [  313.922710] hid-generic 0003:24F0:0140.000A: input,hidraw3: USB HID v1.10 Device [Metadot - Das Keyboard Das Keyboard] on usb-0000:03:00.0-1.4/input1
+Jan 20 15:20:46 mtevans mtp-probe: checking bus 5, device 5: "/sys/devices/pci0000:00/0000:00:1c.4/0000:03:00.0/usb5/5-1/5-1.4"
+Jan 20 15:20:46 mtevans mtp-probe: bus: 5, device: 5 was not an MTP device
+Jan 20 15:20:59 mtevans kernel: [  326.945810] usb 5-1: USB disconnect, device number 4
+Jan 20 15:20:59 mtevans kernel: [  326.945813] usb 5-1.4: USB disconnect, device number 5
+Jan 20 15:20:59 mtevans acpid: input device has been disconnected, fd 11
+Jan 20 15:21:00 mtevans kernel: [  327.276173] usb 6-1: USB disconnect, device number 3
+Jan 20 15:21:00 mtevans kernel: [  327.832450] usb 6-1: new SuperSpeed USB device number 4 using xhci_hcd
+Jan 20 15:21:00 mtevans kernel: [  328.093283] usb 6-1: New USB device found, idVendor=2109, idProduct=0812
+Jan 20 15:21:00 mtevans kernel: [  328.093285] usb 6-1: New USB device strings: Mfr=1, Product=2, SerialNumber=0
+Jan 20 15:21:00 mtevans kernel: [  328.093286] usb 6-1: Product: USB3.0 Hub             
+Jan 20 15:21:00 mtevans kernel: [  328.093287] usb 6-1: Manufacturer: VIA Labs, Inc.         
+Jan 20 15:21:00 mtevans kernel: [  328.094061] hub 6-1:1.0: USB hub found
+Jan 20 15:21:00 mtevans kernel: [  328.094406] hub 6-1:1.0: 4 ports detected
+Jan 20 15:21:01 mtevans kernel: [  328.200251] usb 5-1: new high-speed USB device number 6 using xhci_hcd
+Jan 20 15:21:01 mtevans kernel: [  328.332309] usb 5-1: New USB device found, idVendor=2109, idProduct=2812
+Jan 20 15:21:01 mtevans kernel: [  328.332311] usb 5-1: New USB device strings: Mfr=1, Product=2, SerialNumber=0
+Jan 20 15:21:01 mtevans kernel: [  328.332313] usb 5-1: Product: USB2.0 Hub             
+Jan 20 15:21:01 mtevans kernel: [  328.332314] usb 5-1: Manufacturer: VIA Labs, Inc.         
+Jan 20 15:21:01 mtevans kernel: [  328.332962] hub 5-1:1.0: USB hub found
+Jan 20 15:21:01 mtevans kernel: [  328.333553] hub 5-1:1.0: 4 ports detected
+Jan 20 15:21:01 mtevans kernel: [  328.624300] usb 5-1.4: new full-speed USB device number 7 using xhci_hcd
+Jan 20 15:21:01 mtevans kernel: [  328.733484] usb 5-1.4: New USB device found, idVendor=24f0, idProduct=0140
+Jan 20 15:21:01 mtevans kernel: [  328.733487] usb 5-1.4: New USB device strings: Mfr=1, Product=2, SerialNumber=0
+Jan 20 15:21:01 mtevans kernel: [  328.733488] usb 5-1.4: Product: Das Keyboard
+Jan 20 15:21:01 mtevans kernel: [  328.733489] usb 5-1.4: Manufacturer: Metadot - Das Keyboard
+Jan 20 15:21:01 mtevans kernel: [  328.733563] usb 5-1.4: ep 0x82 - rounding interval to 64 microframes, ep desc says 80 microframes
+Jan 20 15:21:01 mtevans kernel: [  328.739140] input: Metadot - Das Keyboard Das Keyboard as /devices/pci0000:00/0000:00:1c.4/0000:03:00.0/usb5/5-1/5-1.4/5-1.4:1.0/0003:24F0:0140.000B/input/input27
+Jan 20 15:21:01 mtevans kernel: [  328.792481] hid-generic 0003:24F0:0140.000B: input,hidraw2: USB HID v1.10 Keyboard [Metadot - Das Keyboard Das Keyboard] on usb-0000:03:00.0-1.4/input0
+Jan 20 15:21:01 mtevans kernel: [  328.801531] input: Metadot - Das Keyboard Das Keyboard as /devices/pci0000:00/0000:00:1c.4/0000:03:00.0/usb5/5-1/5-1.4/5-1.4:1.1/0003:24F0:0140.000C/input/input28
+Jan 20 15:21:01 mtevans kernel: [  328.856392] hid-generic 0003:24F0:0140.000C: input,hidraw3: USB HID v1.10 Device [Metadot - Das Keyboard Das Keyboard] on usb-0000:03:00.0-1.4/input1
+Jan 20 15:21:01 mtevans mtp-probe: checking bus 5, device 7: "/sys/devices/pci0000:00/0000:00:1c.4/0000:03:00.0/usb5/5-1/5-1.4"
+Jan 20 15:21:01 mtevans mtp-probe: bus: 5, device: 7 was not an MTP device
