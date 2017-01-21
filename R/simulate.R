@@ -1,5 +1,5 @@
 
-#' simulate_pulsets
+#' simulate_pulse
 #'
 #'
 #'   Simulates hormone concentration per minute for 1 subject.
@@ -11,10 +11,11 @@
 #'   parms_list (see function code for naming scheme).
 #'
 #'
-#' @param parms_list Named vector of parameters: T, t, vare, ipi_mean, ipi_var,
-#' ipi_min, mua, sda, muw, and sdw are required.  Either muh and varh or
-#' constant.halflife must be specified.  Same for mub and varb or
-#' constant_baseline.
+#' @param num_of_observations Number of observations to simulate.  Duration of
+#'        observation window equals num_of_observations times sampling
+#'        interval.
+#' @param sampling_interval Time between observations, typically 6-10 minutes.
+#' @param error_var Variance of the error added at each observation, ~ N(0, sqrt(error_var)).
 #' @param ipi_mean Mean number of sampling units between pulses
 #' @param ipi_var Variance of gamma for drawing interpulse interval
 #' @param ipi_min Minimum number of units between pulses
@@ -34,27 +35,25 @@
 #' non-null.
 #' @export
 #' @keywords pulse simulation
-#' simulate_pulsets()
-simulate_pulsets <- function(num_of_samples    = 144,
-                             sampling_interval = 10,
-                             error_var         = 0.005,
-                             ipi_mean          = 12,
-                             ipi_var           = 40,
-                             ipi_min           = 4,
-                             mass_mean         = 1.25,
-                             mass_sd           = 0.50,
-                             width_mean        = 3.50,
-                             width_sd          = 0.50,
-                             halflife_mean     = NULL,
-                             halflife_var      = NULL,
-                             baseline_mean     = NULL,
-                             baseline_var      = NULL,
-                             constant_halflife = 2.6,
-                             constant_baseline = 45) {
+#' simulate_pulse()
+simulate_pulse <- function(num_of_observations = 144,
+                           sampling_interval   = 10,
+                           error_var           = 0.005,
+                           ipi_mean            = 12,
+                           ipi_var             = 40,
+                           ipi_min             = 4,
+                           mass_mean           = 1.25,
+                           mass_sd             = 0.50,
+                           width_mean          = 3.50,
+                           width_sd            = 0.50,
+                           halflife_mean       = NULL,
+                           halflife_var        = NULL,
+                           baseline_mean       = NULL,
+                           baseline_var        = NULL,
+                           constant_halflife   = 2.6,
+                           constant_baseline   = 45) {
 
-    #Call <- match.call()
 
-    
     #---------------------------------------
     # Calculate parameters from input params
     #
@@ -77,7 +76,7 @@ simulate_pulsets <- function(num_of_samples    = 144,
     H      <- 0     # Decay rate (in terms of half-life)
     tau    <- rep(0, 25) # 
     ysim   <- vector(mode = "numeric", 
-                     length = length(seq(10, (num_of_samples * sampling_interval),
+                     length = length(seq(10, (num_of_observations * sampling_interval),
                                          sampling_interval)))
     
     
@@ -87,7 +86,7 @@ simulate_pulsets <- function(num_of_samples    = 144,
     #---------------------------------------
     # Normal CDF 
     erfFn <- function(x){
-    	    y <- 2 * stats::pnorm(x * sqrt(2), 0, 1) - 1
+    	    y <- 2 * pnorm(x * sqrt(2), 0, 1) - 1
     	    y
     	}
     
@@ -113,7 +112,7 @@ simulate_pulsets <- function(num_of_samples    = 144,
     # Get subject specific parameters
     if (is.null(constant_baseline)) {
         while(B <= 0){
-            B <- stats::rnorm(1, baseline_mean, sqrt(baseline_var))
+            B <- rnorm(1, baseline_mean, sqrt(baseline_var))
         }
     } else {
         B <- constant_baseline
@@ -123,7 +122,7 @@ simulate_pulsets <- function(num_of_samples    = 144,
     #   H is half-life, H=ln(2)/lambda_x, where lambda_x is the decay constant
     if (is.null(constant_halflife)) {
         while(H <= 8){
-            H <- stats::rnorm(1, halflife_mean, sqrt(halflife_var))
+            H <- rnorm(1, halflife_mean, sqrt(halflife_var))
         }
     } else {
         # set constant half-life if 
@@ -137,18 +136,18 @@ simulate_pulsets <- function(num_of_samples    = 144,
     # pulse location vector - max 25 pulses per day
     tau <- rep(0, 25)
     # generate initial pulse location
-    tau[1] <- sampling_interval * (stats::rgamma(1, alpha, beta) - 10)
+    tau[1] <- sampling_interval * (rgamma(1, alpha, beta) - 10)
     
     # generate i+1, i+2,... pulse locations
     i <- 1
-    while (tau[i] < (num_of_samples * sampling_interval)){
+    while (tau[i] < (num_of_observations * sampling_interval)){
     	  i      <- i + 1
-    	  tmp    <- ipi_min + stats::rgamma(1, alpha, beta)
+    	  tmp    <- ipi_min + rgamma(1, alpha, beta)
     	  tau[i] <- tau[i-1] + (sampling_interval * tmp)
     }
     
     # reduce pulse location vector to values within time range (<0, 1440)
-    tau <- subset(tau, tau < (num_of_samples * sampling_interval))
+    tau <- subset(tau, tau < (num_of_observations * sampling_interval))
     tau <- subset(tau, tau != 0)
     np  <- length(tau) # No. of pulses - length of vector of pulse locations
                        #    w/in time range
@@ -160,17 +159,17 @@ simulate_pulsets <- function(num_of_samples    = 144,
     # storage vectors for pulse-specific parms
     A     <- rep(0, np)             # pulse mass
     s2p   <- rep(0, np)             # pulse width
-    taxis <- seq(10, (num_of_samples * sampling_interval), sampling_interval)
+    taxis <- seq(10, (num_of_observations * sampling_interval), sampling_interval)
     # time axis 144*10
     ytmp  <- rep(0, length(taxis))  # hormone concentration
     
     # Generate parameters
     for (i in 1:np) {
         #while (A[i] <= 0) {
-            A[i] <- exp(stats::rnorm(1, mass_mean, mass_sd))
+            A[i] <- exp(rnorm(1, mass_mean, mass_sd))
         #}
         #while (s2p[i] <= 0) {
-            s2p[i] <- exp(stats::rnorm(1, mass_mean, mass_sd))
+            s2p[i] <- exp(rnorm(1, width_mean, width_sd))
         #}
         # Truncated T /gamma normal mixture
         #kappa1 = rgamma(1, 2, 2)
@@ -189,7 +188,7 @@ simulate_pulsets <- function(num_of_samples    = 144,
 
     # Draw mean concentration
     for (i in 1:np) {
-       ytmp   <- ytmp + meanI(seq(10, (num_of_samples*sampling_interval),
+       ytmp   <- ytmp + meanI(seq(10, (num_of_observations*sampling_interval),
                                   sampling_interval), 0, A[i],
                               tau[i], log(2) / H, s2p[i])
     }
@@ -213,14 +212,21 @@ simulate_pulsets <- function(num_of_samples    = 144,
     #error_var <- mean(ysim) * error_var
 
     # Generate and add random noise on log scale
-    errors    <- stats::rnorm((length(taxis)), 0, sqrt(error_var))
+    errors    <- rnorm((length(taxis)), 0, sqrt(error_var))
     ysimerror <- ysim * exp(errors)
     ysim_df   <- cbind("observation"   = 1:length(taxis),
                        "time"          = taxis,
-                       "concentration" = ysimerror) 
+                       "concentration" = ysimerror)
     ysim_df   <- tibble::as_data_frame(ysim_df)
 
-    return(list("pulse_data" = ysim_df, "pulse_parms" = allpulseparms))
+    #---------------------------------------
+    # Create return object
+    #---------------------------------------
+    rtn <- structure(list("pulse_data" = ysim_df, "pulse_parms" = allpulseparms),
+                     class = "pulse_sim")
+
+
+    return(rtn)
 
 }
 
