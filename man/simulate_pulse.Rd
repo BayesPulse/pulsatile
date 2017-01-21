@@ -2,24 +2,24 @@
 % Please edit documentation in R/simulate.R
 \name{simulate_pulse}
 \alias{simulate_pulse}
-\title{simulate_pulse}
+\title{Simulate pulsatile hormone data}
 \usage{
 simulate_pulse(num_of_observations = 144, sampling_interval = 10,
   error_var = 0.005, ipi_mean = 12, ipi_var = 40, ipi_min = 4,
-  mass_mean = 1.25, mass_sd = 0.5, width_mean = 3.5, width_sd = 0.5,
+  mass_mean = 3.5, mass_sd = 1.6, width_mean = 35, width_sd = 5,
   halflife_mean = NULL, halflife_var = NULL, baseline_mean = NULL,
-  baseline_var = NULL, constant_halflife = 2.6, constant_baseline = 45)
+  baseline_var = NULL, constant_halflife = 45, constant_baseline = 2.6)
 }
 \arguments{
 \item{num_of_observations}{Number of observations to simulate.  Duration of
-observation window equals num_of_observations times sampling
-interval.}
+observation window equals \code{num_of_observations} times
+\code{sampling_interval}.}
 
 \item{sampling_interval}{Time between observations, typically 6-10 minutes.}
 
 \item{error_var}{Variance of the error added at each observation, ~ N(0, sqrt(error_var)).}
 
-\item{ipi_mean}{Mean number of sampling units between pulses}
+\item{ipi_mean}{Mean number of sampling units between pulses (mean inter-pulse interval).}
 
 \item{ipi_var}{Variance of gamma for drawing interpulse interval}
 
@@ -41,25 +41,32 @@ interval.}
 
 \item{baseline_var}{Variance of baseline}
 
-\item{constant_halflife}{To use a constant (specified) half-life, set this to
-a constant [0,inf). Mean and variance of half-life are not used if this is
-non-null.}
+\item{constant_halflife}{To use a constant (specified) half-life, set this
+to a constant [0,inf). Mean and variance of half-life are not used if this
+is non-null.}
 
 \item{constant_baseline}{To use a constant (specified) baseline, set this to
 a constant [0,inf). Mean and variance of baseline are not used if this is
 non-null.}
 }
-\description{
-Simulates hormone concentration per minute for 1 subject.
+\value{
+A object of class \code{pulse_sim} containing time-series dataset
+  and dataset of characteristics of each pulse
 }
-\details{
-Pulse simulation function adapted from Ken Horton by reducing to single
-  subject, restructuring, and commenting. Ken's originally titled "subject
-  model sim aim1 mua.R". You have two options for passing arguments: 1)
-  specify arguments individually or 2) pass a named vector of parameters to
-  parms_list (see function code for naming scheme).
+\description{
+\code{\link{simulate_pulse}} simulates a time series dataset
+  representing blood concentration measurements of a pulsatile hormone. Both
+  the time series and a dataset of the individual pulse characteristics are
+  returned.
+}
+\examples{
+this_pulse <- simulate_pulse()
+str(this_pulse)
+plot(x = this_pulse$pulse_data$time, 
+     y = this_pulse$pulse_data$concentration,
+     type = 'line')
+# Add this -> summary(this_pulse)
 }
 \keyword{pulse}
-\keyword{simulate_pulse()}
 \keyword{simulation}
 

@@ -21,8 +21,9 @@ devtools::install("../pulsatile", build_vignettes = TRUE)
 library(pulsatile)
 #data(simpulse_reference001)
 
-sim <- simulate_pulse()
-dat <- sim$pulse_data
+this_pulse <- simulate_pulse()
+ggplot(this_pulse$pulse_data, aes(x = time, y = concentration)) +
+  geom_path()
 
 # Replace by above^
 # Read in dataset
@@ -132,3 +133,19 @@ object.size(test1)
 object.size(test2)
 
 
+
+
+
+# check new vs old simulation function
+source("R/new_simulate.R")
+source("R/simulate.R")
+set.seed(999)
+after <- simulate_pulse()
+set.seed(999)
+before <- simulate_pulse()
+
+identical(new_simulate_pulse, simulate_pulse)
+identical(after$pulse_data, before$pulse_data)
+identical(after$pulse_parms, before$pulse_parms)
+dplyr::full_join(after$pulse_data, before$pulse_data, by = c("observation", "time"))
+cbind(after$pulse_parms, before$pulse_parms)
