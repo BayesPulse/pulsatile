@@ -5,12 +5,13 @@
 #options(scipen = 99)
 setwd("~/Projects/Rpackages/pulsatile/")
 
-#library(dplyr)
+library(dplyr)
 #library(tidyr)
 #library(pryr)
 library(devtools)
 library(roxygen2)
-#library(ggplot2)
+library(ggplot2)
+library(magrittr)
 #library(ggthemes)
 #theme_set(theme_tufte())
 
@@ -47,7 +48,7 @@ n_thin  <- 1
 
 start_time <- proc.time()
 set.seed(999999)
-fit_round1 <- fit_pulse(data           = sim$pulse_data,
+fit_round1 <- fit_pulse(data           = this_pulse$pulse_data,
                         iterations     = n_iters,
                         thin           = n_thin,
                         pulse_spec_obj = model_spec)
@@ -56,7 +57,7 @@ time_round1 <- (stop_time - start_time)/60
 
 start_time <- proc.time()
 set.seed(999999)
-fit_round2 <- fit_pulse(data           = sim$pulse_data,
+fit_round2 <- fit_pulse(data           = this_pulse$pulse_data,
                         iterations     = n_iters,
                         thin           = n_thin,
                         pulse_spec_obj = model_spec)
@@ -65,7 +66,7 @@ time_round2 <- (stop_time - start_time)/60
 
 start_time <- proc.time()
 set.seed(999999)
-fit_strauss <- fit_pulse(data           = sim$pulse_data,
+fit_strauss <- fit_pulse(data           = this_pulse$pulse_data,
                          iterations     = n_iters,
                          thin           = n_thin,
                          pulse_spec_obj = model_spec_strauss)
@@ -137,10 +138,10 @@ object.size(test2)
 
 
 # check new vs old simulation function
-source("R/new_simulate.R")
 source("R/simulate.R")
+source("../simulate.R")
 set.seed(999)
-after <- simulate_pulse()
+after <- new_simulate_pulse()
 set.seed(999)
 before <- simulate_pulse()
 

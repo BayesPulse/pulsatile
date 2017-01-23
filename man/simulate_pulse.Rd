@@ -64,8 +64,10 @@ this_pulse <- simulate_pulse()
 str(this_pulse)
 plot(x = this_pulse$pulse_data$time, 
      y = this_pulse$pulse_data$concentration,
-     type = 'line')
+     type = 'l')
 # Add this -> summary(this_pulse)
+# Add this -> plot()
+# Add this -> print()
 }
 \keyword{pulse}
 \keyword{simulation}

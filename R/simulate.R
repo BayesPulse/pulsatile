@@ -41,7 +41,7 @@
 #' # Add this -> plot()
 #' # Add this -> print()
 #' @export
-new_simulate_pulse <- function(num_of_observations = 144,
+simulate_pulse <- function(num_of_observations = 144,
                            sampling_interval   = 10,
                            error_var           = 0.005,
                            ipi_mean            = 12,
