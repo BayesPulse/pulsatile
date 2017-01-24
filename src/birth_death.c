@@ -23,8 +23,6 @@
 // Global variable definitions:
 //      fitstart - The first time in hours that a pulse may occur
 //      fitend   - The last time in hours that a pulse may occur
-//      mmm      - Order statistic used for distribution of pulse locations.
-//                 This is assigned in deconvolution_main.c and is typically 3
 // 
 //-----------------------------------------------------------------------------
 
@@ -44,7 +42,6 @@
 // Global variable definitions 
 extern double fitstart;
 extern double fitend;
-extern int mmm;
 
 
 
@@ -80,6 +77,7 @@ void birth_death(Node_type *list,
                  double *likeli, 
                  //unsigned long *seed, 
                  int iter, 
+                 int strauss,
                  Priors *priors) 
 {
 
@@ -118,7 +116,7 @@ void birth_death(Node_type *list,
   tmp = (double *)calloc(2, sizeof(double));
 
   // If Strauss, calculate instantaneous birth rate and prior intensity
-  if (priors->gamma >= -0.001) {
+  if (strauss == 1) {
     birth_rate      = Birth_rate/(fitend-fitstart);
     pulse_intensity = parms->nprior/(fitend-fitstart);
   } 
@@ -156,14 +154,14 @@ void birth_death(Node_type *list,
 
     // Calculate death rate
     death_rate = NULL;
-    if (priors->gamma > -0.001) {
+    if (strauss == 1) {
       death_rate = calc_death_rate_strauss(list, num_node, partial_likelihood,
                                            full_likelihood, birth_rate,
                                            pulse_intensity, priors);
     } else {
       death_rate = calc_death_rate_os(list, num_node, partial_likelihood,
                                       full_likelihood, Birth_rate, 
-                                      parms->nprior);
+                                      parms->nprior, priors->orderstat);
     }
 
 
@@ -247,7 +245,7 @@ void birth_death(Node_type *list,
       int accept_pos = 1;
 
       // If using Strauss prior, run accept/reject for new position
-      if (priors->gamma > -0.001) {
+      if (strauss == 1) {
         sum_s_r    = calc_sr_strauss(position, list, list, priors);
         papas_cif  = pulse_intensity * pow(priors->gamma, sum_s_r);
         b_ratio    = papas_cif / birth_rate;
@@ -475,6 +473,8 @@ double likelihood(Node_type *list, double **ts, Common_parms *parms, int N,
 //     double full_likelihood     - Value of the full likelihood
 //     double Birth_rate          - Value of the birth rate
 //     double r                   - Prior on pulse count (parms->nprior)
+//     int mmm                    - Order stat to use for prior on location
+//                                  (priors->orderstat)
 // 
 //   RETURNS:
 //     death_rate                 - Vector where the ith element represents 
@@ -486,7 +486,8 @@ double *calc_death_rate_os(Node_type *list,
                            double *partial_likelihood, 
                            double full_likelihood, 
                            double Birth_rate, 
-                           double r) {
+                           double r,
+                           int mmm) {
 
   int i;              // Generic counter
   int j;              // Generic counter

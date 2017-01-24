@@ -2,69 +2,123 @@
 # Testing getting data to the C functions
 #
 #-------------------------------------------------------------------------------
-options(scipen = 99)
+#options(scipen = 99)
 setwd("~/Projects/Rpackages/pulsatile/")
-library(readr)
+
 library(dplyr)
 library(tidyr)
-library(pryr)
+#library(pryr)
 library(devtools)
 library(roxygen2)
 library(ggplot2)
-library(ggthemes)
-theme_set(theme_tufte())
+library(magrittr)
+#library(ggthemes)
+#theme_set(theme_tufte())
 
-document()
-install("../pulsatile")
+devtools::document()
+devtools::check()
+devtools::install("../pulsatile", build_vignettes = TRUE)
 
 library(pulsatile)
 
-# Read in dataset
-dat <- read_delim("test/pulse_reference_001.dat", delim = " ") %>% tbl_df %>%
-  select(-observation)
+set.seed(9999)
+this_pulse <- simulate_pulse()
+model_spec <- pulse_spec(location_prior_type = "order-statistic")
+fit_test   <- fit_pulse(.data = this_pulse, iters = 5000, thin = 50,
+                        spec = model_spec)
+str(fit_test)
+plot(this_pulse)
+# will add summary and print s3 methods
+#summary(this_pulse)
+#this_pulse()
 
-model_spec <- pulse_spec(.data = dat, iterations = 10000, thin = 1)
-model_spec
 
-# Test C functions
-#show_args(.data = dat)
+##############################
+# Various prior parameter sets to fit model with
+##############################
+model_spec <- pulse_spec(location_prior_type = "order-statistic")
+model_spec_strauss <- pulse_spec(location_prior_type  = "strauss",
+                                 prior_location_range = 40,
+                                 prior_location_gamma = 0)
+
 
 #
 # ---- Simple test for repeatable results ---- 
 #
+n_iters <- 250000
+n_thin  <- 50
+
 start_time <- proc.time()
 set.seed(999999)
-fit_round1 <- fit_pulse(model_spec)
+fit_round1 <- fit_pulse(.data = this_pulse,
+                        iters = n_iters,
+                        thin  = n_thin,
+                        spec  = model_spec)
 stop_time <- proc.time()
 time_round1 <- (stop_time - start_time)/60
 
 start_time <- proc.time()
 set.seed(999999)
-fit_round2 <- fit_pulse(model_spec)
+fit_round2 <- fit_pulse(.data = this_pulse,
+                        iters = n_iters,
+                        thin  = n_thin,
+                        spec  = model_spec)
 stop_time <- proc.time()
 time_round2 <- (stop_time - start_time)/60
 
-all(fit_round1[[1]] == fit_round2[[1]])#[1:1000, ]
+start_time <- proc.time()
+set.seed(999999)
+fit_strauss <- fit_pulse(.data = this_pulse,
+                         iters = n_iters,
+                         thin  = n_thin,
+                         spec  = model_spec_strauss)
+stop_time <- proc.time()
+time_round3 <- (stop_time - start_time)/60
+
+
+
+########################################
+# Compare results
+########################################
+all(fit_round1[[3]] == fit_round2[[3]])
+all(fit_round1[[4]] == fit_round2[[4]])
 time_round1 == time_round2
 
-(fit_round1[[1]] == fit_round2[[1]])[491:512, ]
-(fit_round1[[2]][[502]] == fit_round2[[2]][[502]])
+
+########################################
+# Sanity check on pulse count
+########################################
+hist(fit_round1$common_chain$num_pulses) 
+hist(fit_round2$common_chain$num_pulses) 
+hist(fit_strauss$common_chain$num_pulses) 
+# NOTE: Somethings up with the birth-death process.  Think it started with the
+# addition of the location_prior_type option in pulse_spec() and in C code.
+
+########################################
+# Check Strauss 
+########################################
+all((fit_round1[[3]] == fit_strauss[[3]]))
+# min. distance between locations should be approx, but > 40
+fit_strauss$pulse_chain %>% 
+  group_by(iteration) %>%
+  mutate(distance = location - lag(location, k = 1)) %>%
+  ungroup %>% with(., min(distance, na.rm=T))
 
 
 
+########################################
+# Visualize results
+########################################
 
-
-
-pulses <- fit[[2]] %>% do.call(rbind, .) %>% as.data.frame %>% tbl_df  
-common <- fit[[1]] %>% as.data.frame %>% tbl_df %>% mutate(iteration = 1:n()) %>% select(iteration, everything())
+pulses <- fit_round1$pulse_chain # %>% do.call(rbind, .) %>% as.data.frame %>% tbl_df  
+common <- fit_round1$common_chain # %>% as.data.frame %>% tbl_df %>% mutate(iteration = 1:n()) %>% select(iteration, everything())
 
 timeseries <- 
   ggplot() +
-    geom_path(data = dat, aes(x = time, y = concentration)) +
+    geom_path(data = fit_round1$data, aes(x = time, y = concentration)) 
 
 location_hist <- 
-  ggplot() +
-  geom_histogram(data = pulses, aes(x = location, y = ..density..))
+  ggplot() + geom_histogram(data = as.data.frame(pulses), aes(x = location, y = ..density..))
 
 traceplots <- 
   common %>% gather(key = parameter, value = value, -iteration) %>%
@@ -73,3 +127,30 @@ traceplots <-
     facet_wrap(~ parameter, ncol = 3, scales = "free")
 
 
+########################################
+# inspect object size 
+########################################
+# comparing matrix to data frame to tibble
+object.size(pulses)
+test1 <- as.data.frame(pulses)
+test2 <- as_data_frame(test1)
+object.size(test1)
+object.size(test2)
+
+
+
+
+
+# check new vs old simulation function
+source("R/simulate.R")
+source("../simulate.R")
+set.seed(999)
+after <- new_simulate_pulse()
+set.seed(999)
+before <- simulate_pulse()
+
+identical(new_simulate_pulse, simulate_pulse)
+identical(after$pulse_data, before$pulse_data)
+identical(after$pulse_parms, before$pulse_parms)
+dplyr::full_join(after$pulse_data, before$pulse_data, by = c("observation", "time"))
+cbind(after$pulse_parms, before$pulse_parms)

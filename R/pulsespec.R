@@ -9,11 +9,13 @@
 #' fitting a fit_pulse model.
 #'   
 #' 
-#' @param .data Time-series of hormone concentration data
-#' @param iterations Number of iterations to run MCMC_
-#' @param model Model type to fit. One of "single-series", "population",
-#' "single-series associational", "population associational".
-#' @param thin Keep every 'thin' sample
+#' @param location_prior_type Takes on two values: "order-statistic" and
+#' "strauss". "order-statistic" uses every third order statistic of a Uniform
+#' distribution for the pulse location prior and requires specification of the
+#' prior parameter for mean pulse count ("prior_mean_pulse_count").
+#' "strauss" uses the Strauss interacting point-process as a prior and requires
+#' specification of "prior_mean_pulse_count", "prior_location_gamma", and
+#' "prior_location_range".
 #' @param prior_mass_mean mass mean hyperparm
 #' @param prior_mass_var mass variance hyperparm
 #' @param prior_width_mean width mean hyperparm
@@ -47,11 +49,7 @@
 #' @keywords pulse simulation
 #' pulse_spec()
 pulse_spec <-
-  function(.data,
-           iterations = 2500,
-           model      = c("single-series"), #, "population", "single-series
-                     #associational", "population associational"),
-           thin       = 50,
+  function(location_prior_type = c("order-statistic", "strauss"),
            prior_mass_mean        = 1.50,
            prior_mass_var         = 10,
            prior_width_mean       = 3.5,
@@ -62,8 +60,8 @@ pulse_spec <-
            prior_halflife_var     = 100,
            prior_error_alpha      = 0.0001,
            prior_error_beta       = 0.0001,
-           prior_location_gamma   = 0,
-           prior_location_range   = 40,
+           prior_location_gamma   = NULL,
+           prior_location_range   = NULL,
            prior_max_sd_mass      = 10,
            prior_max_sd_width     = 10,
            prior_mean_pulse_count = 12,
@@ -83,16 +81,44 @@ pulse_spec <-
            pv_pulse_location      = 10) 
   {
 
+    # TODO: Research better ways to do this range/valid-value checking.  Pretty
+    # much all of the args need it.
+    location_prior_type <- match.arg(location_prior_type)
+    if (length(location_prior_type) > 1L) 
+      stop(paste("location_prior_type is a required argument -- choose",
+                 "'order-statistic' or 'strauss'"))
+    if (prior_mean_pulse_count <= 0)
+      stop(paste("prior_mean_pulse_count must be > 0."))
+
+    if (location_prior_type == "strauss") {
+
+      strauss <- 1
+      if (is.null(prior_location_gamma) | is.null(prior_location_range)) 
+        stop(paste("prior_location_gamma and prior_location_range are required",
+                   "arguments when location_prior_type == 'strauss'"))
+      if (prior_location_gamma < 0 | prior_location_gamma > 1) 
+        stop(paste("Invalid value for argument 'prior_location_gamma'; should",
+                   "be in [0,1]"))  
+      if (prior_location_range < 0)
+        stop(paste("Invalid value for argument 'prior_location_range'; should",
+                   "be >= 0"))  
+
+    } else {
+
+      strauss <- 0
+      if (!is.null(prior_location_gamma) | !is.null(prior_location_range))
+        message(paste("When location_prior_type is set to 'order-statistic'",
+                      "prior_location_gamma and prior_location_range are not used."))  
+
+    }
+
     # Structure for single-subject, strauss prior model.
     # NOTE: sv's use std dev, while priors use variances (want this consistent
     # for any reason?)
     # NOTE: need more clear label for max_sd's 
     ps_obj <- 
       structure(
-        list(model = list(model      = model, 
-                          iterations = iterations, 
-                          data       = .data,
-                          thin       = thin),
+        list(strauss_location_prior = strauss,
              priors = list(pulse_mass     = list(mean  = prior_mass_mean,
                                                  var   = prior_mass_var),
                            pulse_width    = list(mean  = prior_width_mean,

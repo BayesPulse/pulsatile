@@ -6,3 +6,5 @@
 ..Rcheck
 .gitignore
 temp/
+test/
+README.Rmd

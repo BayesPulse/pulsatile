@@ -4,10 +4,10 @@
 \name{pulsatile}
 \alias{pulsatile}
 \alias{pulsatile-package}
-\title{Pulsatile package documentation
-… bla bla …}
+\title{Pulsatile package documentation}
 \description{
-Pulsatile package documentation
-… bla bla …
+Bayesian deconvolution model for the analysis of time-series of
+pulsatile hormone data. See the help files for the primary functions
+pulse_spec() and fit_pulse().
 }
 

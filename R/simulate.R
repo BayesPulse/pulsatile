@@ -1,220 +1,235 @@
 
-#' simulate_pulsets
+#' Simulate pulsatile hormone data
+#' 
+#' @description \code{\link{simulate_pulse}} simulates a time series dataset
+#'   representing blood concentration measurements of a pulsatile hormone. Both
+#'   the time series and a dataset of the individual pulse characteristics are
+#'   returned. 
 #'
-#'
-#'   Simulates hormone concentration per minute for 1 subject.
-#'
-#'   Pulse simulation function adapted from Ken Horton by reducing to single
-#'   subject, restructuring, and commenting. Ken's originally titled "subject
-#'   model sim aim1 mua.R". You have two options for passing arguments: 1)
-#'   specify arguments individually or 2) pass a named vector of parameters to
-#'   parms_list (see function code for naming scheme).
-#'
-#'
-#' @param parms_list Named vector of parameters: T, t, vare, ipimean, ipivar,
-#' ipimin, mua, sda, muw, and sdw are required.  Either muh and varh or
-#' constant.halflife must be specified.  Same for mub and varb or
-#' constant_baseline.
-#' @export
+#' @param num_obs Number of observations to simulate.  Duration of observation
+#'    window equals \code{num_obs} times \code{interval}.
+#' @param interval Time between observations, typically 6-10 minutes.
+#' @param error_var Variance of the error added at each observation, ~ N(0, sqrt(error_var)).
+#' @param ipi_mean Mean number of sampling units between pulses (mean inter-pulse interval).
+#' @param ipi_var Variance of gamma for drawing interpulse interval
+#' @param ipi_min Minimum number of units between pulses
+#' @param mass_mean Mean pulse mass
+#' @param mass_sd Standard deviation of pulse mass
+#' @param width_mean Mean pulse width
+#' @param width_sd Standard deviation of pulse width
+#' @param halflife_mean Mean of half-life
+#' @param halflife_var Variance of half-life
+#' @param baseline_mean Mean of baseline
+#' @param baseline_var Variance of baseline
+#' @param constant_halflife To use a constant (specified) half-life, set this
+#'   to a constant [0,inf). Mean and variance of half-life are not used if this
+#'   is non-null.
+#' @param constant_baseline To use a constant (specified) baseline, set this to
+#'   a constant [0,inf). Mean and variance of baseline are not used if this is
+#'   non-null.
+#' @return A object of class \code{pulse_sim} containing time-series dataset
+#'   and dataset of characteristics of each pulse
+#' @seealso print.pulse_sim, plot.pulse_sim
 #' @keywords pulse simulation
-#' simulate_pulsets()
-simulate_pulsets <- function(parms_list) {
-    
+#' @examples
+#' this_pulse <- simulate_pulse()
+#' str(this_pulse)
+#' plot(this_pulse)
+#' @export
+simulate_pulse <- function(num_obs           = 144,
+                           interval          = 10,
+                           error_var         = 0.005,
+                           ipi_mean          = 12,
+                           ipi_var           = 40,
+                           ipi_min           = 4,
+                           mass_mean         = 3.5,
+                           mass_sd           = 1.6,
+                           width_mean        = 35,
+                           width_sd          = 5,
+                           halflife_mean     = NULL,
+                           halflife_var      = NULL,
+                           baseline_mean     = NULL,
+                           baseline_var      = NULL,
+                           constant_halflife = 45,
+                           constant_baseline = 2.6) {
 
-    # Handle vector of parameters
-    if (!is.null(parms_list)){
-        T       = parms_list[["T"]] # num. samples
-        t       = parms_list[["t"]] # sampling interval
-        vare    = parms_list[["vare"]]
-        ipimean = parms_list[["ipimean"]]
-        ipivar  = parms_list[["ipivar"]]
-        ipimin  = parms_list[["ipimin"]]
-        mua     = parms_list[["mua"]]
-        sda    = parms_list[["sda"]]
-        muw     = parms_list[["muw"]]
-        sdw    = parms_list[["sdw"]]
-        if (!is.null(parms_list[["muh"]]) & !is.na(parms_list[["muh"]])) {
-            muh     = parms_list[["muh"]]
-            varh    = parms_list[["varh"]]
-            mub     = parms_list[["mub"]]
-            varb    = parms_list[["varb"]]
-        } else {
-            constant_halflife = parms_list[["constant_halflife"]]
-            constant_baseline = parms_list[["constant_baseline"]]
-        }
-    } else {
-      stop("parms_list argument NULL or invalid")
-
-    }
+  # Add default args to function call
+  args      <- formals(sys.function(sys.parent(1)))
+  this_call <- match.call()
+  indx      <- match(names(args), names(this_call)[-1], nomatch = 0)
+  this_call <- c(as.list(this_call), args[!indx])
+  this_call <- as.call(this_call)
 
 
-    
-    #---------------------------------------
-    # Calculate parameters from input params
-    #
-    #   Using a renewal process, define by interpulsatile interval and variance
-    #   then convert gamma parameters
-    # 
-    # mean = alpha / beta
-    # var = alpha / beta^2
-    #---------------------------------------
-    gammamean <- ipimean - ipimin
-    alpha     <- gammamean * gammamean / ipivar
-    beta      <- gammamean / ipivar
+  #---------------------------------------
+  # Helper functions for drawing hormone concentration (w/o error)
+  # Normal CDF 
+  erfFn <- function(x) 2 * stats::pnorm(x * sqrt(2), 0, 1) - 1
 
-    
-    
-    #---------------------------------------
-    # Create data structures for generated parameters
-    #---------------------------------------
-    B      <- 0     # Baseline concentration
-    H      <- 0     # Decay rate (in terms of half-life)
-    tau    <- rep(0, 25) # 
-    ysim   <- vector(mode = "numeric", length = length(seq(10,(T*t),t)))
-    
-    
-    #---------------------------------------
-    # Helper functions for drawing hormone 
-    #   concentration (w/o error)
-    #---------------------------------------
-    # Normal CDF 
-    erfFn <- function(x){
-    	    y <- 2 * stats::pnorm(x * sqrt(2), 0, 1) - 1
-    	    y
-    	}
-    
-    # Model concentation over time given pulse parameters  
-    # t = seq(10, 1440, by = 10)
-    # b = 0 baseline, added later
-    # a = pulse masses
-    # tau1 = pulse locations
-    # lam = decay rate (transformed from half-life)
-    # s2p = pulse widths
-    # NOTE: based on above and eqn, it looks to me like widths, half-life are on
-    # the minutes scale, not sampling units
-    meanI <- function(t, b, a, tau1, lam, s2p){
-    	    m <- b + (a / 2) * exp((tau1 - t) * lam + 0.5 * lam^2 * s2p) * 
-                 (1 + erfFn((t - (tau1 + lam * s2p)) / sqrt(2 * s2p)))
-    	    m
-    	}
-    
-    
-    #---------------------------------------
-    # Simulate subject-specific parameters
-    #---------------------------------------
-    # Get subject specific parameters
-    if (is.null(constant_baseline)) {
-        while(B <= 0){
-            B <- stats::rnorm(1, mub, sqrt(varb))
-        }
-    } else {
-        B <- constant_baseline
-    }
-    
-    # Sample for decay rate from normal given muh, varh 
-    #   H is half-life, H=ln(2)/lambda_x, where lambda_x is the decay constant
-    if (is.null(constant_halflife)) {
-        while(H <= 8){
-            H <- stats::rnorm(1, muh, sqrt(varh))
-        }
-    } else {
-        # set constant half-life if 
-        H <- constant_halflife
-    }
+  # Model concentration over time given pulse parameters  
+  meanI <- function(interval, b, a, tau1, lam, s2p){
+    b + (a / 2) * 
+      exp((tau1 - interval) * lam + 0.5 * lam^2 * s2p) * 
+      (1 + erfFn((interval - (tau1 + lam * s2p)) / sqrt(2 * s2p)))
+  }
 
-    
-    #---------------------------------------
-    # Simulate pulse locations
-    #---------------------------------------
-    # pulse location vector - max 25 pulses per day
-    tau <- rep(0, 25)
-    # generate initial pulse location
-    tau[1] <- t * (stats::rgamma(1, alpha, beta) - 10)
-    
-    # generate i+1, i+2,... pulse locations
-    i <- 1
-    while (tau[i] < (T * t)){
-    	  i      <- i + 1
-    	  tmp    <- ipimin + stats::rgamma(1, alpha, beta)
-    	  tau[i] <- tau[i-1] + (t * tmp)
-    }
-    
-    # reduce pulse location vector to values within time range (<0, 1440)
-    tau <- subset(tau, tau < (T * t))
-    tau <- subset(tau, tau != 0)
-    np  <- length(tau) # No. of pulses - length of vector of pulse locations
-                       #    w/in time range
-    
-    
-    #---------------------------------------
-    # Generate pulse-specific parameters 
-    #---------------------------------------
-    # storage vectors for pulse-specific parms
-    A     <- rep(0, np)             # pulse mass
-    s2p   <- rep(0, np)             # pulse width
-    taxis <- seq(10, (T*t), t)      # time axis 144*10
-    ytmp  <- rep(0, length(taxis))  # hormone concentration
-    
-    # Generate parameters
-    for (i in 1:np) {
-        #while (A[i] <= 0) {
-            A[i] <- exp(stats::rnorm(1, mua, sda))
-        #}
-        #while (s2p[i] <= 0) {
-            s2p[i] <- exp(stats::rnorm(1, muw, sdw))
-        #}
-        # Truncated T /gamma normal mixture
-        #kappa1 = rgamma(1, 2, 2)
-        #kappa2 = rgamma(1, 2, 2)
-        #tvar   = sda^2 / kappa1
-        #t2var  = sdw^2 / kappa2
+  #---------------------------------------
+  # Get baseline concentration
+  if (is.null(constant_baseline)) {
+    while(B <= 0) B <- stats::rnorm(1, baseline_mean, sqrt(baseline_var))
+  } else {
+    B <- constant_baseline
+  }
 
-        #while (A[i] < 0.25) {
-        #    A[i]   <- rnorm(1, mua, sqrt(tvar))
-        #}
+  #---------------------------------------
+  # Get half-life of hormone
+  #   H is half-life, H=ln(2)/lambda_x, where lambda_x is the decay constant
+  if (is.null(constant_halflife)) {
+    while(H <= 8) H <- stats::rnorm(1, halflife_mean, sqrt(halflife_var))
+  } else {
+    H <- constant_halflife
+  }
 
-        #while (s2p[i] < 0.5) {
-    	  #  s2p[i] <- rnorm(1, muw, sqrt(t2var))
-        #}
-    }
+  #---------------------------------------
+  # Generate pulse locations
+  #   Using a renewal process, define by interpulsatile interval and variance
+  #   then convert gamma parameters
+  # - mean = alpha / beta
+  # - var = alpha / beta^2
+  gammamean <- ipi_mean - ipi_min
+  alpha     <- gammamean * gammamean / ipi_var
+  beta      <- gammamean / ipi_var
 
-    # Draw mean concentration
-    for (i in 1:np) {
-       ytmp   <- ytmp + meanI(seq(10, (T*t), t), 0, A[i],
-                              tau[i], log(2) / H, s2p[i])
-    }
-    
-    # Create vector of pulse parameters 
-    allpulseparms <- cbind("pulse_no" = seq(1, np),
-                           "mass"     = A,
-                           "width"    = s2p,
-                           "location" = tau)
-    allpulseparms <- tibble::as_data_frame(allpulseparms)
-    
-    
-    #---------------------------------------
-    # Combine into final simulated data
-    #---------------------------------------
-    # Add baseline to generated hormone concentration
-    ysim <- ytmp + B
-    
-    # Two possible formulations of error variance
-    # first is using coefficient of variation, second is using explicit variance
-    #error_var <- mean(ysim) * vare
-    error_var <- vare
-    # Generate and add random noise on log scale
-    errors    <- stats::rnorm((length(taxis)), 0, sqrt(error_var))
-    ysimerror <- ysim * exp(errors)
-    ysim_df   <- cbind("observation"   = 1:length(taxis),
-                       "time"          = taxis,
-                       "concentration" = ysimerror) 
-    ysim_df   <- tibble::as_data_frame(ysim_df)
+  tau <- rep(0, 25)
+  tau[1] <- interval * (stats::rgamma(1, alpha, beta) - 10)
 
-    return(list("pulse_data" = ysim_df, "pulse_parms" = allpulseparms))
+  i <- 1
+  while (tau[i] < (num_obs * interval)){
+    i      <- i + 1
+    tmp    <- ipi_min + stats::rgamma(1, alpha, beta)
+    tau[i] <- tau[i-1] + (interval * tmp)
+  }
+
+  # Reduce pulse location vector to values within time range (<0, 1440)
+  tau <- subset(tau, tau < (num_obs * interval))
+  tau <- subset(tau, tau != 0)
+  np  <- length(tau) # No. of pulses 
+
+  #---------------------------------------
+  # Generate pulse-specific parameters 
+  A     <- rep(0, np)             # pulse mass
+  s2p   <- rep(0, np)             # pulse width
+  taxis <- seq(10, (num_obs * interval), interval)
+  ytmp  <- rep(0, length(taxis))  # hormone concentration
+
+  for (i in 1:np) {
+    # Log-normal 
+    #A[i]   <- exp(stats::rnorm(1, mass_mean, mass_sd))
+    #s2p[i] <- exp(stats::rnorm(1, width_mean, width_sd))
+
+    # Truncated T (via gamma normal mixture)
+    tvar  <- mass_sd^2  / stats::rgamma(1, 2, 2)        
+    t2var <- width_sd^2 / stats::rgamma(1, 2, 2)
+    while (A[i] < 0.25)   A[i]   <- stats::rnorm(1, mass_mean, sqrt(tvar))
+    while (s2p[i] < 0.5)  s2p[i] <- stats::rnorm(1, width_mean, sqrt(t2var))
+  }
+
+  #---------------------------------------
+  # Draw mean concentration
+  ytmp <- 0
+  for (i in 1:np) {
+    ytmp   <- ytmp + meanI(taxis, 0, A[i], tau[i], log(2) / H, s2p[i])
+  }
+  # Add baseline and error
+  ysim <- ytmp + B
+  errors    <- stats::rnorm((length(taxis)), 0, sqrt(error_var))
+  ysimerror <- ysim * exp(errors)
+
+  #---------------------------------------
+  # Combine into final simulated datasets
+  allpulseparms <- cbind("pulse_no" = seq(1, np),
+                         "mass"     = A,
+                         "width"    = s2p,
+                         "location" = tau)
+  allpulseparms <- tibble::as_data_frame(allpulseparms)
+
+  ysim_df   <- cbind("observation"   = 1:length(taxis),
+                     "time"          = taxis,
+                     "concentration" = ysimerror)
+  ysim_df   <- tibble::as_data_frame(ysim_df)
+
+  #---------------------------------------
+  # Create return object
+  rtn <- structure(list("call"  = this_call,
+                        "data"  = ysim_df, 
+                        "parmeters"  = allpulseparms),
+                   class = "pulse_sim")
+
+
+  return(rtn)
 
 }
 
 
+
+
+
+#' Plot a simulated pulsatile hormone time series.
+#' 
+#' @description \code{\link{plot.pulse_sim}} plots the time-series component of
+#' a \code{pulse_sim} object
+#'
+#' @param x An object of class \code{pulse_sim} resulting from the
+#'   \code{simulate_pulse()} function.
+#' @param ... Other arguments not used by this method.
+#' @return A ggplot2 plot of the \code{simulate_pulse} time-series dataset.
+#' @seealso simulate_pulse, print.pulse_sim, summary.pulse_sim
+#' @keywords pulse simulation
+#' @examples
+#' this_pulse <- simulate_pulse()
+#' plot(this_pulse)
+#' @export 
+plot.pulse_sim <- function(x, ...) {
+
+  ggplot2::ggplot(data = x$data) +
+    ggplot2::aes_string(x = 'time', y = 'concentration') +
+    ggplot2::geom_path()
+
+}
+
+
+
+
+# #' Summarizing simulated pulsatile hormone time series.
+# #' 
+# #' @description \code{\link{plot.pulse_sim}} summarizes the time-series component of
+# #' a \code{pulse_sim} object
+# #'
+# #' @param object An object of class \code{pulse_sim} resulting from the
+# #'   \code{simulate_pulse()} function.
+# #' @param ... Other arguments not used by this method.
+# #' @return Prints summary of the simulation
+# #' @seealso simulate_pulse, print.pulse_sim, print.pulse_sim 
+# #' @keywords pulse simulation
+# #' @examples
+# #' this_pulse <- simulate_pulse()
+# #' summary(this_pulse)
+# #' @export 
+# summary.pulse_sim <- function(object, ...) {
+# 
+#   true_vals <- as.list(stats::getCall(object))
+#   est_vals  <- 
+#   
+#   return(x)
+# 
+# }
+
+# #' @export 
+# print.pulse_sim <- function(x, ...) {
+#   print("\n\npulse_sim object\n")
+#   print("")
+#   invisible(x)
+# }
 
 
 #-------------------------------------------------------------------------------

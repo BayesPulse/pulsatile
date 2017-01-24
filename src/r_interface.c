@@ -17,46 +17,48 @@
 
 double fitstart; // First time a pulse can occur (10 min. increments).
 double fitend;   // Last time a pulse can occur (10 min. increments).
-double mmm = 3;
 
 
 //
 // read in arguments and data and convert to types for original decon code
 //
 SEXP decon_r_interface(SEXP indata,
-                 SEXP model,
-                 SEXP thin,
-                 SEXP iterations,
-                 SEXP prior_pulse_mass_mean,
-                 SEXP prior_pulse_mass_var,
-                 SEXP prior_pulse_width_mean,
-                 SEXP prior_pulse_width_var,
-                 SEXP prior_pulse_location_gamma,
-                 SEXP prior_pulse_location_range,
-                 SEXP prior_pulse_location_count,
-                 SEXP prior_max_sd_mass,
-                 SEXP prior_max_sd_width,
-                 SEXP prior_baseline_mean,
-                 SEXP prior_baseline_var,
-                 SEXP prior_halflife_mean,
-                 SEXP prior_halflife_var,
-                 SEXP prior_error_alpha,
-                 SEXP prior_error_beta,
-                 SEXP sv_pulse_mass_mean,
-                 SEXP sv_pulse_mass_sd,
-                 SEXP sv_pulse_width_mean,
-                 SEXP sv_pulse_width_sd,
-                 SEXP sv_baseline_mean,
-                 SEXP sv_halflife_mean,
-                 SEXP sv_error_var,
-                 SEXP pv_mean_pulse_mass,
-                 SEXP pv_mean_pulse_width,
-                 SEXP pv_pulse_mass,
-                 SEXP pv_pulse_width,
-                 SEXP pv_pulse_location,
-                 SEXP pv_baseline,
-                 SEXP pv_halflife
-                 ) {
+                       SEXP model,
+                       SEXP thin,
+                       //SEXP burnin,
+                       SEXP iterations,
+                       SEXP inverbose,
+                       SEXP strauss_location_prior,
+                       SEXP prior_pulse_mass_mean,
+                       SEXP prior_pulse_mass_var,
+                       SEXP prior_pulse_width_mean,
+                       SEXP prior_pulse_width_var,
+                       SEXP prior_pulse_location_gamma,
+                       SEXP prior_pulse_location_range,
+                       SEXP prior_pulse_location_count,
+                       SEXP prior_max_sd_mass,
+                       SEXP prior_max_sd_width,
+                       SEXP prior_baseline_mean,
+                       SEXP prior_baseline_var,
+                       SEXP prior_halflife_mean,
+                       SEXP prior_halflife_var,
+                       SEXP prior_error_alpha,
+                       SEXP prior_error_beta,
+                       SEXP sv_pulse_mass_mean,
+                       SEXP sv_pulse_mass_sd,
+                       SEXP sv_pulse_width_mean,
+                       SEXP sv_pulse_width_sd,
+                       SEXP sv_baseline_mean,
+                       SEXP sv_halflife_mean,
+                       SEXP sv_error_var,
+                       SEXP pv_mean_pulse_mass,
+                       SEXP pv_mean_pulse_width,
+                       SEXP pv_pulse_mass,
+                       SEXP pv_pulse_width,
+                       SEXP pv_pulse_location,
+                       SEXP pv_baseline,
+                       SEXP pv_halflife
+                       ) {
 
   //int i;
   double **ts; // Pointer to Nx2 matrix containing data
@@ -70,19 +72,22 @@ SEXP decon_r_interface(SEXP indata,
 
   // Algo arguments SEXP to C;
   long iters  = Rf_asInteger(iterations); 
-  long nthin = Rf_asInteger(thin);
-
+  int verbose = Rf_asInteger(inverbose); 
+  int nthin   = Rf_asInteger(thin);
+  int strauss = Rf_asInteger(strauss_location_prior);
+  //int nburnin  = Rf_asInteger(burnin);
+  
 
   //Print to check values
-  Rprintf("There are %d observations in the dataset.\n", nobs);
-  Rprintf("This data is of type (model arg not yet implemented).\n");
-  Rprintf("The algo was run for %ld iterations.\n", iters);
-  Rprintf("Every %ldth sample was saved in the output chain.\n", nthin);
-  // Read the time series into memory                          
-  Rprintf("And the first 10 obs of the dataset looks like this:\n");
-  for (int i = 0; i < 10; i++) {
-    Rprintf("time = %lf, conc = %lf\n", ts[i][0], ts[i][1]);
-  }
+  //Rprintf("There are %d observations in the dataset.\n", nobs);
+  //Rprintf("This data is of type (model arg not yet implemented).\n");
+  //Rprintf("The algo was run for %ld iterations.\n", iters);
+  //Rprintf("Every %ldth sample was saved in the output chain.\n", nthin);
+  //// Read the time series into memory                          
+  //Rprintf("And the first 10 obs of the dataset looks like this:\n");
+  //for (int i = 0; i < 10; i++) {
+  //  Rprintf("time = %lf, conc = %lf\n", ts[i][0], ts[i][1]);
+  //}
 
   fitend   = ts[nobs - 1][0] + ts[0][0] * 2; // search 2 units farther in time
   fitstart = -ts[0][0] * 4;                // search 4 units in the past
@@ -105,11 +110,12 @@ SEXP decon_r_interface(SEXP indata,
   priors->re_sdmax[1]    = Rf_asReal(prior_max_sd_width);     // priora2;
   priors->err_alpha      = Rf_asReal(prior_error_alpha);      // prioralpha;
   priors->err_beta       = Rf_asReal(prior_error_beta);       // priorbeta;
+  priors->orderstat      = 3;                                 // hard-coded;
   priors->gamma          = Rf_asReal(prior_pulse_location_gamma);   // priorgamma;
   priors->range          = Rf_asReal(prior_pulse_location_range);   // priorrange;
 
-  Rprintf("The fit start is %f and the fit end is at time %f\n", fitstart, fitend);
-  Rprintf("The prior on the baseline has mean %f and variance %f\n", priors->meanbh[0], priors->varbh[0]);
+  //Rprintf("The fit start is %f and the fit end is at time %f\n", fitstart, fitend);
+  //Rprintf("The prior on the baseline has mean %f and variance %f\n", priors->meanbh[0], priors->varbh[0]);
 
   // Set up parms structure ------------------
   Common_parms *parms;            // Common parameters data structure
@@ -141,75 +147,26 @@ SEXP decon_r_interface(SEXP indata,
   propsd[0] = Rf_asReal(pv_baseline); 
   propsd[1] = Rf_asReal(pv_halflife);
 
-  Rprintf("proposal variance for location is %f\n", propsd[6]);
+  //Rprintf("proposal variance for location is %f\n", propsd[6]);
 
 
 
   // Set up pulse linklist ------------------
-  //   NOTE: Possibly add option to pulse_spec for setting starting values/num
-  //   pulses
-  //double time[9];       // Starting values: pulse locations
-  //double mass[9];       // Starting values: pulse masses
-  //double width[9];      // Starting values: pulse widths
   Node_type *list;      
-  //Node_type *new_node;  
   list = initialize_node();
-  //mass[0]  = 12.32657558;
-  //mass[1]  = 8.335093817;
-  //mass[2]  = 6.169354435;
-  //mass[3]  = 17.80691618;
-  //mass[4]  = 17.81203064;
-  //mass[5]  = 4.180821883;
-  //mass[6]  = 9.385968508;
-  //mass[7]  = 3.539176735;
-  //mass[8]  = 8.860152668;
-  //width[0] = 26.02652032;
-  //width[1] = 37.383667;
-  //width[2] = 37.90962662;
-  //width[3] = 31.45537546;
-  //width[4] = 52.64992824;
-  //width[5] = 42.00314896;
-  //width[6] = 11.7825812;
-  //width[7] = 21.11221475;
-  //width[8] = 100.6173752;
-  //time[0]  = 139.2555248;
-  //time[1]  = 293.9643442;
-  //time[2]  = 400.3647507;
-  //time[3]  = 654.7396597;
-  //time[4]  = 788.742805;
-  //time[5]  = 918.9406528;
-  //time[6]  = 1156.007127;
-  //time[7]  = 1335.413248;
-  //time[8]  = 1408.372033;
-
-  // Initialize nodes and insert into linkedlist
-  //for (i = 0; i < 9; i++) {
-
-  //  new_node               = initialize_node();
-  //  new_node->time         = time[i];
-  //  new_node->theta[0]     = mass[i];
-  //  new_node->theta[1]     = width[i];
-  //  new_node->mean_contrib = (double *)calloc(nobs, sizeof(double));
-  //  mean_contribution(new_node, ts, parms, nobs);
-  //  insert_node(new_node, list);
-
-  //}
-
-  //print_list(list);
-
 
 
   // R lists for chains ------------------
   // Common parameters -- 1 record per saved iteration
-  SEXP common1 = Rf_protect(Rf_allocMatrix(REALSXP, iters/nthin, 8));
-  //double * commonptr = REAL(common1);
+  SEXP common1 = Rf_protect(Rf_allocMatrix(REALSXP, iters/nthin, 9));
   // Pulse-specific parameters -- 1 record per pulse per iteration
   //   list object defined here, each iteration will differ in length, so the
   //   entries are defined in linklistv3
   SEXP pulse_chains = Rf_protect(Rf_allocVector(VECSXP, iters/nthin));
 
 
-  mcmc(list, parms, ts, iters, nobs, nthin, priors, common1, pulse_chains, propsd);
+  mcmc(list, parms, ts, iters, nobs, nthin, strauss, verbose, priors, common1,
+       pulse_chains, propsd);
 
 
   // Column names for common1 chain --------
@@ -217,18 +174,19 @@ SEXP decon_r_interface(SEXP indata,
   // create 'dim' attribute (dimension of matrix)
   Rf_protect(dim = Rf_allocVector(INTSXP, 2));
   INTEGER(dim)[0] = iters/nthin; 
-  INTEGER(dim)[1] = 8;
+  INTEGER(dim)[1] = 9;
   Rf_setAttrib(common1, R_DimSymbol, dim);
   // create column names for common parms matrix
-  SEXP common_names = Rf_protect(Rf_allocVector(STRSXP, 8));
-  SET_STRING_ELT(common_names, 0, Rf_mkChar("num_pulses"));
-  SET_STRING_ELT(common_names, 1, Rf_mkChar("baseline"));
-  SET_STRING_ELT(common_names, 2, Rf_mkChar("mean_pulse_mass"));
-  SET_STRING_ELT(common_names, 3, Rf_mkChar("mean_pulse_width"));
-  SET_STRING_ELT(common_names, 4, Rf_mkChar("halflife"));
-  SET_STRING_ELT(common_names, 5, Rf_mkChar("model_error"));
-  SET_STRING_ELT(common_names, 6, Rf_mkChar("sd_mass"));
-  SET_STRING_ELT(common_names, 7, Rf_mkChar("sd_widths"));
+  SEXP common_names = Rf_protect(Rf_allocVector(STRSXP, 9));
+  SET_STRING_ELT(common_names, 0, Rf_mkChar("iteration"));
+  SET_STRING_ELT(common_names, 1, Rf_mkChar("num_pulses"));
+  SET_STRING_ELT(common_names, 2, Rf_mkChar("baseline"));
+  SET_STRING_ELT(common_names, 3, Rf_mkChar("mean_pulse_mass"));
+  SET_STRING_ELT(common_names, 4, Rf_mkChar("mean_pulse_width"));
+  SET_STRING_ELT(common_names, 5, Rf_mkChar("halflife"));
+  SET_STRING_ELT(common_names, 6, Rf_mkChar("model_error"));
+  SET_STRING_ELT(common_names, 7, Rf_mkChar("sd_mass"));
+  SET_STRING_ELT(common_names, 8, Rf_mkChar("sd_widths"));
   // assign names to vector
   Rf_protect(dimnames = Rf_allocVector(VECSXP, 2));
   // assign names vector to columns (1) names attribute, leaving rows (0) NULL;
@@ -278,7 +236,7 @@ double **convert_data(SEXP indata, int nrow) {
 
   // Read the time series into memory                          
   for (i = 0; i < nrow; i++) {
-    data[i][0] = INTEGER(getListElement(indata, "time"))[i];
+    data[i][0] = REAL(getListElement(indata, "time"))[i];
     data[i][1] = REAL(getListElement(indata, "concentration"))[i];
     data[i][1] = log(data[i][1]);
   }

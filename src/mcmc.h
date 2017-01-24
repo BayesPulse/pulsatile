@@ -18,14 +18,16 @@
 #include "pulse_node.h"
 
 void mcmc(Node_type *list, Common_parms *parms, double **ts, long iter, int N,
-          int NN, Priors *priors, SEXP common, SEXP pulse_chains, double propsd[]);
+          int NN, int strauss, int verbose, Priors *priors, SEXP common, 
+          SEXP pulse_chains, double propsd[]);
 
 void mh_time_strauss(Node_type *list, Common_parms *parms, double **ts, 
                      double *like, int N, double sd, Priors *priors, 
                      long *atime, long *ntime);
 
 void mh_time_os(Node_type *list, Common_parms *parms, double **ts, 
-                double *like, int N, double v, long *atime, long *ntime);
+                double *like, int N, double v, long *atime, long *ntime,
+                int mmm);
 
 void mh_mu_delta(Node_type *list, Common_parms *parms, Priors *priors, 
                  double **ts, double *like, int N, int num_node, double **var,

@@ -18,6 +18,7 @@ typedef struct {
     double *re_sdmax;    // 'b' on uniform prior for random effects standard deviation
     double err_alpha;    // alpha: prior parameters for model error (inverse gamma)
     double err_beta;     // beta : ""
+    double orderstat;    // # orderstat to use for uniform prior on location
     double gamma;        // Gamma, repulsion parameter for Strauss prior
     double range;        // Range parameter for Strauss prior
 } Priors;
