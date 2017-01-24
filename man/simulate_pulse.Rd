@@ -4,18 +4,17 @@
 \alias{simulate_pulse}
 \title{Simulate pulsatile hormone data}
 \usage{
-simulate_pulse(num_of_observations = 144, sampling_interval = 10,
-  error_var = 0.005, ipi_mean = 12, ipi_var = 40, ipi_min = 4,
-  mass_mean = 3.5, mass_sd = 1.6, width_mean = 35, width_sd = 5,
-  halflife_mean = NULL, halflife_var = NULL, baseline_mean = NULL,
-  baseline_var = NULL, constant_halflife = 45, constant_baseline = 2.6)
+simulate_pulse(num_obs = 144, interval = 10, error_var = 0.005,
+  ipi_mean = 12, ipi_var = 40, ipi_min = 4, mass_mean = 3.5,
+  mass_sd = 1.6, width_mean = 35, width_sd = 5, halflife_mean = NULL,
+  halflife_var = NULL, baseline_mean = NULL, baseline_var = NULL,
+  constant_halflife = 45, constant_baseline = 2.6)
 }
 \arguments{
-\item{num_of_observations}{Number of observations to simulate.  Duration of
-observation window equals \code{num_of_observations} times
-\code{sampling_interval}.}
+\item{num_obs}{Number of observations to simulate.  Duration of observation
+window equals \code{num_obs} times \code{interval}.}
 
-\item{sampling_interval}{Time between observations, typically 6-10 minutes.}
+\item{interval}{Time between observations, typically 6-10 minutes.}
 
 \item{error_var}{Variance of the error added at each observation, ~ N(0, sqrt(error_var)).}
 
@@ -62,12 +61,10 @@ A object of class \code{pulse_sim} containing time-series dataset
 \examples{
 this_pulse <- simulate_pulse()
 str(this_pulse)
-plot(x = this_pulse$pulse_data$time, 
-     y = this_pulse$pulse_data$concentration,
-     type = 'l')
-# Add this -> summary(this_pulse)
-# Add this -> plot()
-# Add this -> print()
+plot(this_pulse)
+}
+\seealso{
+print.pulse_sim, plot.pulse_sim
 }
 \keyword{pulse}
 \keyword{simulation}

@@ -6,10 +6,9 @@
 #'   the time series and a dataset of the individual pulse characteristics are
 #'   returned. 
 #'
-#' @param num_of_observations Number of observations to simulate.  Duration of
-#'   observation window equals \code{num_of_observations} times
-#'   \code{sampling_interval}.
-#' @param sampling_interval Time between observations, typically 6-10 minutes.
+#' @param num_obs Number of observations to simulate.  Duration of observation
+#'    window equals \code{num_obs} times \code{interval}.
+#' @param interval Time between observations, typically 6-10 minutes.
 #' @param error_var Variance of the error added at each observation, ~ N(0, sqrt(error_var)).
 #' @param ipi_mean Mean number of sampling units between pulses (mean inter-pulse interval).
 #' @param ipi_var Variance of gamma for drawing interpulse interval
@@ -30,33 +29,37 @@
 #'   non-null.
 #' @return A object of class \code{pulse_sim} containing time-series dataset
 #'   and dataset of characteristics of each pulse
+#' @seealso print.pulse_sim, plot.pulse_sim
 #' @keywords pulse simulation
 #' @examples
 #' this_pulse <- simulate_pulse()
 #' str(this_pulse)
-#' plot(x = this_pulse$pulse_data$time, 
-#'      y = this_pulse$pulse_data$concentration,
-#'      type = 'l')
-#' # Add this -> summary(this_pulse)
-#' # Add this -> plot()
-#' # Add this -> print()
+#' plot(this_pulse)
 #' @export
-simulate_pulse <- function(num_of_observations = 144,
-                           sampling_interval   = 10,
-                           error_var           = 0.005,
-                           ipi_mean            = 12,
-                           ipi_var             = 40,
-                           ipi_min             = 4,
-                           mass_mean           = 3.5,
-                           mass_sd             = 1.6,
-                           width_mean          = 35,
-                           width_sd            = 5,
-                           halflife_mean       = NULL,
-                           halflife_var        = NULL,
-                           baseline_mean       = NULL,
-                           baseline_var        = NULL,
-                           constant_halflife   = 45,
-                           constant_baseline   = 2.6) {
+simulate_pulse <- function(num_obs           = 144,
+                           interval          = 10,
+                           error_var         = 0.005,
+                           ipi_mean          = 12,
+                           ipi_var           = 40,
+                           ipi_min           = 4,
+                           mass_mean         = 3.5,
+                           mass_sd           = 1.6,
+                           width_mean        = 35,
+                           width_sd          = 5,
+                           halflife_mean     = NULL,
+                           halflife_var      = NULL,
+                           baseline_mean     = NULL,
+                           baseline_var      = NULL,
+                           constant_halflife = 45,
+                           constant_baseline = 2.6) {
+
+  # Add default args to function call
+  args      <- formals(sys.function(sys.parent(1)))
+  this_call <- match.call()
+  indx      <- match(names(args), names(this_call)[-1], nomatch = 0)
+  this_call <- c(as.list(this_call), args[!indx])
+  this_call <- as.call(this_call)
+
 
   #---------------------------------------
   # Helper functions for drawing hormone concentration (w/o error)
@@ -64,10 +67,10 @@ simulate_pulse <- function(num_of_observations = 144,
   erfFn <- function(x) 2 * stats::pnorm(x * sqrt(2), 0, 1) - 1
 
   # Model concentration over time given pulse parameters  
-  meanI <- function(sampling_interval, b, a, tau1, lam, s2p){
+  meanI <- function(interval, b, a, tau1, lam, s2p){
     b + (a / 2) * 
-      exp((tau1 - sampling_interval) * lam + 0.5 * lam^2 * s2p) * 
-      (1 + erfFn((sampling_interval - (tau1 + lam * s2p)) / sqrt(2 * s2p)))
+      exp((tau1 - interval) * lam + 0.5 * lam^2 * s2p) * 
+      (1 + erfFn((interval - (tau1 + lam * s2p)) / sqrt(2 * s2p)))
   }
 
   #---------------------------------------
@@ -98,17 +101,17 @@ simulate_pulse <- function(num_of_observations = 144,
   beta      <- gammamean / ipi_var
 
   tau <- rep(0, 25)
-  tau[1] <- sampling_interval * (stats::rgamma(1, alpha, beta) - 10)
+  tau[1] <- interval * (stats::rgamma(1, alpha, beta) - 10)
 
   i <- 1
-  while (tau[i] < (num_of_observations * sampling_interval)){
+  while (tau[i] < (num_obs * interval)){
     i      <- i + 1
     tmp    <- ipi_min + stats::rgamma(1, alpha, beta)
-    tau[i] <- tau[i-1] + (sampling_interval * tmp)
+    tau[i] <- tau[i-1] + (interval * tmp)
   }
 
   # Reduce pulse location vector to values within time range (<0, 1440)
-  tau <- subset(tau, tau < (num_of_observations * sampling_interval))
+  tau <- subset(tau, tau < (num_obs * interval))
   tau <- subset(tau, tau != 0)
   np  <- length(tau) # No. of pulses 
 
@@ -116,7 +119,7 @@ simulate_pulse <- function(num_of_observations = 144,
   # Generate pulse-specific parameters 
   A     <- rep(0, np)             # pulse mass
   s2p   <- rep(0, np)             # pulse width
-  taxis <- seq(10, (num_of_observations * sampling_interval), sampling_interval)
+  taxis <- seq(10, (num_obs * interval), interval)
   ytmp  <- rep(0, length(taxis))  # hormone concentration
 
   for (i in 1:np) {
@@ -157,8 +160,9 @@ simulate_pulse <- function(num_of_observations = 144,
 
   #---------------------------------------
   # Create return object
-  rtn <- structure(list("pulse_data"  = ysim_df, 
-                        "pulse_parms" = allpulseparms),
+  rtn <- structure(list("call"  = this_call,
+                        "data"  = ysim_df, 
+                        "parmeters"  = allpulseparms),
                    class = "pulse_sim")
 
 
@@ -167,6 +171,65 @@ simulate_pulse <- function(num_of_observations = 144,
 }
 
 
+
+
+
+#' Plot a simulated pulsatile hormone time series.
+#' 
+#' @description \code{\link{plot.pulse_sim}} plots the time-series component of
+#' a \code{pulse_sim} object
+#'
+#' @param x An object of class \code{pulse_sim} resulting from the
+#'   \code{simulate_pulse()} function.
+#' @param ... Other arguments not used by this method.
+#' @return A ggplot2 plot of the \code{simulate_pulse} time-series dataset.
+#' @seealso simulate_pulse, print.pulse_sim, summary.pulse_sim
+#' @keywords pulse simulation
+#' @examples
+#' this_pulse <- simulate_pulse()
+#' plot(this_pulse)
+#' @export 
+plot.pulse_sim <- function(x, ...) {
+
+  ggplot2::ggplot(data = x$data) +
+    ggplot2::aes_string(x = 'time', y = 'concentration') +
+    ggplot2::geom_path()
+
+}
+
+
+
+
+# #' Summarizing simulated pulsatile hormone time series.
+# #' 
+# #' @description \code{\link{plot.pulse_sim}} summarizes the time-series component of
+# #' a \code{pulse_sim} object
+# #'
+# #' @param object An object of class \code{pulse_sim} resulting from the
+# #'   \code{simulate_pulse()} function.
+# #' @param ... Other arguments not used by this method.
+# #' @return Prints summary of the simulation
+# #' @seealso simulate_pulse, print.pulse_sim, print.pulse_sim 
+# #' @keywords pulse simulation
+# #' @examples
+# #' this_pulse <- simulate_pulse()
+# #' summary(this_pulse)
+# #' @export 
+# summary.pulse_sim <- function(object, ...) {
+# 
+#   true_vals <- as.list(stats::getCall(object))
+#   est_vals  <- 
+#   
+#   return(x)
+# 
+# }
+
+# #' @export 
+# print.pulse_sim <- function(x, ...) {
+#   print("\n\npulse_sim object\n")
+#   print("")
+#   invisible(x)
+# }
 
 
 #-------------------------------------------------------------------------------
