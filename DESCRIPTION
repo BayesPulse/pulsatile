@@ -14,7 +14,8 @@ Depends:
     R (>= 3.2.3)
 Imports:
     stats,
-    tibble
+    tibble,
+    ggplot2
 Suggests:
     knitr, 
     rmarkdown

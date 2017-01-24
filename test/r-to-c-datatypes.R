@@ -6,7 +6,7 @@
 setwd("~/Projects/Rpackages/pulsatile/")
 
 library(dplyr)
-#library(tidyr)
+library(tidyr)
 #library(pryr)
 library(devtools)
 library(roxygen2)
@@ -20,56 +20,58 @@ devtools::check()
 devtools::install("../pulsatile", build_vignettes = TRUE)
 
 library(pulsatile)
-#data(simpulse_reference001)
 
+set.seed(9999)
 this_pulse <- simulate_pulse()
-ggplot(this_pulse$pulse_data, aes(x = time, y = concentration)) +
-  geom_path()
-
-# Replace by above^
-# Read in dataset
-#dat <- read_delim("test/pulse_reference_001.dat", delim = " ") %>% 
-#  tbl_df %>%
-#  select(-observation)
-
 model_spec <- pulse_spec(location_prior_type = "order-statistic")
-model_spec
-model_spec_strauss <- pulse_spec(location_prior_type = "strauss",
+fit_test   <- fit_pulse(.data = this_pulse, iters = 5000, thin = 50,
+                        spec = model_spec)
+str(fit_test)
+plot(this_pulse)
+# will add summary and print s3 methods
+#summary(this_pulse)
+#this_pulse()
+
+
+##############################
+# Various prior parameter sets to fit model with
+##############################
+model_spec <- pulse_spec(location_prior_type = "order-statistic")
+model_spec_strauss <- pulse_spec(location_prior_type  = "strauss",
                                  prior_location_range = 40,
                                  prior_location_gamma = 0)
-model_spec_strauss
 
 
 #
 # ---- Simple test for repeatable results ---- 
 #
-n_iters <- 5000
-n_thin  <- 1
+n_iters <- 250000
+n_thin  <- 50
 
 start_time <- proc.time()
 set.seed(999999)
-fit_round1 <- fit_pulse(data           = this_pulse$pulse_data,
-                        iterations     = n_iters,
-                        thin           = n_thin,
-                        pulse_spec_obj = model_spec)
+fit_round1 <- fit_pulse(.data = this_pulse,
+                        iters = n_iters,
+                        thin  = n_thin,
+                        spec  = model_spec)
 stop_time <- proc.time()
 time_round1 <- (stop_time - start_time)/60
 
 start_time <- proc.time()
 set.seed(999999)
-fit_round2 <- fit_pulse(data           = this_pulse$pulse_data,
-                        iterations     = n_iters,
-                        thin           = n_thin,
-                        pulse_spec_obj = model_spec)
+fit_round2 <- fit_pulse(.data = this_pulse,
+                        iters = n_iters,
+                        thin  = n_thin,
+                        spec  = model_spec)
 stop_time <- proc.time()
 time_round2 <- (stop_time - start_time)/60
 
 start_time <- proc.time()
 set.seed(999999)
-fit_strauss <- fit_pulse(data           = this_pulse$pulse_data,
-                         iterations     = n_iters,
-                         thin           = n_thin,
-                         pulse_spec_obj = model_spec_strauss)
+fit_strauss <- fit_pulse(.data = this_pulse,
+                         iters = n_iters,
+                         thin  = n_thin,
+                         spec  = model_spec_strauss)
 stop_time <- proc.time()
 time_round3 <- (stop_time - start_time)/60
 
@@ -87,6 +89,8 @@ time_round1 == time_round2
 # Sanity check on pulse count
 ########################################
 hist(fit_round1$common_chain$num_pulses) 
+hist(fit_round2$common_chain$num_pulses) 
+hist(fit_strauss$common_chain$num_pulses) 
 # NOTE: Somethings up with the birth-death process.  Think it started with the
 # addition of the location_prior_type option in pulse_spec() and in C code.
 

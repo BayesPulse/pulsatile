@@ -20,10 +20,9 @@
 #include "pulse_node.h"
 #include "birth_death.h"
 #include "calculations.h"
-//#include "randgen.h"
 
 // Minumum precision, used instead of equalities in some places
-#define EPS 1.0e-12
+#define EPS 1.0e-42
 
 // Global variables
 extern double fitstart; // First time in 10min increments a pulse can occur
@@ -64,8 +63,8 @@ void mcmc(Node_type *list,
           int N,
           int NN,
           int strauss,
+          int verbose,
           Priors *priors,
-          //unsigned long *seed, 
           SEXP common, //char *file1, 
           SEXP pulse_chains, //char *file2, 
           double propsd[]) {
@@ -305,7 +304,7 @@ void mcmc(Node_type *list,
 
 
     // Print to STDOUT
-    if (!(i % NNN)) {
+    if (verbose & !(i % NNN)) {
       Rprintf("\n\n");
       Rprintf("iter = %d likelihood = %lf\n", i, *likeli);
       Rprintf("mu %.2lf A %.2lf s %.2lf d %.4lf  v %.4le\n", 
@@ -489,8 +488,6 @@ void mh_time_strauss(Node_type *list,
       alpha = (0 < l_rho) ? 0 : l_rho;
 
       // Accept/Reject
-      //if (log(kiss(seed)) < alpha) {
-      // ***NOTE***: just guessed on this implementation
       if (log(Rf_runif(0, 1)) < alpha) {
 
         // If log U < log rho, we accept proposed value. Increase
@@ -649,7 +646,6 @@ void mh_time_os(Node_type *list,
       // x ? y:z is equivalent to R's ifelse, y = true, z = false 
       alpha = (0 < (rho = (prior_ratio + like_ratio))) ? 0 : rho;
 
-      //if (log(kiss(seed)) < alpha) {
       if (log(Rf_runif(0, 1)) < alpha) {
         // If log U < log rho, we accept proposed value. Increase acceptance
         // count by one and set likelihood equal to likelihood under proposal 
@@ -751,7 +747,7 @@ void mh_mu_delta(Node_type *list,
   (*ndelta)++;
 
   // Draw proposal values for b and hl 
-  rmvnorm(pmd, var, 2, parms->md, 1); //seed, 1);
+  rmvnorm(pmd, var, 2, parms->md, 1); 
 
   // Only proceed if we draw reasonable values 
   if (pmd[0] > 0 && pmd[1] > 3) {
@@ -800,7 +796,6 @@ void mh_mu_delta(Node_type *list,
     // Calculate log rho; set alpha equal to min(0, log rho) 
     alpha = (0 < (logrho = (prior_ratio + like_ratio))) ? 0:logrho;
 
-    //if (log(kiss(seed)) < alpha) {
     if (log(Rf_runif(0, 1)) < alpha) {
       // If log U < log rho, increase acceptance rate by 1 and set the
       // likelihood equal to the likelihood under proposed values 
@@ -984,8 +979,8 @@ void draw_re_sd(Node_type *list,
   accept_counter[1] = *arevw;
 
   // Draw proposed values for sigma_1 and sigma_2 
-  new_sd[0] = Rf_rnorm(parms->re_sd[0], v1); //, seed);
-  new_sd[1] = Rf_rnorm(parms->re_sd[1], v2); //, seed);
+  new_sd[0] = Rf_rnorm(parms->re_sd[0], v1); 
+  new_sd[1] = Rf_rnorm(parms->re_sd[1], v2); 
 
   // Accept/reject step
   for (j = 0; j < 2; j++) {
@@ -1110,8 +1105,8 @@ void draw_random_effects(double **ts, Node_type *list, Common_parms *parms,
     (*nrew)++;
 
     // Draw proposed values of current pulse's mass and width 
-    pRE[0] = Rf_rnorm(log(node->theta[0]), v1); //, seed);
-    pRE[1] = Rf_rnorm(log(node->theta[1]), v2); //, seed);
+    pRE[0] = Rf_rnorm(log(node->theta[0]), v1); 
+    pRE[1] = Rf_rnorm(log(node->theta[1]), v2); 
 
     // Determine if we accept or reject proposed pulse mass then determine if
     // we accept or reject proposed pulse width
