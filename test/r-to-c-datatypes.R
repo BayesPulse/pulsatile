@@ -3,15 +3,15 @@
 #
 #-------------------------------------------------------------------------------
 #options(scipen = 99)
-setwd("~/Projects/Rpackages/pulsatile/")
+setwd("~/Projects/BayesPulse/pulsatile/")
 
-library(dplyr)
-library(tidyr)
+# library(dplyr)
+# library(tidyr)
 #library(pryr)
 library(devtools)
-library(roxygen2)
-library(ggplot2)
-library(magrittr)
+# library(roxygen2)
+# library(ggplot2)
+# library(magrittr)
 #library(ggthemes)
 #theme_set(theme_tufte())
 
