@@ -30,7 +30,7 @@ str(fit_test)
 plot(this_pulse)
 # will add summary and print s3 methods
 #summary(this_pulse)
-#this_pulse()
+this_pulse
 
 
 ##############################
@@ -80,8 +80,8 @@ time_round3 <- (stop_time - start_time)/60
 ########################################
 # Compare results
 ########################################
-all(fit_round1[[3]] == fit_round2[[3]])
-all(fit_round1[[4]] == fit_round2[[4]])
+all(fit_round1[["common_chain"]] == fit_round2[["common_chain"]])
+all(fit_round1[["pulse_chain"]] == fit_round2[["pulse_chain"]])
 time_round1 == time_round2
 
 
@@ -91,12 +91,15 @@ time_round1 == time_round2
 hist(fit_round1$common_chain$num_pulses) 
 hist(fit_round2$common_chain$num_pulses) 
 hist(fit_strauss$common_chain$num_pulses) 
-# NOTE: Somethings up with the birth-death process.  Think it started with the
-# addition of the location_prior_type option in pulse_spec() and in C code.
+
 
 ########################################
 # Check Strauss 
 ########################################
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+
 all((fit_round1[[3]] == fit_strauss[[3]]))
 # min. distance between locations should be approx, but > 40
 fit_strauss$pulse_chain %>% 
@@ -115,7 +118,7 @@ common <- fit_round1$common_chain # %>% as.data.frame %>% tbl_df %>% mutate(iter
 
 timeseries <- 
   ggplot() +
-    geom_path(data = fit_round1$data, aes(x = time, y = concentration)) 
+    geom_path(data = fit_round1$data$data, aes(x = time, y = concentration)) 
 
 location_hist <- 
   ggplot() + geom_histogram(data = as.data.frame(pulses), aes(x = location, y = ..density..))
@@ -142,15 +145,15 @@ object.size(test2)
 
 
 # check new vs old simulation function
-source("R/simulate.R")
-source("../simulate.R")
-set.seed(999)
-after <- new_simulate_pulse()
-set.seed(999)
-before <- simulate_pulse()
-
-identical(new_simulate_pulse, simulate_pulse)
-identical(after$pulse_data, before$pulse_data)
-identical(after$pulse_parms, before$pulse_parms)
-dplyr::full_join(after$pulse_data, before$pulse_data, by = c("observation", "time"))
-cbind(after$pulse_parms, before$pulse_parms)
+# source("R/simulate.R")
+# source("../simulate.R")
+# set.seed(999)
+# after <- new_simulate_pulse()
+# set.seed(999)
+# before <- simulate_pulse()
+# 
+# identical(new_simulate_pulse, simulate_pulse)
+# identical(after$pulse_data, before$pulse_data)
+# identical(after$pulse_parms, before$pulse_parms)
+# dplyr::full_join(after$pulse_data, before$pulse_data, by = c("observation", "time"))
+# cbind(after$pulse_parms, before$pulse_parms)

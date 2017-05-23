@@ -1,14 +1,14 @@
 ---
 title: "The pulsatile user's guide"
-author: Matt Mulvahill (matthew.mulvahill@ucdenver.edu)
-date: "`r Sys.Date()`"
-output: 
-  html_document:
-    toc: true
-    code_folding: show
+author: 
+  - name: Matt Mulvahill 
+    email: matthew.mulvahill@ucdenver.edu
+    affiliation: CU Anschutz
+package: pulsatile
+output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{The pulsatile user's guide}
-  %\VignetteEngine{rmarkdown::render}
+  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
@@ -27,9 +27,9 @@ opts_chunk$set(echo       = TRUE,
 ```
 
 ```{r load-package}
-install.packages("devtools")
-library(devtools)
-install_github("mmulvahill/pulsatile")
+# install.packages("devtools")
+# library(devtools)
+# install_github("mmulvahill/pulsatile")
 library(pulsatile)
 library(ggplot2)
 ```
@@ -47,7 +47,7 @@ ggplot(this_pulse$data, aes(x = time, y = concentration)) +
 ```{r fit-pulse}
 # These args are not yet implemented
 model_spec <- pulse_spec(location_prior_type = "order-statistic")
-fit_test   <- fit_pulse(.data = this_pulse, iters = 5000, thin = 50,
+fit_test   <- fit_pulse(.data = this_pulse, iters = 2500, thin = 50,
                         spec = model_spec)
 
 ```
@@ -58,6 +58,7 @@ fit_test   <- fit_pulse(.data = this_pulse, iters = 5000, thin = 50,
 
 ```{r sessionInfo}
 sessionInfo()
+warnings()
 ```
 
 

@@ -6,9 +6,33 @@
 #include "r_interface.h"
 #include <R_ext/Rdynload.h>
 
-// Hadley's R packages approach
-void R_init_pulsatile(DllInfo *info) {
-    R_RegisterCCallable(info, "decon_r_interface", 
-                        (DL_FUNC) &decon_r_interface);
+
+// Define methods called with .Call
+static const
+R_CallMethodDef callMethods[] = {
+  {"decon_r_interface", (DL_FUNC) &decon_r_interface, 35},
+  {NULL,                NULL,                         0}
+};
+
+
+// Initialize DLL
+void 
+R_init_pulsatile(DllInfo *info) {
+
+	// Register routines (only using .Call)
+  R_registerRoutines(info,
+                     NULL,
+                     callMethods,
+                     NULL,
+                     NULL);
+
+	// Restrict to only explicitly defined names
+  R_useDynamicSymbols(info, FALSE);
+
+	// Make call available to other packages
+  R_RegisterCCallable("pulsatile", "decon_r_interface", 
+											(DL_FUNC) &decon_r_interface);
+
 }
+
 

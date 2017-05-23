@@ -1,25 +1,28 @@
 Package: pulsatile
-Title: Bayesian Deconvolution for the Analysis of Pulsatile Hormone Time-series Data
-Version: 0.0.0.9000
+Title: 
+    Bayesian Deconvolution for the Analysis of Pulsatile Hormone Time-series
+    Data
+Version: 0.0.0.9001
 Authors@R: 
-    c(person("Matt", "Mulvahill", 
-             email = "matthew.mulvahill@ucdenver.edu", 
-             role = c("aut", "cre")))
+    person("Matt", "Mulvahill", email = "matthew.mulvahill@ucdenver.edu", role = c("aut", "cre"))
 Description: 
     For fitting Bayesian deconvolutions models to pulsatile hormone data.
     Currently the package fits the single-series model. Development and addtion
     of associational and population models is in-progress. Models are fit using
     two primary functions pulse_spec() and fit_pulse().
+URL: https://github.com/BayesPulse/pulsatile
+BugReports: https://github.com/BayesPulse/pulsatile/issues
 Depends:
-    R (>= 3.2.3)
+    R (>= 3.3)
 Imports:
     stats,
-    tibble,
+    tibble (>= 1.2),
     ggplot2
 Suggests:
+    testthat (>= 1.0.2), 
     knitr, 
     rmarkdown
-VignetteBuilder: rmarkdown
+VignetteBuilder: knitr
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
