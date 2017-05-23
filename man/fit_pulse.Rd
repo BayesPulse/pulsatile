@@ -46,4 +46,3 @@ this_fit   <- fit_pulse(.data = this_pulse, iters = 1000, thin = 10,
 }
 \keyword{fit}
 \keyword{pulse}
-

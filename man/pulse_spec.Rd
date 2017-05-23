@@ -92,4 +92,3 @@ fitting a fit_pulse model.
 \keyword{pulse}
 \keyword{pulse_spec()}
 \keyword{simulation}
-

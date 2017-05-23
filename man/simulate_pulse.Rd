@@ -68,4 +68,3 @@ print.pulse_sim, plot.pulse_sim
 }
 \keyword{pulse}
 \keyword{simulation}
-

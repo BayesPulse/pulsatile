@@ -28,4 +28,3 @@ simulate_pulse, print.pulse_sim, summary.pulse_sim
 }
 \keyword{pulse}
 \keyword{simulation}
-
