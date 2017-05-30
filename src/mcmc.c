@@ -107,6 +107,10 @@ void mcmc(Node_type *list,
   long nrevm  = 0; // RE pulse mass SD
   long arevw  = 0; // RE pulse width SD
   long nrevw  = 0; // RE pulse width SD
+  long afem   = 0; // Fixed Effect pulse mass
+  long nfem   = 0; // Fixed Effect pulse mass
+  long afew   = 0; // Fixed Effect pulse width
+  long nfew   = 0; // Fixed Effect pulse width
   long *adelta_ptr = &adelta; // halflife MH
   long *ndelta_ptr = &ndelta; // halflife MH
   long *atime_ptr  = &atime ; // pulse location MH
@@ -119,16 +123,22 @@ void mcmc(Node_type *list,
   long *nrevm_ptr  = &nrevm ; // RE pulse mass SD
   long *arevw_ptr  = &arevw ; // RE pulse width SD
   long *nrevw_ptr  = &nrevw ; // RE pulse width SD
+  long *afem_ptr   = &afem  ; // FE pulse mass
+  long *nfem_ptr   = &nfem  ; // FE pulse mass
+  long *afew_ptr   = &afew  ; // FE pulse width
+  long *nfew_ptr   = &nfew  ; // FE pulse width
 
   // Allocate memory for likelihood 
   likeli = (double *)calloc(1, sizeof(double));
 
   // Save proposal variances for passing to functions
   sdt   = propsd[6];
-  sdrem = propsd[4];
+  sdrem = propsd[4]; 
   sdrew = propsd[5];
   sdmv  = propsd[2];
   sdwv  = propsd[3];
+  sdfem = propsd[7]; // proposed sd of the fixed effect mass distr
+  sdfew = propsd[8]; // proposed sd of the fixed effect width distr
 
 
   //----------------------------------------------
@@ -192,13 +202,16 @@ void mcmc(Node_type *list,
 
     // 1) Draw the fixed effects   
     //    (Gibbs sampler)
-    draw_fixed_effects(list, priors, parms);  
+    draw_fixed_effects(list, priors, parms, sdfem, sdfew);
 
     // 2) Draw standard deviation of random effects 
     //    (Metropolis Hastings)
     //    Note: log(sd) with uniform prior was suggested by Gelman, 2006
     draw_re_sd(list, priors, parms, sdmv, sdwv, arevm_ptr, nrevm_ptr,
                arevw_ptr, nrevw_ptr); 
+
+    // 3) Draw (kappa from) gamma for the t-distribution var-covar
+    draw_eta(list, parms);
 
     // 3) Draw the random effects 
     //    (Metropolis Hastings)
@@ -316,6 +329,8 @@ void mcmc(Node_type *list,
       Rprintf("pct rem = %.2lf pct rew = %.2lf pct time = %.2lf\n",
               (double)arem  / (double)nrem, 
               (double)arew  / (double)nrew,
+              (double)afem  / (double)nfem, 
+              (double)afew  / (double)nfew,
               (double)atime / (double)ntime);
       Rprintf("pct md = %.2lf revm = %.2lf revw = %.2lf\n", 
              (double)adelta / (double)ndelta, 
@@ -340,6 +355,8 @@ void mcmc(Node_type *list,
       adjust_acceptance( (double) *arew_ptr   / (double) *nrew_ptr,   &sdrew);
       adjust_acceptance( (double) *arevm_ptr  / (double) *nrevm_ptr,  &sdmv);
       adjust_acceptance( (double) *arevw_ptr  / (double) *nrevw_ptr,  &sdwv);
+      adjust_acceptance( (double) *afem_ptr   / (double) *nfem_ptr,   &sdfem);
+      adjust_acceptance( (double) *afew_ptr   / (double) *nfew_ptr,   &sdfew);
 
       adelta = ndelta = 0;
       atime  = ntime  = 0;
@@ -347,6 +364,8 @@ void mcmc(Node_type *list,
       arew   = nrew   = 0;
       arevm  = nrevm  = 0;
       arevw  = nrevw  = 0;
+      afem   = nfem   = 0;
+      afew   = nfew   = 0;
 
       // Cholesky decompose the three proposal var-covar matrices
       for (k = 0; k < 2; k++) {
@@ -915,17 +934,19 @@ void draw_fixed_effects(Node_type *list,
 /* Karen's version 
  *
  * Unknown objects:
- *   pmean_vch -- prior mean? of ?
+ *   pmean_vch -- prior mean? of ? = pmean_var
  *   MDBNOR -- ???
  *
  * */
 void draw_fixed_effects(Node_type *list, 
                         Priors *priors, 
                         Common_parms *parms,
-                        int N, 
-                        unsigned long *seed, 
-                        int iter, 
-                        double **pmean_vch) {
+                        double propsd_mass,
+                        double propsd_width,
+                        long *afem, long *nfem, long *afew, long *nfew,
+                        int iter // TODO: Needed??
+                        ) {
+
   // declare variables 
   Node_type *node;
   int i, j, k, npulse;
@@ -960,7 +981,8 @@ void draw_fixed_effects(Node_type *list,
 
 
   // declare functions 
-  double MDBNOR(double ,double ,double);
+  double MDBNOR(double ,double ,double); // TODO: WHAT IN THE HECK IS THIS? -- integrating a normal?
+  // Truncated t prior is a mixture of norm and gamma
   int rmvnorm(double *, double **, int, double *, unsigned long *,int);
   double rgamma(double, double, unsigned long *);
 
@@ -972,26 +994,26 @@ void draw_fixed_effects(Node_type *list,
   re_var     = (double **)calloc(2, sizeof(double *));
   pvartmp    = (double **)calloc(2, sizeof(double *));
 
-  for (i = 0; i < 2; i++) {
-    re_var_inv[i] = (double *)calloc(2,sizeof(double));
-    re_var[i]     = (double *)calloc(2,sizeof(double));
-    pvartmp[i]    = (double *)calloc(2,sizeof(double));
-  }
+//  for (i = 0; i < 2; i++) {
+//    re_var_inv[i] = (double *)calloc(2,sizeof(double));
+//    re_var[i]     = (double *)calloc(2,sizeof(double));
+//    pvartmp[i]    = (double *)calloc(2,sizeof(double));
+//  }
 
   // printf("iter %d \n",iter);
-  nfe++;
-  for (i = 0; i < 2; i++) {
-    for (j = 0; j < 2; j++) {
-      re_var_inv[i][j] = parms->re_precision[i][j];
-    }
-  }
+//  nfe++;
+//  for (i = 0; i < 2; i++) {
+//    for (j = 0; j < 2; j++) {
+//      re_var_inv[i][j] = parms->re_precision[i][j];
+//    }
+//  }
 
-  if (!cholesky_decomp(re_var_inv,2)) {
-    printf("mass_var_inv in mean mass draw process is not PSD matrix\n");
-    exit(0);
-  }
-
-  re_var = cholesky_invert(2,re_var_inv);
+//  if (!cholesky_decomp(re_var_inv,2)) {
+//    printf("mass_var_inv in mean mass draw process is not PSD matrix\n");
+//    exit(0);
+//  }
+//
+//  re_var = cholesky_invert(2,re_var_inv);
 
 
   // do a draw for each pulse pair and make the decision for each pair separately 
@@ -1000,106 +1022,120 @@ void draw_fixed_effects(Node_type *list,
   //   for(j=0;j<2;j++)
   //     printf("i %d j %d pmean_var %lf\n",i,j,pmean_var[i][j]);
 
-  rmvnorm(new_mean, pmean_vch, 2, parms->theta, seed, 1);
+  //rmvnorm(new_mean, pmean_vch, 2, parms->theta, seed, 1);
+  //
+
+  // Draw proposal value
+  new_mean[0] = Rf_rnorm(parms->theta[0], propsd_mass);
+  new_mean[1] = Rf_rnorm(parms->theta[1], propsd_width);
   // printf("new_mean FE %lf %lf\n",new_mean[0],new_mean[1]);
 
-  if (new_mean[0] > 0 && new_mean[1] > 0) {
-    // printf("inside loop\n");
-    diff_mean_old[0] = parms->theta[0] - priors->fe_mean[0];
-    diff_mean_old[1] = parms->theta[1] - priors->fe_mean[1];
-    diff_mean_new[0] = new_mean[0] - priors->fe_mean[0];
-    diff_mean_new[1] = new_mean[1] - priors->fe_mean[1];
+  // Run Accept/Reject for proposed mass & width
+  for (j = 0; j < 2; j++) {
+
+    if (new_mean[j] > 0) {
+
+      diff_mean_old[j] = parms->theta[j] - priors->fe_mean[j];
+      diff_mean_new[j] = new_mean[j] - priors->fe_mean[j];
+      //diff_mean_old[1] = parms->theta[1] - priors->fe_mean[1];
+      //diff_mean_new[1] = new_mean[1] - priors->fe_mean[1];
 
 
-    // *proposal ratio---ratio of integrals for truncated distribution*
-    pvartmp[0][0] = pmean_vch[0][0] * pmean_vch[0][0];
-    pvartmp[1][1] = pmean_vch[1][1] * pmean_vch[1][1] + pmean_vch[1][0] * pmean_vch[1][0];
-    pvartmp[1][0] = pvartmp[0][1] = pmean_vch[0][0] * pmean_vch[1][0];
-    stdxnew       = (new_mean[0]) / (sqrt(pvartmp[0][0]));
-    stdynew       = (new_mean[1]) / (sqrt(pvartmp[1][1]));
-    stdxold       = (parms->theta[0]) / (sqrt(pvartmp[0][0]));
-    stdyold       = (parms->theta[1]) / (sqrt(pvartmp[1][1]));
-    corrxy        = pvartmp[1][0] / sqrt(pvartmp[0][0] * pvartmp[1][1]);
+      // *proposal ratio---ratio of integrals for truncated distribution*
+      //propvar = pow(propsd[[j]], 2);
+      sdnew       = new_mean[0] / propsd[j];
+      sdold       = parms->theta[0] / propsd[j];
 
-    // printf("stdxnew %lf stdynew %lf stdxold %lf stdyold %lf\n",stdxnew,stdynew,stdxold,stdyold);
-    newint = MDBNOR(stdxnew,stdynew,corrxy);
-    oldint = MDBNOR(stdxold,stdyold,corrxy);
-    //  printf("newint %lf oldint %lf\n",newint,oldint);
-    log_prop_ratio =  log(newint) - log(oldint);          
+      //pvartmp[0][0] = pmean_vch[0][0] * pmean_vch[0][0];
+      //pvartmp[1][1] = pmean_vch[1][1] * pmean_vch[1][1] + 
+      //                pmean_vch[1][0] * pmean_vch[1][0];
+      //pvartmp[1][0] = pvartmp[0][1] = pmean_vch[0][0] * pmean_vch[1][0];
+      //sdnew       = (new_mean[0]) / (sqrt(pvartmp[0][0]));
+      ////sdynew       = (new_mean[1]) / (sqrt(pvartmp[1][1]));
+      //sdold       = (parms->theta[0]) / (sqrt(pvartmp[0][0]));
+      //sdyold       = (parms->theta[1]) / (sqrt(pvartmp[1][1]));
+      //corrxy        = pvartmp[1][0] / sqrt(pvartmp[0][0] * pvartmp[1][1]);
 
-    // calculate the ratio of the priors for the decision ratio in the M-H
-    // the log of the true ratio is just the difference of the exponent terms
-    // in the two normal prior distributions of the new and old draws
-    // The denominator adjustment for the truncated normal cancels in this part
-    log_prior_ratio = 0;
-    for (i = 0; i < 2; i++) {
-      for (j = 0; j < 2; j++) {
-        log_prior_ratio += diff_mean_old[i] * priors->fe_precision[i][j] *
-          diff_mean_old[j] - diff_mean_new[i] * priors->fe_precision[i][j] *
-          diff_mean_new[j];
-      }
-    }
+      // printf("sdxnew %lf sdynew %lf sdxold %lf sdyold %lf\n",sdxnew,sdynew,sdxold,sdyold);
+      newint = MDBNOR(sdxnew,sdynew,corrxy);
+      oldint = MDBNOR(sdxold,sdyold,corrxy);
+      //  printf("newint %lf oldint %lf\n",newint,oldint);
+      log_prop_ratio =  log(newint) - log(oldint);          
 
-    log_prior_ratio *= 0.5;
-    // printf("log_prior_ratio FE %lf \n",log_prior_ratio);
-
-    // calculate the ratio of the distribution of pulse masses and
-    // variances(the random effects)
-    log_RE_ratio = 0;
-
-    node = list->succ;
-    while (node != NULL) {
-
-      // calculate the standardized normal values for the calculation of the
-      // multivariate normal integral
-      stdxnew = (new_mean[0])/(sqrt(re_var[0][0]/node->eta));
-      stdynew = (new_mean[1])/(sqrt(re_var[1][1]/node->eta));
-      stdxold = (parms->theta[0])/(sqrt(re_var[0][0]/node->eta));
-      stdyold = (parms->theta[1])/(sqrt(re_var[1][1]/node->eta));
-      corrxy = re_var[1][0]/sqrt(re_var[0][0] * re_var[1][1]);
-
-      new_sum = 0;
-      old_sum = 0; 
-      tmpold[0] = node->theta[0] - parms->theta[0];
-      tmpold[1] = node->theta[1] - parms->theta[1];
-      tmpnew[0] = node->theta[0] - new_mean[0];
-      tmpnew[1] = node->theta[1] - new_mean[1];
-      // printf("tmpold %lf %lf\n",tmpold[0],tmpold[1]);
-      // printf("tmpnew %lf %lf\n",tmpnew[0],tmpnew[1]);
-
-      temp = 0;
-      for (i=0;i<2;i++) {
-        for (j=0;j<2;j++) {
-          temp += (tmpold[i] * parms->re_precision[i][j] * tmpold[j] - tmpnew[i] * parms->re_precision[i][j] * tmpnew[j]);
-          // printf("temp %lf\n",temp);
+      // calculate the ratio of the priors for the decision ratio in the M-H
+      // the log of the true ratio is just the difference of the exponent terms
+      // in the two normal prior distributions of the new and old draws
+      // The denominator adjustment for the truncated normal cancels in this part
+      log_prior_ratio = 0;
+      for (i = 0; i < 2; i++) {
+        for (j = 0; j < 2; j++) {
+          log_prior_ratio += diff_mean_old[i] * priors->fe_precision[i][j] *
+            diff_mean_old[j] - diff_mean_new[i] * priors->fe_precision[i][j] *
+            diff_mean_new[j];
         }
       }
 
-      temp *= 0.5 * node->eta;
-      newint = MDBNOR(stdxnew,stdynew,corrxy);
-      oldint = MDBNOR(stdxold,stdyold,corrxy);
-      //   printf("newint %lf oldint %lf\n",newint,oldint);
-      temp += log(oldint) - log(newint) ;
-      //     printf("temp end %lf\n",temp);
-      log_RE_ratio += temp;
-      //   printf("log_RE_ratio end %lf \n",log_RE_ratio);
-      node = node->succ;
-    }    
+      log_prior_ratio *= 0.5;
+      // printf("log_prior_ratio FE %lf \n",log_prior_ratio);
 
-    // printf("log_prior_ratio %lf log_RE_ratio FE %lf log_prop_ratio %lf\n",log_prior_ratio,log_RE_ratio,log_prop_ratio);
-    // printf("log_RE_ratio FE %lf\n",log_RE_ratio);   
-    // printf("log_prop_ratio %lf\n",log_prop_ratio);
+      // calculate the ratio of the distribution of pulse masses and
+      // variances(the random effects)
+      log_RE_ratio = 0;
 
-    // create the decision on whether to keep the new values or the old value
-    alpha = (0 < (temp =  (log_prior_ratio + log_RE_ratio + log_prop_ratio))) ? 0:temp;
-    // printf("alpha %lf\n",alpha);
+      node = list->succ;
+      while (node != NULL) {
 
-    if(log(kiss(seed)) < alpha) {
-      // printf("ACCEPT FE\n");
-      afe++;
-      // printf("acc_mean %d\n",acc_mean);
-      for (i=0;i<2;i++)
-        parms->theta[i] = new_mean[i];
+        // calculate the standardized normal values for the calculation of the
+        // multivariate normal integral
+        stdxnew = (new_mean[0])/(sqrt(re_var[0][0]/node->eta));
+        stdynew = (new_mean[1])/(sqrt(re_var[1][1]/node->eta));
+        stdxold = (parms->theta[0])/(sqrt(re_var[0][0]/node->eta));
+        stdyold = (parms->theta[1])/(sqrt(re_var[1][1]/node->eta));
+        corrxy = re_var[1][0]/sqrt(re_var[0][0] * re_var[1][1]);
+
+        new_sum = 0;
+        old_sum = 0; 
+        tmpold[0] = node->theta[0] - parms->theta[0];
+        tmpold[1] = node->theta[1] - parms->theta[1];
+        tmpnew[0] = node->theta[0] - new_mean[0];
+        tmpnew[1] = node->theta[1] - new_mean[1];
+        // printf("tmpold %lf %lf\n",tmpold[0],tmpold[1]);
+        // printf("tmpnew %lf %lf\n",tmpnew[0],tmpnew[1]);
+
+        temp = 0;
+        for (i=0;i<2;i++) {
+          for (j=0;j<2;j++) {
+            temp += (tmpold[i] * parms->re_precision[i][j] * tmpold[j] - tmpnew[i] * parms->re_precision[i][j] * tmpnew[j]);
+            // printf("temp %lf\n",temp);
+          }
+        }
+
+        temp *= 0.5 * node->eta;
+        newint = MDBNOR(stdxnew,stdynew,corrxy);
+        oldint = MDBNOR(stdxold,stdyold,corrxy);
+        //   printf("newint %lf oldint %lf\n",newint,oldint);
+        temp += log(oldint) - log(newint) ;
+        //     printf("temp end %lf\n",temp);
+        log_RE_ratio += temp;
+        //   printf("log_RE_ratio end %lf \n",log_RE_ratio);
+        node = node->succ;
+      }    
+
+      // printf("log_prior_ratio %lf log_RE_ratio FE %lf log_prop_ratio %lf\n",log_prior_ratio,log_RE_ratio,log_prop_ratio);
+      // printf("log_RE_ratio FE %lf\n",log_RE_ratio);   
+      // printf("log_prop_ratio %lf\n",log_prop_ratio);
+
+      // create the decision on whether to keep the new values or the old value
+      alpha = (0 < (temp =  (log_prior_ratio + log_RE_ratio + log_prop_ratio))) ? 0:temp;
+      // printf("alpha %lf\n",alpha);
+
+      if(log(kiss(seed)) < alpha) {
+        // printf("ACCEPT FE\n");
+        afe++;
+        // printf("acc_mean %d\n",acc_mean);
+        for (i=0;i<2;i++)
+          parms->theta[i] = new_mean[i];
+      }
     }
   }
 
