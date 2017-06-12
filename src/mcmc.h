@@ -33,7 +33,10 @@ void mh_mu_delta(Node_type *list, Common_parms *parms, Priors *priors,
                  double **ts, double *like, int N, int num_node, double **var,
                  long *adelta, long *ndelta);
 
-void draw_fixed_effects(Node_type *list, Priors *priors, Common_parms *parms);
+void draw_fixed_effects(Node_type *list, Priors *priors, Common_parms *parms,
+                        double sdfem, double sdfew, long *afem_ptr, 
+                        long *nfem_ptr, long *afew_ptr, long *nfew_ptr); 
+
 
 void draw_re_sd(Node_type *list, Priors *priors, Common_parms *parms, 
                 double v1, double v2, long *arevm, long *nrevm, 
@@ -43,6 +46,9 @@ void draw_random_effects(double **ts, Node_type *list, Common_parms *parms,
                          int N, double *like, double v1,  double v2, 
                          long *arem, long *nrem, long *arew, 
                          long *nrew);
+
+void draw_eta(Node_type *list, Common_parms *parms, double sdm, double sdw,
+              long *aetam, long *aetaw, long *netam, long *netaw);
 
 double error_squared(double **ts, Node_type *list, Common_parms *parms, int N);
 
