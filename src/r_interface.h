@@ -64,11 +64,15 @@ SEXP decon_r_interface(SEXP indata,
                        SEXP sv_error_var,
                        SEXP pv_mean_pulse_mass,
                        SEXP pv_mean_pulse_width,
-                       SEXP pv_pulse_mass,
-                       SEXP pv_pulse_width,
+                       SEXP pv_indiv_pulse_mass,
+                       SEXP pv_indiv_pulse_width,
+                       SEXP pv_sd_pulse_mass,
+                       SEXP pv_sd_pulse_width,
                        SEXP pv_pulse_location,
                        SEXP pv_baseline,
-                       SEXP pv_halflife
+                       SEXP pv_halflife,
+                       SEXP pv_etamass,
+                       SEXP pv_etawidth
                        );
 double **convert_data(SEXP indata, int nrow); 
 void deallocate_data(double **data, int nrow);

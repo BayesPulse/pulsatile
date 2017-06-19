@@ -81,12 +81,12 @@ void mcmc(Node_type *list,
   int num_node2;       // Number of pulses
   //int NN = 50;       // Output ever NNth iteration to files
   int NNN = 5000;      // Output ever NNth iteration to STDOUT
-  double sdrem;        // Proposal variance for RE masses
-  double sdrew;        // Proposal variance for RE widths
-  double sdmv;         // Proposal variance for SD of RE masses
-  double sdwv;         // Proposal variance for SD of RE widths
-  double sdfem;        // Proposal variance for SD of FE masses
-  double sdfew;        // Proposal variance for SD of FE widths
+  double sdrem;        // Proposal SD for RE masses
+  double sdrew;        // Proposal SD for RE widths
+  double sdmv;         // Proposal SD for SD of RE masses
+  double sdwv;         // Proposal SD for SD of RE widths
+  double sdfem;        // Proposal SD for FE masses
+  double sdfew;        // Proposal SD for FE widths
   double sdt;          // Proposal variance for individual pulse locations
   double ssq;          // Sum of squared differences between log(concentration) and expected value
   double sdetam;
@@ -149,10 +149,10 @@ void mcmc(Node_type *list,
   sdrew = propsd[5];
   sdmv  = propsd[2];
   sdwv  = propsd[3];
-  sdfem = propsd[7];   // proposed sd of the fixed effect mass distr
-  sdfew = propsd[8];   // proposed sd of the fixed effect width distr
-  sdetam = propsd[9];  // proposed sd of the eta mass distribution
-  sdetaw = propsd[10]; // proposed sd of the eta width distribution
+  sdfem = propsd[7];   // sd of the proposed fixed effect mass distr
+  sdfew = propsd[8];   // sd of the proposed fixed effect width distr
+  sdetam = propsd[9];  // sd of the proposed eta mass distribution
+  sdetaw = propsd[10]; // sd of the proposed eta width distribution
 
 
   //----------------------------------------------
@@ -268,6 +268,7 @@ void mcmc(Node_type *list,
 
     //------------------------------------------------------
     // Save/Print results
+    // TODO: Handle running very few chains or set minimum -- currently if iters < thin, code fails on "attempt to set index 0/0 in SET_VECTOR_ELT"
     //------------------------------------------------------
     // Save to files common/parms
     if (!(i % NN)) {
@@ -276,13 +277,13 @@ void mcmc(Node_type *list,
 
       // create matrix for pulse-specific parms in this iteration
       SEXP this_pulse_chain;
-      Rf_protect(this_pulse_chain = allocMatrix(REALSXP, num_node2, 6));
+      Rf_protect(this_pulse_chain = allocMatrix(REALSXP, num_node2, 8));
       //memset(REAL(this_pulse_chain), 0, num_node*6*sizeof(double)); //not sure how to use this with SEXP matrices
       SEXP dim, dimnames;
       // create 'dim' attribute (dimension of matrix)
       Rf_protect(dim = Rf_allocVector(INTSXP, 2));
       INTEGER(dim)[0] = num_node2; 
-      INTEGER(dim)[1] = 6;
+      INTEGER(dim)[1] = 8;
       Rf_setAttrib(this_pulse_chain, R_DimSymbol, dim);
 
       while (new_node != NULL) {
@@ -304,13 +305,15 @@ void mcmc(Node_type *list,
       // Column names for this_pulse obj in pulse chain --------
       // create names 
       SEXP pulse_chain_names;
-      Rf_protect(pulse_chain_names = Rf_allocVector(STRSXP, 6));
+      Rf_protect(pulse_chain_names = Rf_allocVector(STRSXP, 8));
       SET_STRING_ELT(pulse_chain_names, 0, Rf_mkChar("iteration"));
       SET_STRING_ELT(pulse_chain_names, 1, Rf_mkChar("total_num_pulses"));
       SET_STRING_ELT(pulse_chain_names, 2, Rf_mkChar("pulse_num"));
       SET_STRING_ELT(pulse_chain_names, 3, Rf_mkChar("location"));
       SET_STRING_ELT(pulse_chain_names, 4, Rf_mkChar("mass"));
       SET_STRING_ELT(pulse_chain_names, 5, Rf_mkChar("width"));
+      SET_STRING_ELT(pulse_chain_names, 6, Rf_mkChar("eta_mass"));
+      SET_STRING_ELT(pulse_chain_names, 7, Rf_mkChar("eta_width"));
       // assign names to vector
       Rf_protect(dimnames = Rf_allocVector(VECSXP, 2));
       // assign names vector to columns (1) names attribute, leaving rows (0) NULL;
@@ -986,8 +989,8 @@ void mh_mu_delta(Node_type *list,
 void draw_fixed_effects(Node_type *list, 
                         Priors *priors, 
                         Common_parms *parms, 
-                        double vfem, 
-                        double vfew,
+                        double sdfem, 
+                        double sdfew,
                         long *afem, long *nfem, long *afew, long *nfew ) {  
   int j, numnode, newint, oldint;
   long *accept_counter;
@@ -1006,8 +1009,8 @@ void draw_fixed_effects(Node_type *list,
   nfew++;
 
   // Proposed values
-  theta[0] = Rf_rnorm(parms->theta[0], vfem);
-  theta[1] = Rf_rnorm(parms->theta[1], vfew);
+  theta[0] = Rf_rnorm(parms->theta[0], sdfem);
+  theta[1] = Rf_rnorm(parms->theta[1], sdfew);
 
   // Draw a new pair of pulse mass and width on the subject level
   for (j = 0; j < 2; j++) {
@@ -1757,7 +1760,7 @@ double error_squared(double **ts,
     ssq += (ts[i][1] - mean[i]) * (ts[i][1] - mean[i]);
   }
 
-  //free(mean);
+  free(mean);
 
   return ssq;
 

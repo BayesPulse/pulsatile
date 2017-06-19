@@ -42,8 +42,12 @@
 #' @param pv_halflife placeholder
 #' @param pv_mean_pulse_mass placeholder
 #' @param pv_mean_pulse_width placeholder
-#' @param pv_pulse_mass placeholder
-#' @param pv_pulse_width placeholder
+#' @param pv_indiv_pulse_mass placeholder
+#' @param pv_indiv_pulse_width placeholder
+#' @param pv_sd_pulse_mass placeholder
+#' @param pv_sd_pulse_width placeholder
+#' @param pv_sdscale_pulse_mass placeholder
+#' @param pv_sdscale_pulse_width placeholder
 #' @param pv_pulse_location placeholder
 #' @export
 #' @keywords pulse simulation
@@ -76,8 +80,12 @@ pulse_spec <-
            pv_halflife            = 45,
            pv_mean_pulse_mass     = 2,
            pv_mean_pulse_width    = 2,
-           pv_pulse_mass          = 2,
-           pv_pulse_width         = 50,
+           pv_indiv_pulse_mass    = 2,
+           pv_indiv_pulse_width   = 2,
+           pv_sd_pulse_mass       = 2,
+           pv_sd_pulse_width      = 50,
+           pv_sdscale_pulse_mass  = 1,
+           pv_sdscale_pulse_width = 1,
            pv_pulse_location      = 10) 
   {
 
@@ -143,8 +151,12 @@ pulse_spec <-
                                     error       = list(var  = sv_error_var)),
              proposal_variances = list(mean_pulse_mass  = pv_mean_pulse_mass,
                                        mean_pulse_width = pv_mean_pulse_width,
-                                       pulse_mass       = pv_pulse_mass,
-                                       pulse_width      = pv_pulse_width,
+                                       indiv_pulse_mass  = pv_indiv_pulse_mass,
+                                       indiv_pulse_width = pv_indiv_pulse_width,
+                                       sd_pulse_mass    = pv_sd_pulse_mass,
+                                       sd_pulse_width   = pv_sd_pulse_width,
+                                       etamass          = pv_sdscale_pulse_mass,
+                                       etawidth         = pv_sdscale_pulse_width,
                                        pulse_location   = pv_pulse_location,
                                        baseline         = pv_baseline,
                                        halflife         = pv_halflife)),
@@ -168,8 +180,8 @@ print.pulse_spec <- function(x, ...) {
   cat("   prior variance =", x$priors$pulse_mass$var, "\n") 
   cat("   mean starting value =", x$starting_values$pulse_mass$mean, "\n") 
   cat("   SD starting value =", x$starting_values$pulse_mass$sd, "\n") 
-  cat("   proposal variance =", x$proposal_variances$pulse_mass, "\n")
-  cat("   mean proposal variance =", x$proposal_variances$mean_pulse_mass, "\n")
+  cat("   proposal variance =", x$proposal_variances$sd_pulse_mass, "\n")
+  cat("   mean proposal variance =", x$proposal_variances$indiv_pulse_mass, "\n")
 
 }
 

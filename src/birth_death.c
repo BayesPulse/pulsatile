@@ -82,7 +82,7 @@ void birth_death(Node_type *list,
 {
 
   // Declarations
-  int i;                      // Generic counter
+  int i, j;                   // Generic counter
   int remove;                 // Ordered number of pulse to remove
   int num_node;               // Number of pulses
   int aaa = 0;                // Counter for # BD iterations
@@ -96,7 +96,7 @@ void birth_death(Node_type *list,
   double *death_rate;         // Vector of death rates for each pulse
   double position;            // Value of new pulse's location
   double *partial_likelihood; // Array of likelihoods with pulse i removed
-  double *tmp;                // Used when drawing new pulse's mass and width
+  //double *tmp;                // Used when drawing new pulse's mass and width
   Node_type *node;            // Pointer to current pulse
   Node_type *new_node;        // New pulse object
   // Spatial BD and Strauss declarations
@@ -113,7 +113,7 @@ void birth_death(Node_type *list,
   //-----------------------------------------
   full_likelihood = *likeli;
   Birth_rate = parms->nprior; 
-  tmp = (double *)calloc(2, sizeof(double));
+  //tmp = (double *)calloc(2, sizeof(double));
 
   // If Strauss, calculate instantaneous birth rate and prior intensity
   if (strauss == 1) {
@@ -261,8 +261,11 @@ void birth_death(Node_type *list,
         new_node               = initialize_node();
         new_node->time         = position;
 
-        new_node->theta[0] = exp(Rf_rnorm(parms->theta[0], parms->re_sd[0]));
-        new_node->theta[1] = exp(Rf_rnorm(parms->theta[1], parms->re_sd[1]));
+        for (j = 0; j < 2; j++) {
+          while (new_node->theta[j] < 0) {
+            new_node->theta[j] = Rf_rnorm(parms->theta[j], parms->re_sd[j]);
+          }
+        }
 
         new_node->mean_contrib = (double *)calloc(N, sizeof(double));
         // Add it to the linklist and update values
@@ -297,7 +300,7 @@ void birth_death(Node_type *list,
   *likeli = full_likelihood;
 
   free(death_rate);
-  free(tmp);
+  //free(tmp);
 
 }
 

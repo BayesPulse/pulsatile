@@ -107,11 +107,15 @@ fit_pulse <- function(.data,
                spec$starting_values$error$var,
                spec$proposal_variances$mean_pulse_mass,
                spec$proposal_variances$mean_pulse_width,
-               spec$proposal_variances$pulse_mass,
-               spec$proposal_variances$pulse_width,
+               spec$proposal_variances$indiv_pulse_mass,
+               spec$proposal_variances$indiv_pulse_width,
+               spec$proposal_variances$sd_pulse_mass,
+               spec$proposal_variances$sd_pulse_width,
                spec$proposal_variances$pulse_location,
                spec$proposal_variances$baseline,
-               spec$proposal_variances$halflife)
+               spec$proposal_variances$halflife,
+               spec$proposal_variances$etamass,
+               spec$proposal_variances$etawidth)
 
   common_chain <- as.data.frame(rtn[[1]])
   pulse_chain  <- as.data.frame(do.call(rbind, rtn[[2]]))
