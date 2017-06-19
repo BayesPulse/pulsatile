@@ -293,6 +293,8 @@ void mcmc(Node_type *list,
         REAL(this_pulse_chain)[num_node + num_node2*3] = new_node->time;
         REAL(this_pulse_chain)[num_node + num_node2*4] = new_node->theta[0];
         REAL(this_pulse_chain)[num_node + num_node2*5] = new_node->theta[1];
+        REAL(this_pulse_chain)[num_node + num_node2*6] = new_node->eta[0];
+        REAL(this_pulse_chain)[num_node + num_node2*7] = new_node->eta[1];
 
         num_node++;
         new_node = new_node->succ;
@@ -989,10 +991,9 @@ void draw_fixed_effects(Node_type *list,
                         long *afem, long *nfem, long *afew, long *nfew ) {  
   int j, numnode, newint, oldint;
   long *accept_counter;
-  double acceptance_ratio, theta[2], old_prior, new_prior, old_val, 
-         prior_ratio, like_ratio, alpha, prop_new, prop_old, psum_old, psum_new,
-         pcomp, prop_ratio, stdxold, stdxnew, 
-         prior_old, prior_new;
+  double normalizing_ratio, acceptance_ratio, theta[2], old_prior, new_prior,
+         old_val, prior_ratio, like_ratio, alpha, prop_new, prop_old, psum_old,
+         psum_new, pcomp, prop_ratio, stdxold, stdxnew, prior_old, prior_new;
   Node_type *node;
 
   accept_counter = (long *)calloc(2, sizeof(long));
@@ -1037,13 +1038,13 @@ void draw_fixed_effects(Node_type *list,
         // Normalizing constants
         stdxnew   = theta[j]        * sqrt(node->eta[j]) / parms->re_sd[j];
         stdxold   = parms->theta[j] * sqrt(node->eta[j]) / parms->re_sd[j];
-        newint   += log(Rf_pnorm(stdxnew)); 
-        oldint   += log(Rf_pnorm(stdxold)); 
+        newint   += log(Rf_pnorm5(stdxnew, 0, 1, FALSE, FALSE)); 
+        oldint   += log(Rf_pnorm5(stdxold, 0, 1, FALSE, FALSE)); 
 
         node = node->succ;
       }
 
-      prop_ratio = 0.5 / (parms->re_precision[j] * parms->re_precision[j]) * 
+      prop_ratio = 0.5 / (parms->re_sd[j] * parms->re_sd[j]) * 
                    (psum_old - psum_new);
       normalizing_ratio = oldint - newint; 
 
@@ -1061,8 +1062,8 @@ void draw_fixed_effects(Node_type *list,
 
   } // end of loop through mass & width 
 
-  afem = accept_counter[0];
-  afew = accept_counter[1];
+  *afem = accept_counter[0];
+  *afew = accept_counter[1];
   free(accept_counter);
 
 }
@@ -1253,8 +1254,8 @@ void draw_re_sd(Node_type *list,
   nrevw++;
 
   // Assign current acceptance counts to temporary vector
-  accept_counter[0] = arevm;
-  accept_counter[1] = arevw;
+  accept_counter[0] = *arevm;
+  accept_counter[1] = *arevw;
 
   // Draw proposed values for sigma_a and sigma_w
   new_sd[0] = Rf_rnorm(parms->re_sd[0], v1);
@@ -1284,9 +1285,9 @@ void draw_re_sd(Node_type *list,
 
       // Normalizing constants
       stdxold   = parms->theta[j] * sqrt(node->eta[j]) / parms->re_sd[j];
-      stdxnew   = theta[j]        * sqrt(node->eta[j]) / parms->re_sd[j];
-      newint   += log(Rf_pnorm(stdxnew)); 
-      oldint   += log(Rf_pnorm(stdxold)); 
+      stdxnew   = parms->theta[j] * sqrt(node->eta[j]) / new_sd[j];
+      newint   += log(Rf_pnorm5(stdxnew, 0, 1, FALSE, FALSE)); 
+      oldint   += log(Rf_pnorm5(stdxold, 0, 1, FALSE, FALSE)); 
 
       node = node->succ;
 
@@ -1298,11 +1299,11 @@ void draw_re_sd(Node_type *list,
     prop_ratio = psum * 0.5 * (prop_old - prop_new); //
 
     // We only can accept the proposed value if it is positive
-    if (new_sd[j] > 0 && new_sd[j] < priors->re_sd[j]) {
+    if (new_sd[j] > 0 && new_sd[j] < priors->re_sdmax[j]) {
 
       // Compute log rho, and set alpha equal to min(log rho,0)
       acceptance_ratio = log(prior_ratio) + prop_ratio - newint + oldint;
-      alpha = (0 < acceptance_ratio) ? 0 : temp;
+      alpha = (0 < acceptance_ratio) ? 0 : acceptance_ratio;
 
       // If log(U) < log rho, accept the proposed value
       // Increase acceptance count by 1
@@ -1316,8 +1317,8 @@ void draw_re_sd(Node_type *list,
   } // end of loop through s_a and s_w 
 
   // Set acceptance count equal to temp vector components
-  arevm = accept_counter[0];
-  arevw = accept_counter[1];
+  *arevm = accept_counter[0];
+  *arevw = accept_counter[1];
 
   free(new_sd);
   free(accept_counter);
@@ -1524,7 +1525,6 @@ void draw_random_effects(double **ts,
                          long *arem, long *nrem, 
                          long *arew, long *nrew) {
   //double current_like;
-	Node_type *node;
   int i;                  // Generic counters
   int j;                  // Generic counters
   double logrho;          // Acceptance ratio prior to min(0,logrho)
@@ -1540,21 +1540,21 @@ void draw_random_effects(double **ts,
   double *old_contrib;    // For holding mean contrib using current value
   Node_type *node;        // Pointer to linklist of pulses
 
-	// Set acceptance counts equal to temporary vector
-	accept_counter    = (long *)calloc(2, sizeof(long));
-	accept_counter[0] = arem;
-	accept_counter[1] = arew;
 
   // Go to start of pulses 
   node = list->succ;
 
-  // Allocate Memory
-  old_contrib = (double *)calloc(N, sizeof(double));
-  pRE         = (double *)calloc(2, sizeof(double));
+	// Set acceptance counts equal to temporary vector
+	accept_counter    = (long *)calloc(2, sizeof(long));
+	accept_counter[0] = *arem;
+	accept_counter[1] = *arew;
 
   // Go through each existing pulse 
   while (node != NULL) {
 
+    // Allocate Memory
+    old_contrib = (double *)calloc(N, sizeof(double));
+    pRE         = (double *)calloc(2, sizeof(double));
 
     // Increase the denominators of the acceptance rates
     nrem++;
@@ -1623,16 +1623,16 @@ void draw_random_effects(double **ts,
 
     // Advance to next pulse
     node = node->succ;
+    free(pRE);
+    free(old_contrib);
 
   } // end of loop through pulses
 
   // Set counter equal to temporary vector values
-  arem = accept_counter[0];
-  arew = accept_counter[1];
+  *arem = accept_counter[0];
+  *arew = accept_counter[1];
   // free memory
   free(accept_counter);
-  free(pRE);
-  free(old_contrib);
 
 }
 
@@ -1653,12 +1653,13 @@ void draw_eta(Node_type *list,
   long *accept_counter; 
   double x, peta, prior_ratio, re_ratio, old_gamma, new_gamma, stdold, stdnew,
          re_old, re_new, alpha, temp;
+  double *proposed_eta;
   Node_type *node;
 
   proposed_eta      = (double *)calloc(2, sizeof(double));
   accept_counter    = (long *)calloc(2, sizeof(long));
-  accept_counter[0] = aetam;
-  accept_counter[1] = aetaw;
+  accept_counter[0] = *aetam;
+  accept_counter[1] = *aetaw;
 
   // first pulse mass and then pulse width
   node = list->succ;
@@ -1675,8 +1676,8 @@ void draw_eta(Node_type *list,
       if (proposed_eta[j] > 0) {
 
         // 
-        old_gamma = Rf_dgamma(node->eta[j], 2., 2.);
-        new_gamma = Rf_dgamma(proposed_eta[j], 2., 2.);
+        old_gamma = Rf_dgamma(node->eta[j], 2, 2, FALSE);
+        new_gamma = Rf_dgamma(proposed_eta[j], 2, 2, FALSE);
 
         prior_ratio  = log(new_gamma) - log(old_gamma);
         stdold       = (node->theta[j]) / (parms->re_sd[j] / sqrt(node->eta[j]));
@@ -1688,7 +1689,8 @@ void draw_eta(Node_type *list,
         re_ratio     = re_old - re_new;
         re_ratio    /= parms->re_sd[j];
         re_ratio    /= parms->re_sd[j];
-        re_ratio    += log(Rf_pnorm(stdold)) - log(Rf_pnorm(stdnew)) - 
+        re_ratio    += log(Rf_pnorm5(stdold, 0, 1, FALSE, FALSE)) -
+                       log(Rf_pnorm5(stdnew, 0, 1, FALSE, FALSE)) - 
                        0.5 * log(node->eta[j]) + 0.5 * log(proposed_eta[j]); // the 1/2pi term in
                                                                           // normal distirbution
         alpha = (0 < (temp = (prior_ratio + re_ratio))) ? 0 : temp;
@@ -1709,8 +1711,8 @@ void draw_eta(Node_type *list,
     node = node->succ;
 
   }
-  aetam = accept_counter[0];
-  aetaw = accept_counter[1];
+  *aetam = accept_counter[0];
+  *aetaw = accept_counter[1];
   free(accept_counter);
   free(proposed_eta);
   
@@ -1755,7 +1757,7 @@ double error_squared(double **ts,
     ssq += (ts[i][1] - mean[i]) * (ts[i][1] - mean[i]);
   }
 
-  free(mean);
+  //free(mean);
 
   return ssq;
 

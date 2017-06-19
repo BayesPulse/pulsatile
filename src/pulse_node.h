@@ -16,6 +16,9 @@ typedef struct node_tag {
     double theta[2];       // 0: individual pulse mass; 1: individual pulse variance
     double *mean_contrib;  // vector of secretion contribution for this pulse at
                            // each timepoint
+    double eta[2];         // scaling parameter distr. gamma(4/2, 4/2), for
+                           // making the truncated t-distribution prior on
+                           // individual pulse mass/width
 } Node_type;
 
 
