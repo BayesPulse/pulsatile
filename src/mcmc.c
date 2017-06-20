@@ -1065,10 +1065,10 @@ void draw_fixed_effects(Node_type *list,
         //Rprintf("New theta x %f\n", parms->theta[j]);
         //Rprintf("Old standardized x %f\n", stdxnew);
         //Rprintf("New standardized x %f\n", stdxold);
-        newint   += log(Rf_pnorm5(stdxnew, 0, 1, FALSE, FALSE)); 
-        oldint   += log(Rf_pnorm5(stdxold, 0, 1, FALSE, FALSE)); 
         //Rprintf("Old integral %f\n", oldint);
         //Rprintf("New integral %f\n", newint);
+        oldint += Rf_pnorm5(stdxold, 0, 1, 1.0, 1.0); // second 1.0 does the log xform for us 
+        newint += Rf_pnorm5(stdxnew, 0, 1, 1.0, 1.0); // first 1.0 says to use lower tail
 
         node = node->succ;
       }

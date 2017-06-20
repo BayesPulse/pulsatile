@@ -58,7 +58,7 @@ Node_type *initialize_node(void) {
   p->mean_contrib   = NULL;
   p->time           = fitstart;
   for (i = 0; i < 2; i++) {
-    p->theta[i] = 0;
+    p->theta[i] = 1;
     p->eta[i] = 1;
   }
 
