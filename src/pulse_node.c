@@ -59,6 +59,7 @@ Node_type *initialize_node(void) {
   p->time           = fitstart;
   for (i = 0; i < 2; i++) {
     p->theta[i] = 0;
+    p->eta[i] = 1;
   }
 
   return p;
