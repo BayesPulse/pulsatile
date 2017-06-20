@@ -3,7 +3,7 @@
 #
 #-------------------------------------------------------------------------------
 #options(scipen = 99)
-setwd("~/Projects/Rpackages/pulsatile/")
+setwd("~/Projects/BayesPulse/pulsatile/")
 
 library(dplyr)
 library(tidyr)
@@ -16,8 +16,8 @@ library(magrittr)
 #theme_set(theme_tufte())
 
 devtools::document()
-devtools::check()
-devtools::install("../pulsatile", build_vignettes = TRUE)
+#devtools::check()
+devtools::install("../pulsatile", build_vignettes = FALSE)
 
 library(pulsatile)
 
@@ -25,7 +25,7 @@ set.seed(9999)
 this_pulse <- simulate_pulse()
 model_spec <- pulse_spec(location_prior_type = "order-statistic")
 fit_test   <- fit_pulse(.data = this_pulse, iters = 5000, thin = 50,
-                        spec = model_spec)
+                        spec = model_spec, verbose = TRUE)
 str(fit_test)
 plot(this_pulse)
 # will add summary and print s3 methods
