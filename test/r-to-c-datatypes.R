@@ -10,10 +10,10 @@ setwd("~/Projects/BayesPulse/pulsatile/")
 #library(pryr)
 library(devtools)
 # library(roxygen2)
-# library(ggplot2)
-# library(magrittr)
-#library(ggthemes)
-#theme_set(theme_tufte())
+library(ggplot2)
+library(magrittr)
+library(ggthemes)
+theme_set(theme_tufte())
 
 devtools::document()
 devtools::check()
@@ -25,8 +25,8 @@ library(pulsatile)
 set.seed(9999)
 this_pulse <- simulate_pulse()
 model_spec <- pulse_spec(location_prior_type = "order-statistic")
-fit_test   <- fit_pulse(.data = this_pulse, iters = 1000, thin = 1,
-                        spec = model_spec)
+fit_test   <- fit_pulse(.data = this_pulse, iters = 50000, thin = 1,
+                        spec = model_spec, verbose = TRUE)
 str(fit_test)
 plot(this_pulse)
 # will add summary and print s3 methods
@@ -46,7 +46,7 @@ model_spec_strauss <- pulse_spec(location_prior_type  = "strauss",
 #
 # ---- Simple test for repeatable results ---- 
 #
-n_iters <- 250000
+n_iters <- 100000
 n_thin  <- 50
 
 start_time <- proc.time()
@@ -92,9 +92,9 @@ time_round1 == time_round2
 ########################################
 # Sanity check on pulse count
 ########################################
-x11(); hist(fit_round1$common_chain$num_pulses) 
-x11(); hist(fit_round2$common_chain$num_pulses) 
-x11(); hist(fit_strauss$common_chain$num_pulses) 
+hist(fit_round1$common_chain$num_pulses) 
+hist(fit_round2$common_chain$num_pulses) 
+hist(fit_strauss$common_chain$num_pulses) 
 
 dev.off()
 dev.off()

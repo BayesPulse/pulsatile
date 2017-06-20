@@ -197,7 +197,9 @@ void mcmc(Node_type *list,
     //   selection of prior occurs within function based on 
     //   priors->gamma < -0.001
     //------------------------------------------------------
+    //if (i < 50) {
     birth_death(list, ts, parms, N, likeli, i, strauss, priors);
+    //}
 
     // Count number of pulses
     // **NOTE**: could remove this traversing of the linked-list by having
@@ -230,6 +232,19 @@ void mcmc(Node_type *list,
     //draw_eta(list, parms);
     draw_eta(list, parms, sdetam, sdetaw, aetam_ptr, aetaw_ptr, netam_ptr,
              netaw_ptr);
+
+    //num_node = 0;
+    //new_node = list->succ;
+    //while (new_node != NULL) {
+
+    //  Rprintf("node %d\n", num_node);
+    //  Rprintf("eta mass = %f\n", new_node->eta[0]);
+    //  Rprintf("eta width = %f\n", new_node->eta[1]);
+
+    //  num_node++;
+    //  new_node = new_node->succ;
+
+    //}
 
 
     // 3) Draw the random effects 
@@ -299,7 +314,7 @@ void mcmc(Node_type *list,
 
         num_node++;
         new_node = new_node->succ;
-        j++;
+        //j++;
       }
 
       // Column names for this_pulse obj in pulse chain --------
@@ -1011,8 +1026,8 @@ void draw_fixed_effects(Node_type *list,
   // Proposed values
   theta[0] = Rf_rnorm(parms->theta[0], sdfem);
   theta[1] = Rf_rnorm(parms->theta[1], sdfew);
-  //Rprintf("Proposed mean mass is: %f\n", theta[0]);
-  //Rprintf("Proposed mean width is: %f\n", theta[1]);
+  Rprintf("Proposed mean mass is: %f\n", theta[0]);
+  Rprintf("Proposed mean width is: %f\n", theta[1]);
 
   // Draw a new pair of pulse mass and width on the subject level
   for (j = 0; j < 2; j++) {
@@ -1043,16 +1058,17 @@ void draw_fixed_effects(Node_type *list,
         // Normalizing constants
         stdxnew   = theta[j]        * sqrt(node->eta[j]) / parms->re_sd[j];
         stdxold   = parms->theta[j] * sqrt(node->eta[j]) / parms->re_sd[j];
-        Rprintf("sqrt(eta) %f\n", sqrt(node->eta[j]));
-        Rprintf("re_sd %f\n", parms->re_sd[j]);
-        Rprintf("Old theta x %f\n", theta[j]);
-        Rprintf("New theta x %f\n", parms->theta[j]);
-        Rprintf("Old standardized x %f\n", stdxnew);
-        Rprintf("New standardized x %f\n", stdxold);
+        //Rprintf("\n\n\n\n\n", sqrt(node->eta[j]));
+        //Rprintf("sqrt(eta) %f\n", sqrt(node->eta[j]));
+        //Rprintf("re_sd %f\n", parms->re_sd[j]);
+        //Rprintf("Old theta x %f\n", theta[j]);
+        //Rprintf("New theta x %f\n", parms->theta[j]);
+        //Rprintf("Old standardized x %f\n", stdxnew);
+        //Rprintf("New standardized x %f\n", stdxold);
         newint   += log(Rf_pnorm5(stdxnew, 0, 1, FALSE, FALSE)); 
         oldint   += log(Rf_pnorm5(stdxold, 0, 1, FALSE, FALSE)); 
-        Rprintf("Old integral %f\n", oldint);
-        Rprintf("New integral %f\n", newint);
+        //Rprintf("Old integral %f\n", oldint);
+        //Rprintf("New integral %f\n", newint);
 
         node = node->succ;
       }
@@ -1062,13 +1078,14 @@ void draw_fixed_effects(Node_type *list,
       normalizing_ratio = oldint - newint; 
       Rprintf("Normalizing ratio is %f\n", normalizing_ratio);
 
-      acceptance_ratio = prior_ratio + prop_ratio;// + normalizing_ratio;
+      acceptance_ratio = prior_ratio + prop_ratio + normalizing_ratio;
       alpha = (0 < acceptance_ratio) ? 0 : acceptance_ratio;
 
       // If log(U) < log rho, accept the proposed value
       // Increase acceptance count by 1
       if (log(Rf_runif(0, 1)) < alpha) {
-        //Rprintf("Proposal %d accepted! (0 = mass, 1 = width)\n", j);
+        Rprintf("Proposal %d accepted! (0 = mass, 1 = width), theta=%f\n", j,
+                theta[j]);
         accept_counter[j]++;
         parms->theta[j] = theta[j];
       }
@@ -1665,7 +1682,7 @@ void draw_eta(Node_type *list,
               double sdm, double sdw,
               long *aetam, long *aetaw, long *netam, long *netaw) {
   int i, j;
-  long *accept_counter; 
+  long *accept_counter, num_node; 
   double x, peta, prior_ratio, re_ratio, old_gamma, new_gamma, stdold, stdnew,
          re_old, re_new, alpha, temp;
   double *proposed_eta;
@@ -1676,15 +1693,23 @@ void draw_eta(Node_type *list,
   accept_counter[0] = *aetam;
   accept_counter[1] = *aetaw;
 
+  //Rprintf("\n\nNew iteration\n");
+
   // first pulse mass and then pulse width
+  num_node = 0;
   node = list->succ;
   while (node != NULL) {
     netam++;
     netaw++;
 
+    //Rprintf("Node number %d\n", num_node);
+    num_node++;
+
     // draw the new eta
     proposed_eta[0] = Rf_rnorm(node->eta[0], sdm);
     proposed_eta[1] = Rf_rnorm(node->eta[1], sdw);
+    //Rprintf("\nProposed eta mass: %f\n", proposed_eta[0]);
+    //Rprintf("Proposed eta width: %f\n", proposed_eta[1]);
 
     for (j = 0; j < 2; j++) {
 
@@ -1709,16 +1734,20 @@ void draw_eta(Node_type *list,
                        0.5 * log(node->eta[j]) + 0.5 * log(proposed_eta[j]); // the 1/2pi term in
                                                                           // normal distirbution
         alpha = (0 < (temp = (prior_ratio + re_ratio))) ? 0 : temp;
+        //Rprintf("%d: log(rho) = acceptance ratio = %f\n", j, alpha);
 
         // If log U < log rho, accept the proposed value, increase acceptance
         // counter 
         if (log(Rf_runif(0, 1)) < alpha) {
+          //Rprintf("Accepted j=%d!; eta=%f\n", j, proposed_eta[j]);
           accept_counter[j]++;
           node->eta[j] = proposed_eta[j];
+          //Rprintf("Accepted node->eta=%f\n\n", node->eta[j]);
         }
 
       }
 
+      //Rprintf("All j=%d node->eta=%f\n\n", j, node->eta[j]);
       // node->eta[j] = 1;
 
     }
