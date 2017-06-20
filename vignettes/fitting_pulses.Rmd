@@ -47,7 +47,7 @@ ggplot(this_pulse$data, aes(x = time, y = concentration)) +
 ```{r fit-pulse}
 # These args are not yet implemented
 model_spec <- pulse_spec(location_prior_type = "order-statistic")
-fit_test   <- fit_pulse(.data = this_pulse, iters = 2500, thin = 50,
+fit_test   <- fit_pulse(.data = this_pulse, iters = 100, thin = 50,
                         spec = model_spec)
 
 ```

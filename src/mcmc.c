@@ -1011,6 +1011,8 @@ void draw_fixed_effects(Node_type *list,
   // Proposed values
   theta[0] = Rf_rnorm(parms->theta[0], sdfem);
   theta[1] = Rf_rnorm(parms->theta[1], sdfew);
+  //Rprintf("Proposed mean mass is: %f\n", theta[0]);
+  //Rprintf("Proposed mean width is: %f\n", theta[1]);
 
   // Draw a new pair of pulse mass and width on the subject level
   for (j = 0; j < 2; j++) {
@@ -1041,8 +1043,16 @@ void draw_fixed_effects(Node_type *list,
         // Normalizing constants
         stdxnew   = theta[j]        * sqrt(node->eta[j]) / parms->re_sd[j];
         stdxold   = parms->theta[j] * sqrt(node->eta[j]) / parms->re_sd[j];
+        Rprintf("sqrt(eta) %f\n", sqrt(node->eta[j]));
+        Rprintf("re_sd %f\n", parms->re_sd[j]);
+        Rprintf("Old theta x %f\n", theta[j]);
+        Rprintf("New theta x %f\n", parms->theta[j]);
+        Rprintf("Old standardized x %f\n", stdxnew);
+        Rprintf("New standardized x %f\n", stdxold);
         newint   += log(Rf_pnorm5(stdxnew, 0, 1, FALSE, FALSE)); 
         oldint   += log(Rf_pnorm5(stdxold, 0, 1, FALSE, FALSE)); 
+        Rprintf("Old integral %f\n", oldint);
+        Rprintf("New integral %f\n", newint);
 
         node = node->succ;
       }
@@ -1050,13 +1060,15 @@ void draw_fixed_effects(Node_type *list,
       prop_ratio = 0.5 / (parms->re_sd[j] * parms->re_sd[j]) * 
                    (psum_old - psum_new);
       normalizing_ratio = oldint - newint; 
+      Rprintf("Normalizing ratio is %f\n", normalizing_ratio);
 
-      acceptance_ratio = prior_ratio + prop_ratio + normalizing_ratio;
+      acceptance_ratio = prior_ratio + prop_ratio;// + normalizing_ratio;
       alpha = (0 < acceptance_ratio) ? 0 : acceptance_ratio;
 
       // If log(U) < log rho, accept the proposed value
       // Increase acceptance count by 1
       if (log(Rf_runif(0, 1)) < alpha) {
+        //Rprintf("Proposal %d accepted! (0 = mass, 1 = width)\n", j);
         accept_counter[j]++;
         parms->theta[j] = theta[j];
       }

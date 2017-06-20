@@ -21,10 +21,11 @@ devtools::install("../pulsatile", build_vignettes = TRUE)
 
 library(pulsatile)
 
+# NOTE: eta is not working right -- often -nan or huuuuuge
 set.seed(9999)
 this_pulse <- simulate_pulse()
 model_spec <- pulse_spec(location_prior_type = "order-statistic")
-fit_test   <- fit_pulse(.data = this_pulse, iters = 5000, thin = 50,
+fit_test   <- fit_pulse(.data = this_pulse, iters = 1000, thin = 1,
                         spec = model_spec)
 str(fit_test)
 plot(this_pulse)
@@ -53,7 +54,8 @@ set.seed(999999)
 fit_round1 <- fit_pulse(.data = this_pulse,
                         iters = n_iters,
                         thin  = n_thin,
-                        spec  = model_spec)
+                        spec  = model_spec,
+                        verbose = TRUE)
 stop_time <- proc.time()
 time_round1 <- (stop_time - start_time)/60
 
@@ -62,7 +64,8 @@ set.seed(999999)
 fit_round2 <- fit_pulse(.data = this_pulse,
                         iters = n_iters,
                         thin  = n_thin,
-                        spec  = model_spec)
+                        spec  = model_spec,
+                        verbose = TRUE)
 stop_time <- proc.time()
 time_round2 <- (stop_time - start_time)/60
 
@@ -71,7 +74,8 @@ set.seed(999999)
 fit_strauss <- fit_pulse(.data = this_pulse,
                          iters = n_iters,
                          thin  = n_thin,
-                         spec  = model_spec_strauss)
+                         spec  = model_spec_strauss,
+                        verbose = TRUE)
 stop_time <- proc.time()
 time_round3 <- (stop_time - start_time)/60
 
@@ -88,10 +92,13 @@ time_round1 == time_round2
 ########################################
 # Sanity check on pulse count
 ########################################
-hist(fit_round1$common_chain$num_pulses) 
-hist(fit_round2$common_chain$num_pulses) 
-hist(fit_strauss$common_chain$num_pulses) 
+x11(); hist(fit_round1$common_chain$num_pulses) 
+x11(); hist(fit_round2$common_chain$num_pulses) 
+x11(); hist(fit_strauss$common_chain$num_pulses) 
 
+dev.off()
+dev.off()
+dev.off()
 
 ########################################
 # Check Strauss 
