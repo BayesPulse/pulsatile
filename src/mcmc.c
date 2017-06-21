@@ -283,7 +283,8 @@ void mcmc(Node_type *list,
 
     //------------------------------------------------------
     // Save/Print results
-    // TODO: Handle running very few chains or set minimum -- currently if iters < thin, code fails on "attempt to set index 0/0 in SET_VECTOR_ELT"
+    // TODO: Handle running very few chains or set minimum -- currently if
+    // iters < thin, code fails on "attempt to set index 0/0 in SET_VECTOR_ELT"
     //------------------------------------------------------
     // Save to files common/parms
     if (!(i % NN)) {
@@ -1007,11 +1008,11 @@ void draw_fixed_effects(Node_type *list,
                         double sdfem, 
                         double sdfew,
                         long *afem, long *nfem, long *afew, long *nfew ) {  
-  int j, numnode, newint, oldint;
+  int j, newint, oldint, numnode;
   long *accept_counter;
   double normalizing_ratio, acceptance_ratio, theta[2], old_prior, new_prior,
-         old_val, prior_ratio, like_ratio, alpha, prop_new, prop_old, psum_old,
-         psum_new, pcomp, prop_ratio, stdxold, stdxnew, prior_old, prior_new;
+         prior_ratio, alpha, psum_old,
+         psum_new, pcomp, prop_ratio, stdxold, stdxnew, test;
   Node_type *node;
 
   accept_counter = (long *)calloc(2, sizeof(long));
@@ -1020,8 +1021,8 @@ void draw_fixed_effects(Node_type *list,
   accept_counter[0]  = *afem;
   accept_counter[1]  = *afew;
   // Iteration counters
-  nfem++;
-  nfew++;
+  (*nfem)++;
+  (*nfew)++;
 
   // Proposed values
   theta[0] = Rf_rnorm(parms->theta[0], sdfem);
@@ -1042,11 +1043,12 @@ void draw_fixed_effects(Node_type *list,
       prior_ratio  = (old_prior - new_prior) / (2 * priors->fe_variance[j]);
 
       // likelihood ratio (Proposal Ratio)
-      psum_old = 0.0;
-      psum_new = 0.0;
-      newint   = 0.0;
-      oldint   = 0.0;
+      psum_old = 0;
+      psum_new = 0;
+      newint   = 0;
+      oldint   = 0;
 
+      numnode = 0;
       node = list->succ;
 
       // 'likelihood' ratio -- Ratio of p(alpha|mu, nu, kappa)
@@ -1055,6 +1057,7 @@ void draw_fixed_effects(Node_type *list,
                     (node->theta[j] - parms->theta[j]) * node->eta[j];
         psum_new += (node->theta[j] - theta[j]) * 
                     (node->theta[j] - theta[j]) * node->eta[j];
+
         // Normalizing constants
         stdxnew   = theta[j]        * sqrt(node->eta[j]) / parms->re_sd[j];
         stdxold   = parms->theta[j] * sqrt(node->eta[j]) / parms->re_sd[j];
@@ -1071,6 +1074,7 @@ void draw_fixed_effects(Node_type *list,
         newint += Rf_pnorm5(stdxnew, 0, 1, 1.0, 1.0); // first 1.0 says to use lower tail
 
         node = node->succ;
+        numnode++;
       }
 
       prop_ratio = 0.5 / (parms->re_sd[j] * parms->re_sd[j]) * 
@@ -1282,8 +1286,8 @@ void draw_re_sd(Node_type *list,
   accept_counter = (long *)calloc(2, sizeof(long));
 
   // Add 1 to the counters for acceptance rates of sigma_a and sigma_w
-  nrevm++;
-  nrevw++;
+  (*nrevm)++;
+  (*nrevw)++;
 
   // Assign current acceptance counts to temporary vector
   accept_counter[0] = *arevm;
@@ -1318,8 +1322,8 @@ void draw_re_sd(Node_type *list,
       // Normalizing constants
       stdxold   = parms->theta[j] * sqrt(node->eta[j]) / parms->re_sd[j];
       stdxnew   = parms->theta[j] * sqrt(node->eta[j]) / new_sd[j];
-      newint   += log(Rf_pnorm5(stdxnew, 0, 1, FALSE, FALSE)); 
-      oldint   += log(Rf_pnorm5(stdxold, 0, 1, FALSE, FALSE)); 
+      newint   += Rf_pnorm5(stdxnew, 0, 1, 1.0, 1.0);  // second 1.0 does the log xform for us 
+      oldint   += Rf_pnorm5(stdxold, 0, 1, 1.0, 1.0);  // first 1.0 says to use lower tail
 
       node = node->succ;
 
@@ -1589,8 +1593,8 @@ void draw_random_effects(double **ts,
     pRE         = (double *)calloc(2, sizeof(double));
 
     // Increase the denominators of the acceptance rates
-    nrem++;
-    nrew++;
+    (*nrem)++;
+    (*nrew)++;
 
     // Draw proposed values of current pulse's mass and width
     pRE[0] = Rf_rnorm(node->theta[0], v1);
@@ -1699,8 +1703,8 @@ void draw_eta(Node_type *list,
   num_node = 0;
   node = list->succ;
   while (node != NULL) {
-    netam++;
-    netaw++;
+    (*netam)++;
+    (*netaw)++;
 
     //Rprintf("Node number %d\n", num_node);
     num_node++;
@@ -1715,9 +1719,11 @@ void draw_eta(Node_type *list,
 
       if (proposed_eta[j] > 0) {
 
-        // 
-        old_gamma = Rf_dgamma(node->eta[j], 2, 2, FALSE);
-        new_gamma = Rf_dgamma(proposed_eta[j], 2, 2, FALSE);
+        // Shape, scale parameterized: 
+        //    https://github.com/mmulvahill/r-source/blob/trunk/src/nmath/dgamma.c
+        //    https://cran.r-project.org/doc/manuals/r-release/R-exts.html#Distribution-functions
+        old_gamma = Rf_dgamma(node->eta[j], 2, 0.5, 0); 
+        new_gamma = Rf_dgamma(proposed_eta[j], 2, 0.5, 0);
 
         prior_ratio  = log(new_gamma) - log(old_gamma);
         stdold       = (node->theta[j]) / (parms->re_sd[j] / sqrt(node->eta[j]));
@@ -1729,10 +1735,10 @@ void draw_eta(Node_type *list,
         re_ratio     = re_old - re_new;
         re_ratio    /= parms->re_sd[j];
         re_ratio    /= parms->re_sd[j];
-        re_ratio    += log(Rf_pnorm5(stdold, 0, 1, FALSE, FALSE)) -
-                       log(Rf_pnorm5(stdnew, 0, 1, FALSE, FALSE)) - 
+        re_ratio    += Rf_pnorm5(stdold, 0, 1, 1.0, 1.0) -  // second 1.0 does the log xform for us 
+                       Rf_pnorm5(stdnew, 0, 1, 1.0, 1.0) -  // first 1.0 says to use lower tail      
                        0.5 * log(node->eta[j]) + 0.5 * log(proposed_eta[j]); // the 1/2pi term in
-                                                                          // normal distirbution
+                                                                             // normal distirbution
         alpha = (0 < (temp = (prior_ratio + re_ratio))) ? 0 : temp;
         //Rprintf("%d: log(rho) = acceptance ratio = %f\n", j, alpha);
 
@@ -1748,7 +1754,8 @@ void draw_eta(Node_type *list,
       }
 
       //Rprintf("All j=%d node->eta=%f\n\n", j, node->eta[j]);
-      // node->eta[j] = 1;
+      // TODO: eta set to 1 for debugging
+      //node->eta[j] = 1;
 
     }
 
