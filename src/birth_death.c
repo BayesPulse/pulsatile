@@ -105,6 +105,7 @@ void birth_death(Node_type *list,
   double papas_cif;           // Papangelou's cond'l intensity fn for birthed
   double b_ratio;             // Ratio of papas_cif/birth_rate for accept/rej
   double pulse_intensity;     // Prior intensity on pulse count poisson
+  double new_theta;           // New theta draw for looping till > 0
 
 
   //-----------------------------------------
@@ -211,7 +212,7 @@ void birth_death(Node_type *list,
     // Set Pr(Birth), force death/birth if too many/few
     if (num_node <= 1) { 
       max = 1.1;
-    } else if (num_node >= max_num_node) {
+    } else if (num_node >= max_num_node) { //TODO: may want to remove this upper limit for production..
       max = -0.1;
     } else { 
       max = Birth_rate / (Birth_rate + Death_rate); 
@@ -262,9 +263,13 @@ void birth_death(Node_type *list,
         new_node->time         = position;
 
         for (j = 0; j < 2; j++) {
-          while (new_node->theta[j] < 0) {
-            new_node->theta[j] = Rf_rnorm(parms->theta[j], parms->re_sd[j]);
+          new_theta = -1;
+          //new_eta = -1;
+          while (new_theta < 0) { // | new_eta < 0) {
+            //new_eta = Rf_rnorm(1, );
+            new_theta = Rf_rnorm(parms->theta[j], parms->re_sd[j]);
           }
+          new_node->theta[j] = new_theta;
         }
 
         new_node->mean_contrib = (double *)calloc(N, sizeof(double));

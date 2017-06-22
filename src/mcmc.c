@@ -233,20 +233,6 @@ void mcmc(Node_type *list,
     draw_eta(list, parms, sdetam, sdetaw, aetam_ptr, aetaw_ptr, netam_ptr,
              netaw_ptr);
 
-    //num_node = 0;
-    //new_node = list->succ;
-    //while (new_node != NULL) {
-
-    //  Rprintf("node %d\n", num_node);
-    //  Rprintf("eta mass = %f\n", new_node->eta[0]);
-    //  Rprintf("eta width = %f\n", new_node->eta[1]);
-
-    //  num_node++;
-    //  new_node = new_node->succ;
-
-    //}
-
-
     // 3) Draw the random effects 
     //    (Metropolis Hastings)
     draw_random_effects(ts, list, parms, N, likeli, sdrem, sdrew, arem_ptr,
@@ -376,6 +362,10 @@ void mcmc(Node_type *list,
              (double)adelta / (double)ndelta, 
              (double)arevm  / (double)nrevm,
              (double)arevw  / (double)nrevw);
+      Rprintf("pct etam = %.2lf etaw = %.2lf\n", 
+             (double)aetam / (double)netam, 
+             (double)aetaw  / (double)netaw);
+    
     }
 
     //----------------------------------------
@@ -1027,8 +1017,6 @@ void draw_fixed_effects(Node_type *list,
   // Proposed values
   theta[0] = Rf_rnorm(parms->theta[0], sdfem);
   theta[1] = Rf_rnorm(parms->theta[1], sdfew);
-  Rprintf("Proposed mean mass is: %f\n", theta[0]);
-  Rprintf("Proposed mean width is: %f\n", theta[1]);
 
   // Draw a new pair of pulse mass and width on the subject level
   for (j = 0; j < 2; j++) {
@@ -1061,15 +1049,6 @@ void draw_fixed_effects(Node_type *list,
         // Normalizing constants
         stdxnew   = theta[j]        * sqrt(node->eta[j]) / parms->re_sd[j];
         stdxold   = parms->theta[j] * sqrt(node->eta[j]) / parms->re_sd[j];
-        //Rprintf("\n\n\n\n\n", sqrt(node->eta[j]));
-        //Rprintf("sqrt(eta) %f\n", sqrt(node->eta[j]));
-        //Rprintf("re_sd %f\n", parms->re_sd[j]);
-        //Rprintf("Old theta x %f\n", theta[j]);
-        //Rprintf("New theta x %f\n", parms->theta[j]);
-        //Rprintf("Old standardized x %f\n", stdxnew);
-        //Rprintf("New standardized x %f\n", stdxold);
-        //Rprintf("Old integral %f\n", oldint);
-        //Rprintf("New integral %f\n", newint);
         oldint += Rf_pnorm5(stdxold, 0, 1, 1.0, 1.0); // second 1.0 does the log xform for us 
         newint += Rf_pnorm5(stdxnew, 0, 1, 1.0, 1.0); // first 1.0 says to use lower tail
 
@@ -1080,7 +1059,6 @@ void draw_fixed_effects(Node_type *list,
       prop_ratio = 0.5 / (parms->re_sd[j] * parms->re_sd[j]) * 
                    (psum_old - psum_new);
       normalizing_ratio = oldint - newint; 
-      Rprintf("Normalizing ratio is %f\n", normalizing_ratio);
 
       acceptance_ratio = prior_ratio + prop_ratio + normalizing_ratio;
       alpha = (0 < acceptance_ratio) ? 0 : acceptance_ratio;
@@ -1088,13 +1066,11 @@ void draw_fixed_effects(Node_type *list,
       // If log(U) < log rho, accept the proposed value
       // Increase acceptance count by 1
       if (log(Rf_runif(0, 1)) < alpha) {
-        Rprintf("Proposal %d accepted! (0 = mass, 1 = width), theta=%f\n", j,
-                theta[j]);
         accept_counter[j]++;
         parms->theta[j] = theta[j];
-      }
+      } 
 
-    }
+    } 
 
   } // end of loop through mass & width 
 
@@ -1317,6 +1293,7 @@ void draw_re_sd(Node_type *list,
       prior_ratio *= parms->re_sd[j] / new_sd[j]; 
       pcomp        = node->theta[j] - parms->theta[j]; 
       pcomp       *= pcomp; 
+      psum        += pcomp;
       psum        += pcomp * node->eta[j]; 
 
       // Normalizing constants
@@ -1339,6 +1316,7 @@ void draw_re_sd(Node_type *list,
 
       // Compute log rho, and set alpha equal to min(log rho,0)
       acceptance_ratio = log(prior_ratio) + prop_ratio - newint + oldint;
+
       alpha = (0 < acceptance_ratio) ? 0 : acceptance_ratio;
 
       // If log(U) < log rho, accept the proposed value
@@ -1642,11 +1620,9 @@ void draw_random_effects(double **ts,
         // counter 
         if (log(Rf_runif(0, 1)) < alpha) {
           accept_counter[j]++;
-        }
-
+        } else {
         // Otherwise, reject the proposed value, set pulse's mass/width back to 
         // saved current value, and set pulse's mean_contrib back to saved value
-        else {
 
           node->theta[j] = old_val;
           for (i = 0; i < N; i++) {
@@ -1697,23 +1673,17 @@ void draw_eta(Node_type *list,
   accept_counter[0] = *aetam;
   accept_counter[1] = *aetaw;
 
-  //Rprintf("\n\nNew iteration\n");
-
   // first pulse mass and then pulse width
   num_node = 0;
   node = list->succ;
   while (node != NULL) {
     (*netam)++;
     (*netaw)++;
-
-    //Rprintf("Node number %d\n", num_node);
     num_node++;
 
     // draw the new eta
     proposed_eta[0] = Rf_rnorm(node->eta[0], sdm);
     proposed_eta[1] = Rf_rnorm(node->eta[1], sdw);
-    //Rprintf("\nProposed eta mass: %f\n", proposed_eta[0]);
-    //Rprintf("Proposed eta width: %f\n", proposed_eta[1]);
 
     for (j = 0; j < 2; j++) {
 
@@ -1740,21 +1710,17 @@ void draw_eta(Node_type *list,
                        0.5 * log(node->eta[j]) + 0.5 * log(proposed_eta[j]); // the 1/2pi term in
                                                                              // normal distirbution
         alpha = (0 < (temp = (prior_ratio + re_ratio))) ? 0 : temp;
-        //Rprintf("%d: log(rho) = acceptance ratio = %f\n", j, alpha);
 
         // If log U < log rho, accept the proposed value, increase acceptance
         // counter 
         if (log(Rf_runif(0, 1)) < alpha) {
-          //Rprintf("Accepted j=%d!; eta=%f\n", j, proposed_eta[j]);
           accept_counter[j]++;
           node->eta[j] = proposed_eta[j];
-          //Rprintf("Accepted node->eta=%f\n\n", node->eta[j]);
         }
 
       }
 
-      //Rprintf("All j=%d node->eta=%f\n\n", j, node->eta[j]);
-      // TODO: eta set to 1 for debugging
+      // NOTE: eta set to 1 for debugging
       //node->eta[j] = 1;
 
     }
