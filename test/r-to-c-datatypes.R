@@ -16,8 +16,8 @@ library(ggthemes)
 theme_set(theme_tufte())
 
 devtools::document()
-#devtools::check()
-devtools::install("../pulsatile", build_vignettes = FALSE)
+devtools::check()
+devtools::install("../pulsatile", build_vignettes = TRUE)
 
 library(pulsatile)
 
