@@ -74,19 +74,23 @@ void mcmc(Node_type *list,
   //
   GetRNGstate();
   int i;               // Generic counter
-  int	j;               // Generic counter
-  int	k;               // Generic counter
-  int	l;               // Generic counter
-  int	num_node;        // Counter of num_node for loops
-  int	num_node2;       // Number of pulses
-  //int	NN = 50;         // Output ever NNth iteration to files
-  int	NNN = 5000;      // Output ever NNth iteration to STDOUT
-  double sdrem;         // Proposal variance for RE masses
-  double sdrew;         // Proposal variance for RE widths
-  double sdmv;          // Proposal variance for SD of RE masses
-  double sdwv;          // Proposal variance for SD of RE widths
-  double sdt;           // Proposal variance for individual pulse locations
+  int j;               // Generic counter
+  int k;               // Generic counter
+  int l;               // Generic counter
+  int num_node;        // Counter of num_node for loops
+  int num_node2;       // Number of pulses
+  //int NN = 50;       // Output ever NNth iteration to files
+  int NNN = 5000;      // Output ever NNth iteration to STDOUT
+  double sdrem;        // Proposal SD for RE masses
+  double sdrew;        // Proposal SD for RE widths
+  double sdmv;         // Proposal SD for SD of RE masses
+  double sdwv;         // Proposal SD for SD of RE widths
+  double sdfem;        // Proposal SD for FE masses
+  double sdfew;        // Proposal SD for FE widths
+  double sdt;          // Proposal variance for individual pulse locations
   double ssq;          // Sum of squared differences between log(concentration) and expected value
+  double sdetam;
+  double sdetaw;
   double *likeli;      // Value of likelihood
   double **pmd_var;    // Var-cov matrix for baseline and half-life
   double **pmd_vch;    // Cholesky decomposed var-cov matrix for baseline/half-life
@@ -107,6 +111,14 @@ void mcmc(Node_type *list,
   long nrevm  = 0; // RE pulse mass SD
   long arevw  = 0; // RE pulse width SD
   long nrevw  = 0; // RE pulse width SD
+  long afem   = 0; // Fixed Effect pulse mass
+  long nfem   = 0; // Fixed Effect pulse mass
+  long afew   = 0; // Fixed Effect pulse width
+  long nfew   = 0; // Fixed Effect pulse width
+  long aetam  = 0; // pulse mass eta 
+  long aetaw  = 0; // pulse width eta
+  long netam  = 0; // pulse mass eta 
+  long netaw  = 0; // pulse width eta
   long *adelta_ptr = &adelta; // halflife MH
   long *ndelta_ptr = &ndelta; // halflife MH
   long *atime_ptr  = &atime ; // pulse location MH
@@ -119,16 +131,28 @@ void mcmc(Node_type *list,
   long *nrevm_ptr  = &nrevm ; // RE pulse mass SD
   long *arevw_ptr  = &arevw ; // RE pulse width SD
   long *nrevw_ptr  = &nrevw ; // RE pulse width SD
+  long *afem_ptr   = &afem  ; // FE pulse mass
+  long *nfem_ptr   = &nfem  ; // FE pulse mass
+  long *afew_ptr   = &afew  ; // FE pulse width
+  long *nfew_ptr   = &nfew  ; // FE pulse width
+  long *aetam_ptr  = &aetam ; // pulse mass eta 
+  long *aetaw_ptr  = &aetaw ; // pulse width eta
+  long *netam_ptr  = &netam ; // pulse mass eta 
+  long *netaw_ptr  = &netaw ; // pulse width eta
 
   // Allocate memory for likelihood 
   likeli = (double *)calloc(1, sizeof(double));
 
   // Save proposal variances for passing to functions
   sdt   = propsd[6];
-  sdrem = propsd[4];
+  sdrem = propsd[4]; 
   sdrew = propsd[5];
   sdmv  = propsd[2];
   sdwv  = propsd[3];
+  sdfem = propsd[7];   // sd of the proposed fixed effect mass distr
+  sdfew = propsd[8];   // sd of the proposed fixed effect width distr
+  sdetam = propsd[9];  // sd of the proposed eta mass distribution
+  sdetaw = propsd[10]; // sd of the proposed eta width distribution
 
 
   //----------------------------------------------
@@ -173,7 +197,9 @@ void mcmc(Node_type *list,
     //   selection of prior occurs within function based on 
     //   priors->gamma < -0.001
     //------------------------------------------------------
+    //if (i < 50) {
     birth_death(list, ts, parms, N, likeli, i, strauss, priors);
+    //}
 
     // Count number of pulses
     // **NOTE**: could remove this traversing of the linked-list by having
@@ -192,13 +218,20 @@ void mcmc(Node_type *list,
 
     // 1) Draw the fixed effects   
     //    (Gibbs sampler)
-    draw_fixed_effects(list, priors, parms);  
+    draw_fixed_effects(list, priors, parms, sdfem, sdfew, afem_ptr, nfem_ptr,
+                       afew_ptr, nfew_ptr); 
+
 
     // 2) Draw standard deviation of random effects 
     //    (Metropolis Hastings)
     //    Note: log(sd) with uniform prior was suggested by Gelman, 2006
     draw_re_sd(list, priors, parms, sdmv, sdwv, arevm_ptr, nrevm_ptr,
                arevw_ptr, nrevw_ptr); 
+
+    // 3) Draw (kappa from) gamma for the t-distribution var-covar
+    //draw_eta(list, parms);
+    draw_eta(list, parms, sdetam, sdetaw, aetam_ptr, aetaw_ptr, netam_ptr,
+             netaw_ptr);
 
     // 3) Draw the random effects 
     //    (Metropolis Hastings)
@@ -236,6 +269,8 @@ void mcmc(Node_type *list,
 
     //------------------------------------------------------
     // Save/Print results
+    // TODO: Handle running very few chains or set minimum -- currently if
+    // iters < thin, code fails on "attempt to set index 0/0 in SET_VECTOR_ELT"
     //------------------------------------------------------
     // Save to files common/parms
     if (!(i % NN)) {
@@ -244,13 +279,13 @@ void mcmc(Node_type *list,
 
       // create matrix for pulse-specific parms in this iteration
       SEXP this_pulse_chain;
-      Rf_protect(this_pulse_chain = allocMatrix(REALSXP, num_node2, 6));
+      Rf_protect(this_pulse_chain = allocMatrix(REALSXP, num_node2, 8));
       //memset(REAL(this_pulse_chain), 0, num_node*6*sizeof(double)); //not sure how to use this with SEXP matrices
       SEXP dim, dimnames;
       // create 'dim' attribute (dimension of matrix)
       Rf_protect(dim = Rf_allocVector(INTSXP, 2));
       INTEGER(dim)[0] = num_node2; 
-      INTEGER(dim)[1] = 6;
+      INTEGER(dim)[1] = 8;
       Rf_setAttrib(this_pulse_chain, R_DimSymbol, dim);
 
       while (new_node != NULL) {
@@ -261,22 +296,26 @@ void mcmc(Node_type *list,
         REAL(this_pulse_chain)[num_node + num_node2*3] = new_node->time;
         REAL(this_pulse_chain)[num_node + num_node2*4] = new_node->theta[0];
         REAL(this_pulse_chain)[num_node + num_node2*5] = new_node->theta[1];
+        REAL(this_pulse_chain)[num_node + num_node2*6] = new_node->eta[0];
+        REAL(this_pulse_chain)[num_node + num_node2*7] = new_node->eta[1];
 
         num_node++;
         new_node = new_node->succ;
-        j++;
+        //j++;
       }
 
       // Column names for this_pulse obj in pulse chain --------
       // create names 
       SEXP pulse_chain_names;
-      Rf_protect(pulse_chain_names = Rf_allocVector(STRSXP, 6));
+      Rf_protect(pulse_chain_names = Rf_allocVector(STRSXP, 8));
       SET_STRING_ELT(pulse_chain_names, 0, Rf_mkChar("iteration"));
       SET_STRING_ELT(pulse_chain_names, 1, Rf_mkChar("total_num_pulses"));
       SET_STRING_ELT(pulse_chain_names, 2, Rf_mkChar("pulse_num"));
       SET_STRING_ELT(pulse_chain_names, 3, Rf_mkChar("location"));
       SET_STRING_ELT(pulse_chain_names, 4, Rf_mkChar("mass"));
       SET_STRING_ELT(pulse_chain_names, 5, Rf_mkChar("width"));
+      SET_STRING_ELT(pulse_chain_names, 6, Rf_mkChar("eta_mass"));
+      SET_STRING_ELT(pulse_chain_names, 7, Rf_mkChar("eta_width"));
       // assign names to vector
       Rf_protect(dimnames = Rf_allocVector(VECSXP, 2));
       // assign names vector to columns (1) names attribute, leaving rows (0) NULL;
@@ -316,11 +355,17 @@ void mcmc(Node_type *list,
       Rprintf("pct rem = %.2lf pct rew = %.2lf pct time = %.2lf\n",
               (double)arem  / (double)nrem, 
               (double)arew  / (double)nrew,
+              //(double)afem  / (double)nfem, 
+              //(double)afew  / (double)nfew,
               (double)atime / (double)ntime);
       Rprintf("pct md = %.2lf revm = %.2lf revw = %.2lf\n", 
              (double)adelta / (double)ndelta, 
              (double)arevm  / (double)nrevm,
              (double)arevw  / (double)nrevw);
+      Rprintf("pct etam = %.2lf etaw = %.2lf\n", 
+             (double)aetam / (double)netam, 
+             (double)aetaw  / (double)netaw);
+    
     }
 
     //----------------------------------------
@@ -340,6 +385,10 @@ void mcmc(Node_type *list,
       adjust_acceptance( (double) *arew_ptr   / (double) *nrew_ptr,   &sdrew);
       adjust_acceptance( (double) *arevm_ptr  / (double) *nrevm_ptr,  &sdmv);
       adjust_acceptance( (double) *arevw_ptr  / (double) *nrevw_ptr,  &sdwv);
+      adjust_acceptance( (double) *afem_ptr   / (double) *nfem_ptr,   &sdfem);
+      adjust_acceptance( (double) *afew_ptr   / (double) *nfew_ptr,   &sdfew);
+			adjust_acceptance( (double) *aetam_ptr  / (double) *netam_ptr,  &sdetam);
+			adjust_acceptance( (double) *aetaw_ptr  / (double) *netaw_ptr,  &sdetaw);
 
       adelta = ndelta = 0;
       atime  = ntime  = 0;
@@ -347,6 +396,10 @@ void mcmc(Node_type *list,
       arew   = nrew   = 0;
       arevm  = nrevm  = 0;
       arevw  = nrevw  = 0;
+      afem   = nfem   = 0;
+      afew   = nfew   = 0;
+      aetam  = netam  = 0;
+      aetaw  = netaw  = 0;
 
       // Cholesky decompose the three proposal var-covar matrices
       for (k = 0; k < 2; k++) {
@@ -840,7 +893,7 @@ void mh_mu_delta(Node_type *list,
 
 //-----------------------------------------------------------------------------
 // 
-// draw_fixed_effects: 
+// draw_fixed_effects (OLD - lognormal): 
 //   this runs the M-H draw for overall mean mass and width
 // 
 //   NOTE: Estimated on log scale, relative to natural scales of mass and
@@ -861,55 +914,172 @@ void mh_mu_delta(Node_type *list,
 //     None                - all updates are made internally
 // 
 //-----------------------------------------------------------------------------
+//void draw_fixed_effects(Node_type *list, 
+//                        Priors *priors, 
+//                        Common_parms *parms
+//                        ) {
+//
+//  // Declarations
+//  int j;           // Generic counter
+//  int numnode;     // Count of pulses
+//  double gmean;    // Mean for Gibbs sampler 
+//  double gvar;     // Var for Gibbs sampler
+//  double resum;    // Sum of pulse individual masses/widths
+//  Node_type *node; // Pointer to linklist of pulses
+//
+//
+//  // Draw new values of mu_a and mu_w via Gibbs Sampler 
+//  for (j = 0; j < 2; j++) {
+//
+//    resum   = 0.0;
+//    numnode = 0;
+//    node    = list->succ;
+//
+//    // This while loop counts the pulses and gets the sum of r.e. 
+//    while (node != NULL) {
+//      numnode++;
+//      resum += log(node->theta[j]);
+//      node   = node->succ;
+//    } 
+//
+//    // I added this on 11 Sep 2012; numnode is 0 to start with and this
+//    // causes gvar to be very large, sometimes leading to values of mua and
+//    // muw that are too large or too small; this in turn leads to later
+//    // extreme values of A-ik and sigma-p-ik which causes precision issues
+//    // in mean-contrib 
+//    if (numnode == 0) {
+//      numnode = 1;
+//    }
+//
+//    gmean  = (priors->fe_variance[j] * resum);
+//    gmean += (parms->re_sd[j] * parms->re_sd[j] * priors->fe_mean[j]);
+//    gmean /= (priors->fe_variance[j] * numnode) + 
+//             (parms->re_sd[j] * parms->re_sd[j]);
+//    gvar   = priors->fe_variance[j] * parms->re_sd[j] * parms->re_sd[j];
+//    gvar  /= (priors->fe_variance[j] * numnode) + 
+//             (parms->re_sd[j] * parms->re_sd[j]);
+//
+//    parms->theta[j] = Rf_rnorm(gmean, sqrt(gvar));
+//  }
+//
+//}
+
+
+
+//-----------------------------------------------------------------------------
+// START OF draw_fixed_effects SUBROUTINE*/
+//
+//
+// draw_fixed_effects: this runs the Gibbs sampler draw for subject-specific
+// mean masses and widths;
+// ARGUMENTS: Subject_type *sublist; this is the current list of subjects;
+// Priors *priors; the current values of the prior parameters;
+// Common_parms *parms; the current values of the common parameters;
+// unsigned long *seed; seed values needed for the randon number generator;
+// RETURNS: None; all updates are made internally
+//
+//********************************************************************/
+//
+// VARIABLE DEFINITIONS
+// j: generic counter
+// numnode: counter of pulses
+//
+// gvar: variance of distribution used in Gibbs sampler
+// *subject: current list of subjects and their characteristics
+// *subnode: for a given subject, list of pulses and their characteristics
+//
+// SUBROUTINES USED
+// kiss: found in randgen.c; draws from U(0,1) distribution
+// rnorm: found in randgen.c; draws from the normal distribution
+//------------------------------------------------------------------------------
 void draw_fixed_effects(Node_type *list, 
                         Priors *priors, 
-                        Common_parms *parms
-                        ) {
+                        Common_parms *parms, 
+                        double sdfem, 
+                        double sdfew,
+                        long *afem, long *nfem, long *afew, long *nfew ) {  
+  int j, newint, oldint, numnode;
+  long *accept_counter;
+  double normalizing_ratio, acceptance_ratio, theta[2], old_prior, new_prior,
+         prior_ratio, alpha, psum_old,
+         psum_new, pcomp, prop_ratio, stdxold, stdxnew, test;
+  Node_type *node;
 
-  // Declarations
-  int j;           // Generic counter
-  int numnode;     // Count of pulses
-  double gmean;    // Mean for Gibbs sampler 
-  double gvar;     // Var for Gibbs sampler
-  double resum;    // Sum of pulse individual masses/widths
-  Node_type *node; // Pointer to linklist of pulses
+  accept_counter = (long *)calloc(2, sizeof(long));
 
+  // Acceptance counters
+  accept_counter[0]  = *afem;
+  accept_counter[1]  = *afew;
+  // Iteration counters
+  (*nfem)++;
+  (*nfew)++;
 
-  // Draw new values of mu_a and mu_w via Gibbs Sampler 
+  // Proposed values
+  theta[0] = Rf_rnorm(parms->theta[0], sdfem);
+  theta[1] = Rf_rnorm(parms->theta[1], sdfew);
+
+  // Draw a new pair of pulse mass and width on the subject level
   for (j = 0; j < 2; j++) {
 
-    resum   = 0.0;
-    numnode = 0;
-    node    = list->succ;
+    if (theta[j]>0) {
 
-    // This while loop counts the pulses and gets the sum of r.e. 
-    while (node != NULL) {
-      numnode++;
-      resum += log(node->theta[j]);
-      node   = node->succ;
+      // Prior Ratio  -- DONE
+      old_prior    = (parms->theta[j] - priors->fe_mean[j]) * 
+                     (parms->theta[j] - priors->fe_mean[j]); 
+      new_prior    = (theta[j] - priors->fe_mean[j]) * 
+                     (theta[j] - priors->fe_mean[j]); 
+      prior_ratio  = (old_prior - new_prior) / (2 * priors->fe_variance[j]);
+
+      // likelihood ratio (Proposal Ratio)
+      psum_old = 0;
+      psum_new = 0;
+      newint   = 0;
+      oldint   = 0;
+
+      numnode = 0;
+      node = list->succ;
+
+      // 'likelihood' ratio -- Ratio of p(alpha|mu, nu, kappa)
+      while (node != NULL) {
+        psum_old += (node->theta[j] - parms->theta[j]) * 
+                    (node->theta[j] - parms->theta[j]) * node->eta[j];
+        psum_new += (node->theta[j] - theta[j]) * 
+                    (node->theta[j] - theta[j]) * node->eta[j];
+
+        // Normalizing constants
+        stdxnew   = theta[j]        * sqrt(node->eta[j]) / parms->re_sd[j];
+        stdxold   = parms->theta[j] * sqrt(node->eta[j]) / parms->re_sd[j];
+        oldint += Rf_pnorm5(stdxold, 0, 1, 1.0, 1.0); // second 1.0 does the log xform for us 
+        newint += Rf_pnorm5(stdxnew, 0, 1, 1.0, 1.0); // first 1.0 says to use lower tail
+
+        node = node->succ;
+        numnode++;
+      }
+
+      prop_ratio = 0.5 / (parms->re_sd[j] * parms->re_sd[j]) * 
+                   (psum_old - psum_new);
+      normalizing_ratio = oldint - newint; 
+
+      acceptance_ratio = prior_ratio + prop_ratio + normalizing_ratio;
+      alpha = (0 < acceptance_ratio) ? 0 : acceptance_ratio;
+
+      // If log(U) < log rho, accept the proposed value
+      // Increase acceptance count by 1
+      if (log(Rf_runif(0, 1)) < alpha) {
+        accept_counter[j]++;
+        parms->theta[j] = theta[j];
+      } 
+
     } 
 
-    // I added this on 11 Sep 2012; numnode is 0 to start with and this
-    // causes gvar to be very large, sometimes leading to values of mua and
-    // muw that are too large or too small; this in turn leads to later
-    // extreme values of A-ik and sigma-p-ik which causes precision issues
-    // in mean-contrib 
-    if (numnode == 0) {
-      numnode = 1;
-    }
+  } // end of loop through mass & width 
 
-    gmean  = (priors->fe_variance[j] * resum);
-    gmean += (parms->re_sd[j] * parms->re_sd[j] * priors->fe_mean[j]);
-    gmean /= (priors->fe_variance[j] * numnode) + 
-             (parms->re_sd[j] * parms->re_sd[j]);
-    gvar   = priors->fe_variance[j] * parms->re_sd[j] * parms->re_sd[j];
-    gvar  /= (priors->fe_variance[j] * numnode) + 
-             (parms->re_sd[j] * parms->re_sd[j]);
-
-    parms->theta[j] = Rf_rnorm(gmean, sqrt(gvar));
-  }
+  *afem = accept_counter[0];
+  *afew = accept_counter[1];
+  free(accept_counter);
 
 }
+
 
 
 
@@ -943,98 +1113,231 @@ void draw_fixed_effects(Node_type *list,
 //     None                - all updates are made internally
 //
 //-----------------------------------------------------------------------------
-void draw_re_sd(Node_type *list, 
-                Priors *priors, 
-                Common_parms *parms,
-                double v1, 
-                double v2,
-                long *arevm, long *nrevm, long *arevw, long *nrevw
-                ) {
+//void draw_re_sd(Node_type *list, 
+//                Priors *priors, 
+//                Common_parms *parms,
+//                double v1, 
+//                double v2,
+//                long *arevm, long *nrevm, long *arevw, long *nrevw
+//                ) {
+//
+//  int j;                  // Index for re_sd, theta, etc. arrays (mass=0, width=1)
+//  int npulse;             // Number of pulses
+//  double *accept_counter; // Array for counting acceptances
+//  double *new_sd;         // Array of proposed re std. devns
+//  double prop_new;        // New portion of acceptance ratio
+//  double prop_old;        // Old portion of acceptance ratio
+//  double psum;            // Sums of squares
+//  double prop_ratio;      // Acceptance ratio
+//  double alpha;           // Min of log(rho) and 0
+//  double draw;            // Random U(0,1) for accept/reject
+//  Node_type *node;        // Pointer for current node
+//  //--DEBUGGING--//
+//  //double debug1;
+//  //--DEBUGGING--//
+//
+//  // Allocate memory 
+//  new_sd = (double *)calloc(2, sizeof(double));
+//  accept_counter = (double *)calloc(2, sizeof(double));
+//
+//  // Add 1 to the counters for acceptance rates of sigma_1 and sigma_2 
+//  (*nrevm)++;
+//  (*nrevw)++;
+//
+//  // Assign current acceptance counts to temporary vector 
+//  accept_counter[0] = *arevm;
+//  accept_counter[1] = *arevw;
+//
+//  // Draw proposed values for sigma_1 and sigma_2 
+//  new_sd[0] = Rf_rnorm(parms->re_sd[0], v1); 
+//  new_sd[1] = Rf_rnorm(parms->re_sd[1], v2); 
+//
+//  // Accept/reject step
+//  for (j = 0; j < 2; j++) {
+//
+//    // Compute the sum included in the "likelihood".  Also compute the old value
+//    // divided by the new value raised to num_node.  This sum is the same
+//    // assuming the current value of sigma_j in both the numerator and
+//    // denominator of rho 
+//    psum   = 0;
+//    npulse = 0;
+//    node   = list->succ;
+//
+//    // Calculate sums of squares portion of accept. ratio
+//    while (node != NULL) {
+//      psum += (log(node->theta[j]) - parms->theta[j]) *
+//              (log(node->theta[j]) - parms->theta[j]);
+//      npulse++;
+//      node  = node->succ;
+//    }
+//
+//    // Logic is the uniform prior [U(0, re_sdmax)] portion of accept ratio
+//    if (new_sd[j] > 0 && new_sd[j] < priors->re_sdmax[j]) {
+//
+//      // Calculate rest of accept ratio  
+//      prop_old     = 1.0 / parms->re_sd[j] ;
+//      prop_old    /= parms->re_sd[j];
+//      prop_new     = 1.0 / new_sd[j]; 
+//      prop_new    /= new_sd[j];
+//      prop_ratio   = psum * 0.5 * (prop_old - prop_new);
+//      prop_ratio  += (double)npulse * log(parms->re_sd[j] / new_sd[j]);
+//
+//
+//      // Compute log rho, and set alpha equal to min(log rho, 0) 
+//      alpha = (0 < prop_ratio) ? 0 : prop_ratio;
+//      draw  = log(Rf_runif(0,1));
+//
+//      // If log(U) < log rho, accept the proposed value 
+//      if (draw < alpha) {
+//        parms->re_sd[j] = new_sd[j];
+//        accept_counter[j]++;
+//      }
+//
+//    }
+//
+//  }
+//
+//  // Reassign acceptance counters and free memory
+//  *arevm = accept_counter[0];
+//  *arevw = accept_counter[1];
+//  free(new_sd);
+//  free(accept_counter);
+//
+//}
 
-  int j;                  // Index for re_sd, theta, etc. arrays (mass=0, width=1)
-  int npulse;             // Number of pulses
-  double *accept_counter; // Array for counting acceptances
-  double *new_sd;         // Array of proposed re std. devns
-  double prop_new;        // New portion of acceptance ratio
-  double prop_old;        // Old portion of acceptance ratio
-  double psum;            // Sums of squares
-  double prop_ratio;      // Acceptance ratio
-  double alpha;           // Min of log(rho) and 0
-  double draw;            // Random U(0,1) for accept/reject
-  Node_type *node;        // Pointer for current node
-  //--DEBUGGING--//
-  //double debug1;
-  //--DEBUGGING--//
 
-  // Allocate memory 
-  new_sd = (double *)calloc(2, sizeof(double));
-  accept_counter = (double *)calloc(2, sizeof(double));
+//------------------------------------------------------------------------------
+// draw_re_sd: this runs the M-H draw for standard deviations of pulse
+//             masses and widths;
+// ARGUMENTS: Subject_type *sublist; this is the current list of subjects;
+//            Priors *priors; the current values of the prior parameters;
+//            Common_parms *parms; the current values of the common parameters;
+//            double v1; the proposal variance for overall st-dev of pulse mass;
+//            double v2; the proposal variance for overall st-dev of pulse width;
+//                       unsigned long *seed; seed values needed for the randon
+//                       number generator;
+//            RETURNS: None; all updates are made internally; this does update
+//                     the global variables regarding acceptance rate: afemv,
+//                     afewv, nfemv, and nfewv
+//
+// VARIABLE DEFINITIONS
+//   j: generic counter
+//   *accept_counter: current acceptance counters are saved to this vector so we can
+//        increment inside a loop
+//   *new_sd: proposed values of st. dev. of pulse mass and width
+//   prop_new: part of evaluation of prop_ratio portion of log(rho)
+//   prop_old: same as prop_new but with current (not proposed) value
+//   psum: part of evaluation of prop_ratio portion of log(rho)
+//   pcomp: part of evaluation of prop_ratio portion of log(rho)
+//   prior_old: part of evaluation of prior_ratio portion of log(rho)
+//   prior_new: same as prior_old, but with proposed value
+//   prior_ratio: comparison between prior distributions under current and proposed values
+//   prop_ratio: comparison between random effects distributions under current and
+//   proposed values
+//   temp: value used in evaluation of log(rho)
+//   alpha: minimum of 0 and log(rho); used to determine acceptance in M-H
+//   *subnode: for a given subject, list of pulses and their characteristics
+//   *subject: current list of subjects and their qualities
+//
+// SUBROUTINES USED
+//   kiss: found in randgen.c; draws from U(0,1) distribution
+//   rnorm: found in randgen.c; draws from the normal distribution
+//
+//------------------------------------------------------------------------------
+void draw_re_sd(Node_type *list,
+                       Priors *priors, 
+                       Common_parms *parms, 
+                       double v1, 
+                       double v2,
+                       long *arevm, long *nrevm, long *arevw, long *nrevw) {
+  int j;
+  long *accept_counter;   
+  double *new_sd, prop_new, prop_old, psum, pcomp, prior_old,
+         prior_new, prior_ratio, prop_ratio, acceptance_ratio, alpha,
+         stdxold, stdxnew, newint, oldint;
+  Node_type *node;
 
-  // Add 1 to the counters for acceptance rates of sigma_1 and sigma_2 
+  // Allocate Memory
+  new_sd         = (double *)calloc(2, sizeof(double));
+  accept_counter = (long *)calloc(2, sizeof(long));
+
+  // Add 1 to the counters for acceptance rates of sigma_a and sigma_w
   (*nrevm)++;
   (*nrevw)++;
 
-  // Assign current acceptance counts to temporary vector 
+  // Assign current acceptance counts to temporary vector
   accept_counter[0] = *arevm;
   accept_counter[1] = *arevw;
 
-  // Draw proposed values for sigma_1 and sigma_2 
-  new_sd[0] = Rf_rnorm(parms->re_sd[0], v1); 
-  new_sd[1] = Rf_rnorm(parms->re_sd[1], v2); 
+  // Draw proposed values for sigma_a and sigma_w
+  new_sd[0] = Rf_rnorm(parms->re_sd[0], v1);
+  new_sd[1] = Rf_rnorm(parms->re_sd[1], v2);
 
-  // Accept/reject step
-  for (j = 0; j < 2; j++) {
+  // Accept or Reject sigma_a, then accept or reject for sigma_w
+  for (j = 0; j < 2; j++){
 
-    // Compute the sum included in the "likelihood".  Also compute the old value
-    // divided by the new value raised to num_node.  This sum is the same
-    // assuming the current value of sigma_j in both the numerator and
-    // denominator of rho 
-    psum   = 0;
-    npulse = 0;
-    node   = list->succ;
+    // Initialize integora
+    newint = 0;
+    oldint = 0;
 
-    // Calculate sums of squares portion of accept. ratio
+    // Compute the sum included in the "likelihood"
+    // Also compute the old value divided by the new value raised to num_node
+    // This sum is the same assuming the current value of sigma_j in both
+    // the numerator and denominator of rho
+    psum = 0;
+    prior_ratio = 1; 
+    node = list->succ;
+
     while (node != NULL) {
-      psum += (log(node->theta[j]) - parms->theta[j]) *
-              (log(node->theta[j]) - parms->theta[j]);
-      npulse++;
-      node  = node->succ;
+
+      prior_ratio *= parms->re_sd[j] / new_sd[j]; 
+      pcomp        = node->theta[j] - parms->theta[j]; 
+      pcomp       *= pcomp; 
+      psum        += pcomp;
+      psum        += pcomp * node->eta[j]; 
+
+      // Normalizing constants
+      stdxold   = parms->theta[j] * sqrt(node->eta[j]) / parms->re_sd[j];
+      stdxnew   = parms->theta[j] * sqrt(node->eta[j]) / new_sd[j];
+      newint   += Rf_pnorm5(stdxnew, 0, 1, 1.0, 1.0);  // second 1.0 does the log xform for us 
+      oldint   += Rf_pnorm5(stdxold, 0, 1, 1.0, 1.0);  // first 1.0 says to use lower tail
+
+      node = node->succ;
+
     }
 
-    // Logic is the uniform prior [U(0, re_sdmax)] portion of accept ratio
+    // Complete the "likelihood" portion of rho
+    prop_old   = 1.0 / (parms->re_sd[j] * parms->re_sd[j]); //
+    prop_new   = 1.0 / (new_sd[j]      * new_sd[j]); //
+    prop_ratio = psum * 0.5 * (prop_old - prop_new); //
+
+    // We only can accept the proposed value if it is positive
     if (new_sd[j] > 0 && new_sd[j] < priors->re_sdmax[j]) {
 
-      // Calculate rest of accept ratio  
-      prop_old     = 1.0 / parms->re_sd[j] ;
-      prop_old    /= parms->re_sd[j];
-      prop_new     = 1.0 / new_sd[j]; 
-      prop_new    /= new_sd[j];
-      prop_ratio   = psum * 0.5 * (prop_old - prop_new);
-      prop_ratio  += (double)npulse * log(parms->re_sd[j] / new_sd[j]);
+      // Compute log rho, and set alpha equal to min(log rho,0)
+      acceptance_ratio = log(prior_ratio) + prop_ratio - newint + oldint;
 
+      alpha = (0 < acceptance_ratio) ? 0 : acceptance_ratio;
 
-      // Compute log rho, and set alpha equal to min(log rho, 0) 
-      alpha = (0 < prop_ratio) ? 0 : prop_ratio;
-      draw  = log(Rf_runif(0,1));
-
-      // If log(U) < log rho, accept the proposed value 
-      if (draw < alpha) {
-        parms->re_sd[j] = new_sd[j];
+      // If log(U) < log rho, accept the proposed value
+      // Increase acceptance count by 1
+      if (log(Rf_runif(0, 1)) < alpha) {
         accept_counter[j]++;
+        parms->re_sd[j] = new_sd[j];
       }
 
     }
 
-  }
+  } // end of loop through s_a and s_w 
 
-  // Reassign acceptance counters and free memory
+  // Set acceptance count equal to temp vector components
   *arevm = accept_counter[0];
   *arevw = accept_counter[1];
+
   free(new_sd);
   free(accept_counter);
 
 }
-
 
 
 
@@ -1066,17 +1369,183 @@ void draw_re_sd(Node_type *list,
 // 
 // 
 //-----------------------------------------------------------------------------
-void draw_random_effects(double **ts, Node_type *list, Common_parms *parms, 
-                         int N, double *like, double v1,  double v2,
+// void draw_random_effects(double **ts, Node_type *list, Common_parms *parms, 
+//                          int N, double *like, double v1,  double v2,
+//                          long *arem, long *nrem, 
+//                          long *arew, long *nrew) {
+//   int i;                  // Generic counters
+//   int j;                  // Generic counters
+//   double logrho;          // Acceptance ratio prior to min(0,logrho)
+//   double prior_old;       // Prior portion of accept. ratio due to current value
+//   double prior_new;       // Prior portion of accept. ratio due to proposed value
+//   double old_val;         // For holding old value of mass/width
+//   double *accept_counter; // Internal array for counting acceptances
+//   double *pRE;            // Array of proposed RE mass/width value
+//   double prior_ratio;     // Portion of accept. ratio due to priors
+//   double like_ratio;      // Portion of accept. ratio due to likelihoods
+//   double alpha;           // Acceptance ratio after min(0,logrho)
+//   double plikelihood;     // Likelihood with proposed value
+//   double *old_contrib;    // For holding mean contrib using current value
+//   Node_type *node;        // Pointer to linklist of pulses
+// 
+//   // Allocate Memory 
+//   accept_counter        = (double *)calloc(2, sizeof(double));
+//   old_contrib = (double *)calloc(N, sizeof(double));
+//   pRE         = (double *)calloc(2, sizeof(double));
+// 
+//   // Set acceptance counts equal to temporary vector 
+//   accept_counter[0] = *arem;
+//   accept_counter[1] = *arew;
+// 
+//   // Go to start of node list 
+//   node = list->succ;
+// 
+//   // Go through each existing pulse 
+//   while (node != NULL) {
+// 
+//     // Increase the denominators of the acceptance rates 
+//     (*nrem)++;
+//     (*nrew)++;
+// 
+//     // Draw proposed values of current pulse's mass and width 
+//     pRE[0] = Rf_rnorm(log(node->theta[0]), v1); 
+//     pRE[1] = Rf_rnorm(log(node->theta[1]), v2); 
+// 
+//     // Determine if we accept or reject proposed pulse mass then determine if
+//     // we accept or reject proposed pulse width
+//     for (j = 0; j < 2; j++) {
+//       // We can only accept if we draw a non-negative mass/width 
+// 
+//       // Compute the log of the ratio of the priors 
+//       prior_old     = log(node->theta[j]) - parms->theta[j];
+//       prior_old    *= 0.5 * prior_old;
+//       prior_new     = pRE[j] - parms->theta[j];
+//       prior_new    *= 0.5 * prior_new;
+//       prior_ratio   = prior_old - prior_new;
+//       prior_ratio  /= parms->re_sd[j];
+//       prior_ratio  /= parms->re_sd[j];
+// 
+//       // Save the current value of mass/width 
+//       old_val = node->theta[j];
+// 
+//       // Set the pulse's mass/width equal to the proposed value 
+//       node->theta[j] = exp(pRE[j]);
+// 
+//       // Save the mean_contrib for that pulse
+//       for (i = 0; i < N; i++) {
+//         old_contrib[i] = node->mean_contrib[i];
+//       }
+// 
+//       // Recalculate that pulse's mean_contrib assuming proposed mass/width 
+//       mean_contribution(node, ts, parms, N);
+// 
+//       // Calculate likelihood assuming proposed mass/width 
+//       plikelihood = likelihood(list, ts, parms, N, list);
+// 
+//       // Compute the log of the ratio between the two likelihoods
+//       like_ratio = plikelihood - *like;
+// 
+//       // Calculate log rho; set alpha equal to min(0, log rho) 
+//       alpha = (0 < (logrho = (prior_ratio + like_ratio))) ? 0:logrho;
+// 
+//       if (log(Rf_runif(0, 1)) < alpha) {
+//         // If log U < log rho, accept the proposed value, increase
+//         // acceptance counter and set current likelihood equal to
+//         // likelihood under proposed mass/width 
+//         accept_counter[j]++;
+//         *like = plikelihood;
+//       } else {
+//         // Otherwise, reject the proposed value, set pulse's mass/width back to
+//         // saved current value, and set pulse's mean_contrib back to saved value
+//         node->theta[j] = old_val;
+//         for (i = 0; i < N; i++) {
+//           node->mean_contrib[i] = old_contrib[i];
+//         }
+//       }
+// 
+//     } 
+//     // end of loop through mass & width 
+// 
+//     // Advance to next pulse 
+//     node = node->succ;
+// 
+//   } 
+//   // end of loop through pulses 
+// 
+//   // Set counter equal to temporary vector values 
+//   *arem = accept_counter[0];
+//   *arew = accept_counter[1];
+// 
+//   // free memory 
+//   free(accept_counter);
+//   free(pRE);
+//   free(old_contrib);
+// 
+// }
+
+
+
+//-----------------------------------------------------------------------------
+// draw_random_effects: this runs the M-H draw for individual pulse masses and
+//                       widths;
+// 	 ARGUMENTS: 
+// 	 double **ts; this is the matrix of observed data (a column of
+// 	              times and a column of log(concentration);
+// 	 Subject_type *list; this is the current list of subjects that exist;
+// 	 Common_parms *parms; the current values of the common parameters;
+// 	 int N; the number of observations in **ts;
+// 	 double v1; the proposal variance for individual pulse masses;
+// 	 double v2; the proposal variance for individual pulse widths;
+// 	 unsigned long *seed; seed values needed for the randon number generator;
+// 	 RETURNS: None; all updates are made internally; this does update the
+// 	          global variables regarding acceptance rate: arem, arew, nrem,
+// 	          nrew
+//-----------------------------------------------------------------------------
+// VARIABLE DEFINITIONS
+//  i,j,k: generic counters
+//  temp: value used in evaluation of log(rho)
+//  prior_old: part of evaluation of prior_ratio portion of log(rho)
+//  prior_new: same as prior_old, but with proposed value
+//  old_val: current value of the random effect is saved to this variable so we
+//  can evaluate likelihood under the proposed value
+//  *accept_counter: current acceptance counters are saved to this vector so we can increment
+//  inside a loop
+//  *pRE: proposed values of individual mass and width
+//  prior_ratio: comparison between prior distributions under current and proposed values
+//  like_ratio: difference between current and proposed log-likelihoods
+//  alpha: minimum of 0 and log(rho); used to determine acceptance in M-H
+//  plikelihood: likelihood under proposed value
+//  *old_contrib: current mean_contrib for a pulse is saved to this vector
+//  so we can evaluate likelihood under proposed pulse's mean_contrib
+//  current_like: current likelihood for a given subject; used for comparison
+//  *subnode: for a given subject, current list of pulses and their qualities
+//  *subject: current list of subjects and their qualities
+// 
+//  SUBROUTINES USED
+//  mean_contribution: found in birthdeath.c; evaluates mean_contrib for a
+//  pulse with specific parameters
+//  kiss: found in randgen.c; draws from U(0,1) distribution
+//  rnorm: found in randgen.c; draws from the normal distribution
+//  likelihood2: found in birthdeath.c; calculates and returns likelihood for a
+//  given subject under current parameters
+//-----------------------------------------------------------------------------
+void draw_random_effects(double **ts, 
+                         Node_type *list, 
+                         Common_parms *parms, 
+                         int N, 
+                         double *like,
+                         double v1, 
+                         double v2, 
                          long *arem, long *nrem, 
                          long *arew, long *nrew) {
+  //double current_like;
   int i;                  // Generic counters
   int j;                  // Generic counters
   double logrho;          // Acceptance ratio prior to min(0,logrho)
   double prior_old;       // Prior portion of accept. ratio due to current value
   double prior_new;       // Prior portion of accept. ratio due to proposed value
   double old_val;         // For holding old value of mass/width
-  double *accept_counter; // Internal array for counting acceptances
+  long *accept_counter; // Internal array for counting acceptances
   double *pRE;            // Array of proposed RE mass/width value
   double prior_ratio;     // Portion of accept. ratio due to priors
   double like_ratio;      // Portion of accept. ratio due to likelihoods
@@ -1085,101 +1554,186 @@ void draw_random_effects(double **ts, Node_type *list, Common_parms *parms,
   double *old_contrib;    // For holding mean contrib using current value
   Node_type *node;        // Pointer to linklist of pulses
 
-  // Allocate Memory 
-  accept_counter        = (double *)calloc(2, sizeof(double));
-  old_contrib = (double *)calloc(N, sizeof(double));
-  pRE         = (double *)calloc(2, sizeof(double));
 
-  // Set acceptance counts equal to temporary vector 
-  accept_counter[0] = *arem;
-  accept_counter[1] = *arew;
-
-  // Go to start of node list 
+  // Go to start of pulses 
   node = list->succ;
+
+	// Set acceptance counts equal to temporary vector
+	accept_counter    = (long *)calloc(2, sizeof(long));
+	accept_counter[0] = *arem;
+	accept_counter[1] = *arew;
 
   // Go through each existing pulse 
   while (node != NULL) {
 
-    // Increase the denominators of the acceptance rates 
+    // Allocate Memory
+    old_contrib = (double *)calloc(N, sizeof(double));
+    pRE         = (double *)calloc(2, sizeof(double));
+
+    // Increase the denominators of the acceptance rates
     (*nrem)++;
     (*nrew)++;
 
-    // Draw proposed values of current pulse's mass and width 
-    pRE[0] = Rf_rnorm(log(node->theta[0]), v1); 
-    pRE[1] = Rf_rnorm(log(node->theta[1]), v2); 
+    // Draw proposed values of current pulse's mass and width
+    pRE[0] = Rf_rnorm(node->theta[0], v1);
+    pRE[1] = Rf_rnorm(node->theta[1], v2);
 
-    // Determine if we accept or reject proposed pulse mass then determine if
-    // we accept or reject proposed pulse width
-    for (j = 0; j < 2; j++) {
-      // We can only accept if we draw a non-negative mass/width 
+    if (pRE[0] > 0.0 && pRE[1] > 0.01 && pRE[1] < 100){
+      // Determine if we accept or reject proposed pulse mass then determine
+      // if we accept or reject proposed pulse width
+      for (j = 0; j < 2; j++){
 
-      // Compute the log of the ratio of the priors 
-      prior_old     = log(node->theta[j]) - parms->theta[j];
-      prior_old    *= 0.5 * prior_old;
-      prior_new     = pRE[j] - parms->theta[j];
-      prior_new    *= 0.5 * prior_new;
-      prior_ratio   = prior_old - prior_new;
-      prior_ratio  /= parms->re_sd[j];
-      prior_ratio  /= parms->re_sd[j];
+        // Compute the log of the ratio of the priors
+        prior_old = node->theta[j] - parms->theta[j];
+        prior_old *= 0.5*prior_old;
+        prior_new = pRE[j] - parms->theta[j];
+        prior_new *= 0.5*prior_new;
+        prior_ratio = prior_old - prior_new;
+        prior_ratio /= parms->re_sd[j];
+        prior_ratio /= parms->re_sd[j];
 
-      // Save the current value of mass/width 
-      old_val = node->theta[j];
+        // Save the current value of mass/width
+        old_val = node->theta[j];
 
-      // Set the pulse's mass/width equal to the proposed value 
-      node->theta[j] = exp(pRE[j]);
+        // Set the pulse's mass/width equal to the proposed value
+        node->theta[j] = pRE[j];
 
-      // Save the mean_contrib for that pulse
-      for (i = 0; i < N; i++) {
-        old_contrib[i] = node->mean_contrib[i];
-      }
-
-      // Recalculate that pulse's mean_contrib assuming proposed mass/width 
-      mean_contribution(node, ts, parms, N);
-
-      // Calculate likelihood assuming proposed mass/width 
-      plikelihood = likelihood(list, ts, parms, N, list);
-
-      // Compute the log of the ratio between the two likelihoods
-      like_ratio = plikelihood - *like;
-
-      // Calculate log rho; set alpha equal to min(0, log rho) 
-      alpha = (0 < (logrho = (prior_ratio + like_ratio))) ? 0:logrho;
-
-      if (log(Rf_runif(0, 1)) < alpha) {
-        // If log U < log rho, accept the proposed value, increase
-        // acceptance counter and set current likelihood equal to
-        // likelihood under proposed mass/width 
-        accept_counter[j]++;
-        *like = plikelihood;
-      } else {
-        // Otherwise, reject the proposed value, set pulse's mass/width back to
-        // saved current value, and set pulse's mean_contrib back to saved value
-        node->theta[j] = old_val;
+        // Save the mean_contrib for that pulse
         for (i = 0; i < N; i++) {
-          node->mean_contrib[i] = old_contrib[i];
+          old_contrib[i] = node->mean_contrib[i];
         }
-      }
 
-    } 
-    // end of loop through mass & width 
+        // Recalculate that pulse's mean_contrib assuming proposed mass/width 
+        mean_contribution(node, ts, parms, N);
 
-    // Advance to next pulse 
+        // Calculate likelihood assuming proposed mass/width 
+        plikelihood = likelihood(list, ts, parms, N, list);
+
+        like_ratio = plikelihood - *like;
+
+        // Compute the log of the ratio between the two likelihoods
+
+        // Calculate log rho; set alpha equal to min(0,log rho) 
+        alpha = (0 < (logrho = (prior_ratio + like_ratio))) ? 0:logrho;
+
+        // If log U < log rho, accept the proposed value, increase acceptance
+        // counter 
+        if (log(Rf_runif(0, 1)) < alpha) {
+          accept_counter[j]++;
+        } else {
+        // Otherwise, reject the proposed value, set pulse's mass/width back to 
+        // saved current value, and set pulse's mean_contrib back to saved value
+
+          node->theta[j] = old_val;
+          for (i = 0; i < N; i++) {
+            node->mean_contrib[i] = old_contrib[i];
+          }
+
+        }
+      } // end of loop through mass & width 
+    }
+
+    // Advance to next pulse
     node = node->succ;
+    free(pRE);
+    free(old_contrib);
 
-  } 
-  // end of loop through pulses 
+  } // end of loop through pulses
 
-  // Set counter equal to temporary vector values 
+  // Set counter equal to temporary vector values
   *arem = accept_counter[0];
   *arew = accept_counter[1];
-
-  // free memory 
+  // free memory
   free(accept_counter);
-  free(pRE);
-  free(old_contrib);
 
 }
 
+
+
+//-----------------------------------------------------------------------------
+// 
+// draw_eta: 
+//   This subroutine draws a kappa for the scaling of the SD in the truncated-t
+//   prior on alpha/omega (individual mass/width). 
+// 
+//-----------------------------------------------------------------------------
+void draw_eta(Node_type *list, 
+              Common_parms *parms, 
+              double sdm, double sdw,
+              long *aetam, long *aetaw, long *netam, long *netaw) {
+  int i, j;
+  long *accept_counter, num_node; 
+  double x, peta, prior_ratio, re_ratio, old_gamma, new_gamma, stdold, stdnew,
+         re_old, re_new, alpha, temp;
+  double *proposed_eta;
+  Node_type *node;
+
+  proposed_eta      = (double *)calloc(2, sizeof(double));
+  accept_counter    = (long *)calloc(2, sizeof(long));
+  accept_counter[0] = *aetam;
+  accept_counter[1] = *aetaw;
+
+  // first pulse mass and then pulse width
+  num_node = 0;
+  node = list->succ;
+  while (node != NULL) {
+    (*netam)++;
+    (*netaw)++;
+    num_node++;
+
+    // draw the new eta
+    proposed_eta[0] = Rf_rnorm(node->eta[0], sdm);
+    proposed_eta[1] = Rf_rnorm(node->eta[1], sdw);
+
+    for (j = 0; j < 2; j++) {
+
+      if (proposed_eta[j] > 0) {
+
+        // Shape, scale parameterized: 
+        //    https://github.com/mmulvahill/r-source/blob/trunk/src/nmath/dgamma.c
+        //    https://cran.r-project.org/doc/manuals/r-release/R-exts.html#Distribution-functions
+        old_gamma = Rf_dgamma(node->eta[j], 2, 0.5, 0); 
+        new_gamma = Rf_dgamma(proposed_eta[j], 2, 0.5, 0);
+
+        prior_ratio  = log(new_gamma) - log(old_gamma);
+        stdold       = (node->theta[j]) / (parms->re_sd[j] / sqrt(node->eta[j]));
+        stdnew       = (node->theta[j]) / (parms->re_sd[j] / sqrt(proposed_eta[j]));
+        re_old       = node->theta[j] - parms->theta[j];
+        re_old      *= 0.5 * re_old * node->eta[j];
+        re_new       = node->theta[j] - parms->theta[j];
+        re_new      *= 0.5 * re_new * proposed_eta[j];
+        re_ratio     = re_old - re_new;
+        re_ratio    /= parms->re_sd[j];
+        re_ratio    /= parms->re_sd[j];
+        re_ratio    += Rf_pnorm5(stdold, 0, 1, 1.0, 1.0) -  // second 1.0 does the log xform for us 
+                       Rf_pnorm5(stdnew, 0, 1, 1.0, 1.0) -  // first 1.0 says to use lower tail      
+                       0.5 * log(node->eta[j]) + 0.5 * log(proposed_eta[j]); // the 1/2pi term in
+                                                                             // normal distirbution
+        alpha = (0 < (temp = (prior_ratio + re_ratio))) ? 0 : temp;
+
+        // If log U < log rho, accept the proposed value, increase acceptance
+        // counter 
+        if (log(Rf_runif(0, 1)) < alpha) {
+          accept_counter[j]++;
+          node->eta[j] = proposed_eta[j];
+        }
+
+      }
+
+      // NOTE: eta set to 1 for debugging
+      //node->eta[j] = 1;
+
+    }
+
+    node = node->succ;
+
+  }
+  *aetam = accept_counter[0];
+  *aetaw = accept_counter[1];
+  free(accept_counter);
+  free(proposed_eta);
+  
+}
 
 
 
