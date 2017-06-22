@@ -53,11 +53,15 @@ SEXP decon_r_interface(SEXP indata,
                        SEXP sv_error_var,
                        SEXP pv_mean_pulse_mass,
                        SEXP pv_mean_pulse_width,
-                       SEXP pv_pulse_mass,
-                       SEXP pv_pulse_width,
+                       SEXP pv_indiv_pulse_mass,
+                       SEXP pv_indiv_pulse_width,
+                       SEXP pv_sd_pulse_mass,
+                       SEXP pv_sd_pulse_width,
                        SEXP pv_pulse_location,
                        SEXP pv_baseline,
-                       SEXP pv_halflife
+                       SEXP pv_halflife,
+                       SEXP pv_etamass,
+                       SEXP pv_etawidth
                        ) {
 
   //int i;
@@ -138,17 +142,31 @@ SEXP decon_r_interface(SEXP indata,
 
 
   // Set up proposal variances ------------------
-  double propsd[7];   // Array of proposal variances for MH algorithms
-  propsd[4] = Rf_asReal(pv_mean_pulse_mass); 
-  propsd[5] = Rf_asReal(pv_mean_pulse_width);
-  propsd[2] = Rf_asReal(pv_pulse_mass); 
-  propsd[3] = Rf_asReal(pv_pulse_width);
-  propsd[6] = Rf_asReal(pv_pulse_location); 
-  propsd[0] = Rf_asReal(pv_baseline); 
-  propsd[1] = Rf_asReal(pv_halflife);
+  double propsd[11];   // Array of proposal variances for MH algorithms
+  propsd[4]  = Rf_asReal(pv_indiv_pulse_mass);  // SD of proposal distr for random effects (individ. pulse masses) -- formerly pv_mean_pulse_mass
+  propsd[5]  = Rf_asReal(pv_indiv_pulse_width); // SD of proposal distr for random effects (individ. pulse masses)
+  propsd[2]  = Rf_asReal(pv_sd_pulse_mass);  // Proposal variance for SD of RE masses (formerly pv_pulse_mass)
+  propsd[3]  = Rf_asReal(pv_sd_pulse_width); // Proposal variance for SD of RE masses
+  propsd[6]  = Rf_asReal(pv_pulse_location); 
+  propsd[0]  = Rf_asReal(pv_baseline); 
+  propsd[1]  = Rf_asReal(pv_halflife);
+  propsd[7]  = Rf_asReal(pv_mean_pulse_mass);  // sd of the proposed fixed effect mass distr
+  propsd[8]  = Rf_asReal(pv_mean_pulse_width); // sd of the proposed fixed effect width distr
+  propsd[9]  = Rf_asReal(pv_etamass);  // sd of the proposed eta mass distribution
+  propsd[10] = Rf_asReal(pv_etawidth); // sd of the proposed eta width distribution
 
   //Rprintf("proposal variance for location is %f\n", propsd[6]);
-
+  //Rprintf("\nProposal sd indiv mass: %f", propsd[4]);
+  //Rprintf("\nProposal sd indiv width: %f", propsd[5]);
+  //Rprintf("\nProposal sd sd mass: %f", propsd[2]);
+  //Rprintf("\nProposal sd sd width: %f", propsd[3]);
+  //Rprintf("\nProposal sd location: %f", propsd[6]);
+  //Rprintf("\nProposal sd baseline: %f", propsd[0]);
+  //Rprintf("\nProposal sd halflife: %f", propsd[1]);
+  //Rprintf("\nProposal sd mean mass: %f", propsd[7]);
+  //Rprintf("\nProposal sd mean width: %f", propsd[8]);
+  //Rprintf("\nProposal sd eta mass: %f", propsd[9]);
+  //Rprintf("\nProposal sd eta width: %f", propsd[10]);
 
 
   // Set up pulse linklist ------------------

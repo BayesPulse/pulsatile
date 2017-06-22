@@ -42,18 +42,22 @@
 #' @param pv_halflife placeholder
 #' @param pv_mean_pulse_mass placeholder
 #' @param pv_mean_pulse_width placeholder
-#' @param pv_pulse_mass placeholder
-#' @param pv_pulse_width placeholder
+#' @param pv_indiv_pulse_mass placeholder
+#' @param pv_indiv_pulse_width placeholder
+#' @param pv_sd_pulse_mass placeholder
+#' @param pv_sd_pulse_width placeholder
+#' @param pv_sdscale_pulse_mass placeholder
+#' @param pv_sdscale_pulse_width placeholder
 #' @param pv_pulse_location placeholder
 #' @export
 #' @keywords pulse simulation
 #' pulse_spec()
 pulse_spec <-
   function(location_prior_type = c("order-statistic", "strauss"),
-           prior_mass_mean        = 1.50,
-           prior_mass_var         = 10,
-           prior_width_mean       = 3.5,
-           prior_width_var        = 10,
+           prior_mass_mean        = 3.5,
+           prior_mass_var         = 100,
+           prior_width_mean       = 35,
+           prior_width_var        = 1000,
            prior_baseline_mean    = 2.6,
            prior_baseline_var     = 100,
            prior_halflife_mean    = 45,
@@ -62,11 +66,11 @@ pulse_spec <-
            prior_error_beta       = 0.0001,
            prior_location_gamma   = NULL,
            prior_location_range   = NULL,
-           prior_max_sd_mass      = 10,
-           prior_max_sd_width     = 10,
+           prior_max_sd_mass      = 100,
+           prior_max_sd_width     = 150,
            prior_mean_pulse_count = 12,
-           sv_mass_mean           = 1.5,
-           sv_width_mean          = 3.5,
+           sv_mass_mean           = 3.5,
+           sv_width_mean          = 35,
            sv_baseline_mean       = 2.6,
            sv_halflife_mean       = 45,
            sv_error_var           = 0.25,
@@ -75,9 +79,13 @@ pulse_spec <-
            pv_baseline            = 0.5,
            pv_halflife            = 45,
            pv_mean_pulse_mass     = 2,
-           pv_mean_pulse_width    = 2,
-           pv_pulse_mass          = 2,
-           pv_pulse_width         = 50,
+           pv_mean_pulse_width    = 5,
+           pv_indiv_pulse_mass    = 2,
+           pv_indiv_pulse_width   = 2,
+           pv_sd_pulse_mass       = 2,
+           pv_sd_pulse_width      = 10,
+           pv_sdscale_pulse_mass  = 1,
+           pv_sdscale_pulse_width = 1,
            pv_pulse_location      = 10) 
   {
 
@@ -143,8 +151,12 @@ pulse_spec <-
                                     error       = list(var  = sv_error_var)),
              proposal_variances = list(mean_pulse_mass  = pv_mean_pulse_mass,
                                        mean_pulse_width = pv_mean_pulse_width,
-                                       pulse_mass       = pv_pulse_mass,
-                                       pulse_width      = pv_pulse_width,
+                                       indiv_pulse_mass  = pv_indiv_pulse_mass,
+                                       indiv_pulse_width = pv_indiv_pulse_width,
+                                       sd_pulse_mass    = pv_sd_pulse_mass,
+                                       sd_pulse_width   = pv_sd_pulse_width,
+                                       etamass          = pv_sdscale_pulse_mass,
+                                       etawidth         = pv_sdscale_pulse_width,
                                        pulse_location   = pv_pulse_location,
                                        baseline         = pv_baseline,
                                        halflife         = pv_halflife)),
@@ -168,8 +180,8 @@ print.pulse_spec <- function(x, ...) {
   cat("   prior variance =", x$priors$pulse_mass$var, "\n") 
   cat("   mean starting value =", x$starting_values$pulse_mass$mean, "\n") 
   cat("   SD starting value =", x$starting_values$pulse_mass$sd, "\n") 
-  cat("   proposal variance =", x$proposal_variances$pulse_mass, "\n")
-  cat("   mean proposal variance =", x$proposal_variances$mean_pulse_mass, "\n")
+  cat("   proposal variance =", x$proposal_variances$sd_pulse_mass, "\n")
+  cat("   mean proposal variance =", x$proposal_variances$indiv_pulse_mass, "\n")
 
 }
 

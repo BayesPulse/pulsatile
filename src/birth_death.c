@@ -82,7 +82,7 @@ void birth_death(Node_type *list,
 {
 
   // Declarations
-  int i;                      // Generic counter
+  int i, j;                   // Generic counter
   int remove;                 // Ordered number of pulse to remove
   int num_node;               // Number of pulses
   int aaa = 0;                // Counter for # BD iterations
@@ -96,7 +96,7 @@ void birth_death(Node_type *list,
   double *death_rate;         // Vector of death rates for each pulse
   double position;            // Value of new pulse's location
   double *partial_likelihood; // Array of likelihoods with pulse i removed
-  double *tmp;                // Used when drawing new pulse's mass and width
+  //double *tmp;                // Used when drawing new pulse's mass and width
   Node_type *node;            // Pointer to current pulse
   Node_type *new_node;        // New pulse object
   // Spatial BD and Strauss declarations
@@ -105,6 +105,7 @@ void birth_death(Node_type *list,
   double papas_cif;           // Papangelou's cond'l intensity fn for birthed
   double b_ratio;             // Ratio of papas_cif/birth_rate for accept/rej
   double pulse_intensity;     // Prior intensity on pulse count poisson
+  double new_theta;           // New theta draw for looping till > 0
 
 
   //-----------------------------------------
@@ -113,7 +114,7 @@ void birth_death(Node_type *list,
   //-----------------------------------------
   full_likelihood = *likeli;
   Birth_rate = parms->nprior; 
-  tmp = (double *)calloc(2, sizeof(double));
+  //tmp = (double *)calloc(2, sizeof(double));
 
   // If Strauss, calculate instantaneous birth rate and prior intensity
   if (strauss == 1) {
@@ -211,7 +212,7 @@ void birth_death(Node_type *list,
     // Set Pr(Birth), force death/birth if too many/few
     if (num_node <= 1) { 
       max = 1.1;
-    } else if (num_node >= max_num_node) {
+    } else if (num_node >= max_num_node) { //TODO: may want to remove this upper limit for production..
       max = -0.1;
     } else { 
       max = Birth_rate / (Birth_rate + Death_rate); 
@@ -261,8 +262,15 @@ void birth_death(Node_type *list,
         new_node               = initialize_node();
         new_node->time         = position;
 
-        new_node->theta[0] = exp(Rf_rnorm(parms->theta[0], parms->re_sd[0]));
-        new_node->theta[1] = exp(Rf_rnorm(parms->theta[1], parms->re_sd[1]));
+        for (j = 0; j < 2; j++) {
+          new_theta = -1;
+          //new_eta = -1;
+          while (new_theta < 0) { // | new_eta < 0) {
+            //new_eta = Rf_rnorm(1, );
+            new_theta = Rf_rnorm(parms->theta[j], parms->re_sd[j]);
+          }
+          new_node->theta[j] = new_theta;
+        }
 
         new_node->mean_contrib = (double *)calloc(N, sizeof(double));
         // Add it to the linklist and update values
@@ -297,7 +305,7 @@ void birth_death(Node_type *list,
   *likeli = full_likelihood;
 
   free(death_rate);
-  free(tmp);
+  //free(tmp);
 
 }
 
