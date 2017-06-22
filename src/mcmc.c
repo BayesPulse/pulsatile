@@ -1002,7 +1002,7 @@ void draw_fixed_effects(Node_type *list,
   long *accept_counter;
   double normalizing_ratio, acceptance_ratio, theta[2], old_prior, new_prior,
          prior_ratio, alpha, psum_old,
-         psum_new, pcomp, prop_ratio, stdxold, stdxnew, test;
+         psum_new, prop_ratio, stdxold, stdxnew;
   Node_type *node;
 
   accept_counter = (long *)calloc(2, sizeof(long));
@@ -1252,9 +1252,8 @@ void draw_re_sd(Node_type *list,
                        long *arevm, long *nrevm, long *arevw, long *nrevw) {
   int j;
   long *accept_counter;   
-  double *new_sd, prop_new, prop_old, psum, pcomp, prior_old,
-         prior_new, prior_ratio, prop_ratio, acceptance_ratio, alpha,
-         stdxold, stdxnew, newint, oldint;
+  double *new_sd, prop_new, prop_old, psum, pcomp, prior_ratio, prop_ratio,
+         acceptance_ratio, alpha, stdxold, stdxnew, newint, oldint;
   Node_type *node;
 
   // Allocate Memory
@@ -1661,7 +1660,7 @@ void draw_eta(Node_type *list,
               Common_parms *parms, 
               double sdm, double sdw,
               long *aetam, long *aetaw, long *netam, long *netaw) {
-  int i, j;
+  int j;
   long *accept_counter, num_node; 
   double x, peta, prior_ratio, re_ratio, old_gamma, new_gamma, stdold, stdnew,
          re_old, re_new, alpha, temp;
