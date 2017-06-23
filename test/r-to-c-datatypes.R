@@ -25,10 +25,17 @@ library(pulsatile)
 set.seed(9999)
 this_pulse <- simulate_pulse()
 model_spec <- pulse_spec(location_prior_type = "order-statistic")
-fit_test   <- fit_pulse(.data = this_pulse, iters = 5000, thin = 50,
+fit_test   <- fit_pulse(.data = this_pulse, iters = 25000, thin = 50,
                         spec = model_spec, verbose = TRUE)
 str(fit_test)
+
 plot(this_pulse)
+
+?chains
+chains(fit_test)
+pulse_chain(fit_test)
+common_chain(fit_test)
+
 fit_test$common_chain %>% 
   ggplot(aes(x = iteration, y = mean_pulse_width)) + geom_path()
 # will add summary and print s3 methods

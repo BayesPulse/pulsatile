@@ -1662,8 +1662,8 @@ void draw_eta(Node_type *list,
               long *aetam, long *aetaw, long *netam, long *netaw) {
   int j;
   long *accept_counter, num_node; 
-  double x, peta, prior_ratio, re_ratio, old_gamma, new_gamma, stdold, stdnew,
-         re_old, re_new, alpha, temp;
+  double prior_ratio, re_ratio, old_gamma, new_gamma, stdold, stdnew, re_old,
+         re_new, alpha, temp;
   double *proposed_eta;
   Node_type *node;
 
