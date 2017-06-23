@@ -38,14 +38,6 @@
 #--------------------------------------------
 # Other functions w/ no corollary from major package
 #
-#   Extract heirarchical chains
-#     - hormone1_chain() ??? driver_chain()
-#     - hormone2_chain() ??? response_chain()
-#     - pulse_chain()
-#     - subject_chain()
-#     - pop_chain()
-#     - chains() --> list/str chains available and functions to extract them
-#
 #   Summary -- follow rstanarm::summary.stanreg's example
 
 
@@ -85,18 +77,6 @@
 
 
 
-
-
-
-
-
-
-re_chain <- function(fit) {
-  # extract pulse-specific parameter chain
-}
-fe_chain <- function(fit) {
-  # extract common parameters chain
-}
 
 
 # mcmc_trace <- function() {}
