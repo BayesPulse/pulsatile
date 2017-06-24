@@ -1,29 +1,30 @@
 
 #' Simulate pulsatile hormone data
 #' 
-#' @description \code{\link{simulate_pulse}} simulates a time series dataset
+#' @description 
+#'   \code{\link{simulate_pulse}} simulates a time series dataset
 #'   representing blood concentration measurements of a pulsatile hormone. Both
 #'   the time series and a dataset of the individual pulse characteristics are
 #'   returned. 
-#'
+#'    
 #' @param num_obs Number of observations to simulate.  Duration of observation
 #'    window equals \code{num_obs} times \code{interval}.
-#' @param interval Time between observations, typically 6-10 minutes.
-#' @param error_var Variance of the error added at each observation, ~ N(0, sqrt(error_var)).
+#' @param interval Time in minutes between observations, typically 6-10.
+#' @param error_var Variance of the error added at each observation, error ~ N(0, sqrt(error_var)).
 #' @param ipi_mean Mean number of sampling units between pulses (mean inter-pulse interval).
 #' @param ipi_var Variance of gamma for drawing interpulse interval
 #' @param ipi_min Minimum number of units between pulses
 #' @param mass_mean Mean pulse mass
 #' @param mass_sd Standard deviation of pulse mass
-#' @param width_mean Mean pulse width
-#' @param width_sd Standard deviation of pulse width
-#' @param halflife_mean Mean of half-life
-#' @param halflife_var Variance of half-life
+#' @param width_mean Mean pulse width (in minutes)
+#' @param width_sd Standard deviation of pulse width (in minutes)
+#' @param halflife_mean Mean of half-life (in minutes)
+#' @param halflife_var Variance of half-life (in minutes)
 #' @param baseline_mean Mean of baseline
 #' @param baseline_var Variance of baseline
 #' @param constant_halflife To use a constant (specified) half-life, set this
-#'   to a constant [0,inf). Mean and variance of half-life are not used if this
-#'   is non-null.
+#'   to a constant value [0,inf) in minutes. Mean and variance of half-life are
+#'   not used if this is non-null.
 #' @param constant_baseline To use a constant (specified) baseline, set this to
 #'   a constant [0,inf). Mean and variance of baseline are not used if this is
 #'   non-null.
