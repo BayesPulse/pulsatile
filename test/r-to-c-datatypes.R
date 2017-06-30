@@ -5,11 +5,11 @@
 #options(scipen = 99)
 setwd("~/Projects/BayesPulse/pulsatile/")
 
-# library(dplyr)
-# library(tidyr)
-#library(pryr)
+library(dplyr)
+library(tidyr)
+library(pryr)
 library(devtools)
-# library(roxygen2)
+ library(roxygen2)
 library(ggplot2)
 library(magrittr)
 library(ggthemes)
@@ -24,8 +24,10 @@ library(pulsatile)
 # NOTE: eta is not working right -- often -nan or huuuuuge
 set.seed(9999)
 this_pulse <- simulate_pulse()
-model_spec <- pulse_spec(location_prior_type = "order-statistic")
-fit_test   <- fit_pulse(.data = this_pulse, iters = 25000, thin = 50,
+model_spec <- pulse_spec(location_prior_type = "strauss",
+                         prior_location_range = 40r
+                         prior_location_gamma = 0)
+fit_test   <- fit_pulse(.data = this_pulse, iters = 250000, thin = 50,
                         spec = model_spec, verbose = TRUE)
 str(fit_test)
 
