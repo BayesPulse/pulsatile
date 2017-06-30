@@ -28,7 +28,7 @@ typedef struct {
     double sigma;    // model error (variance)
     double lsigma;   // log of model error (may not be used)
     double theta[2]; // mean pulse mass and width on log scale (TODO: converting this to natural scale for truncated t-distr)
-    double *re_sd;   // variance/covariance matrix for theta
+    double re_sd[2];   // variance/covariance matrix for theta
     double decay;    // decay rate converted from above half-life
     double nprior;   // prior number of pulses
 } Common_parms;

@@ -1245,11 +1245,11 @@ void draw_fixed_effects(Node_type *list,
 //
 //------------------------------------------------------------------------------
 void draw_re_sd(Node_type *list,
-                       Priors *priors, 
-                       Common_parms *parms, 
-                       double v1, 
-                       double v2,
-                       long *arevm, long *nrevm, long *arevw, long *nrevw) {
+                Priors *priors, 
+                Common_parms *parms, 
+                double v1, 
+                double v2,
+                long *arevm, long *nrevm, long *arevw, long *nrevw) {
   int j;
   long *accept_counter;   
   double *new_sd, prop_new, prop_old, psum, pcomp, prior_ratio, prop_ratio,
