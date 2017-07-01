@@ -35,7 +35,7 @@ columns printed to those which fit in the console.}
 Default is \code{FALSE}.}
 }
 \description{
-Primary function for fitting deconvulation model for time series of pulsatile
+Primary function for fitting deconvolution model for time series of pulsatile
 hormone data
 }
 \examples{
