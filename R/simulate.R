@@ -101,12 +101,12 @@ simulate_pulse <- function(num_obs           = 144,
   beta      <- gammamean / ipi_var
 
   tau <- rep(0, 25)
-  tau[1] <- interval * (stats::rgamma(1, alpha, beta) - 10)
+  tau[1] <- interval * (stats::rgamma(1, shape = alpha, rate = beta) - 10)
 
   i <- 1
   while (tau[i] < (num_obs * interval)){
     i      <- i + 1
-    tmp    <- ipi_min + stats::rgamma(1, alpha, beta)
+    tmp    <- ipi_min + stats::rgamma(1, shape = alpha, rate = beta)
     tau[i] <- tau[i-1] + (interval * tmp)
   }
 
@@ -130,8 +130,8 @@ simulate_pulse <- function(num_obs           = 144,
     #s2p[i] <- exp(stats::rnorm(1, width_mean, width_sd))
 
     # Truncated T (via gamma normal mixture)
-    mass_kappa[i]  <- stats::rgamma(1, 2, 2)
-    width_kappa[i] <- stats::rgamma(1, 2, 2)
+    mass_kappa[i]  <- stats::rgamma(1, shape = 2, rate = 2)
+    width_kappa[i] <- stats::rgamma(1, shape = 2, rate = 2)
     tvar  <- mass_sd^2  / mass_kappa[i]
     t2var <- width_sd^2 / width_kappa[i]
     while (A[i] < 0.25)   A[i]   <- stats::rnorm(1, mass_mean, sqrt(tvar))
