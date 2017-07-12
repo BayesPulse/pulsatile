@@ -20,7 +20,8 @@
 #' @export
 draw_sd_between_pulses <- function(pulse_list,
                                    priors,
-                                   proposal_sd) {
+                                   proposal_sd, 
+                                   old) {
 
   current_value <- pulse_list$parms$sd_mass
   prior_max <- priors$max_sd$mass
@@ -36,18 +37,26 @@ draw_sd_between_pulses <- function(pulse_list,
   pulses <- map(pulse_list$pulses, ~ .x$parameters) %>% purrr::transpose(.) %>%
     map(~ do.call(c, .x))
 
-  first_part <- 
-    pulse_list$num_pulses * (log(current_value) - log(new_value))
-  second_part <- 
-    pulse_list$num_pulses * ((1 / current_value^2) - (1 / new_value^2))
-  third_part <-
-    sum(0.5 *  (pulses$mass - parms$mean_mass) ^ 2 * pulses$mass_eta)
-  old_int <- 
-    sum(pnorm(pulse_list$mean_mass * sqrt(pulses$mass_eta) / current_value, log.p = TRUE))
-  new_int <- 
-    sum(pnorm(pulse_list$mean_mass * sqrt(pulses$mass_eta) / new_value, log.p = TRUE))
+  # Old
+  if (old) {
+    cat("OLD")
+    first_part  <- pulse_list$num_pulses * (log(current_value) - log(new_value))
+    second_part <- ((1 / current_value^2) - (1 / new_value^2))
+    third_part  <- sum(0.5 *  (pulses$mass - parms$mean_mass) ^ 2 * pulses$mass_eta)
+    old_int <- sum(pnorm(pulse_list$mean_mass * sqrt(pulses$mass_eta) / current_value, log.p = TRUE))
+    new_int <- sum(pnorm(pulse_list$mean_mass * sqrt(pulses$mass_eta) / new_value, log.p = TRUE))
+    rho <- first_part + second_part * third_part - new_int + old_int
+  } else {
+  # New
+    cat("NEW")
+    first_part  <- pulse_list$num_pulses * (log(current_value) - log(new_value))
+    second_part <- 0.5 * ((1 / current_value^2) - (1 / new_value^2))
+    third_part <- sum(pulses$mass_eta * (pulses$mass - parms$mean_mass)^2)
+    old_int <- sum(pnorm(pulse_list$mean_mass * sqrt(pulses$mass_eta) / current_value, log.p = TRUE))
+    new_int <- sum(pnorm(pulse_list$mean_mass * sqrt(pulses$mass_eta) / new_value, log.p = TRUE))
+    rho <- old_int - new_int + first_part + second_part * third_part
+  }
 
-  rho <- first_part + second_part * third_part - new_int + old_int
   rho <- min(0, rho)
 
   if (log(runif(1, min = 0, max = 1)) < rho) {

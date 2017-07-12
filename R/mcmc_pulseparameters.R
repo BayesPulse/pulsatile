@@ -1,10 +1,14 @@
 # 
-# #
-# #
-# #
-# #
+#
+#
+#
+#
 # 
 # 
+library(dplyr)
+library(purrr)
+library(tibble)
+library(pulsatile)
 as_pulse <- function(location  = 100, 
                      mass      = rnorm(1, 3.5, 1),
                      width     = rnorm(1, 35, 10), 
@@ -57,24 +61,23 @@ as_pulse_list <- function(..., .data = NULL, num_obs = 144, sampling_interval = 
 
 
 
-mymcmc <- function() {
+mymcmc <- function(old = FALSE) {
 
 
   test_pulses <- as_pulse_list(as_pulse(), as_pulse(), as_pulse(), as_pulse(), 
                                as_pulse(), as_pulse(), as_pulse(), as_pulse(),
-                               as_pulse(), as_pulse(), as_pulse(), as_pulse(),
-                               as_pulse(), as_pulse(), as_pulse(), as_pulse(),
                                as_pulse(), as_pulse(), as_pulse(), as_pulse())
-  proposal_sd <- 5
+  proposal_sd <- 1
   priors <- pulse_spec(prior_max_sd_mass = 10) %>% .$priors
-  rtn_sdmass <- 0
+  rtn_sdmass <- 1
 
   for (i in 1:25000) {
 
     rtn_sdmass <- c(rtn_sdmass, test_pulses$parms$sd_mass)
     result <- draw_sd_between_pulses(pulse_list = test_pulses,
                                      priors = priors,
-                                     proposal_sd = proposal_sd)
+                                     proposal_sd = proposal_sd,
+                                     old = old)
 
     test_pulses$parms$sd_mass <- result$value
   }
@@ -87,13 +90,34 @@ mymcmc <- function() {
 # prior max = 10
 # proposal sd = 15
 # sd mass = 1
-#set.seed(1)
-test <- mymcmc()
-test <- data_frame("i" = 1:length(test), "sd" = test) 
-ggplot(test, aes(x = i, y = sd)) + geom_path()
+set.seed(1)
+# test1 <- mymcmc()
+test1 <- mymcmc(old = TRUE)
+test1 <- data_frame("sample" = x, "i" = 1:length(test1), "sd" = test1)
+summarise(test1, mean = mean(sd))
+ggplot(test1, aes(x = i, y = sd)) + geom_path()
 # mean(sqrt((test$sd^2)/4))
-mean(test$sd)
-median(test$sd)
+mean(test1$sd)
+median(test1$sd)
+
+
+set.seed(2017-07-11)
+fixed_new <- 
+  mclapply(1:20, function(x) {
+         test1 <- mymcmc(old = FALSE)
+         test1 <- data_frame("sample" = x, "i" = 1:length(test1), "sd" = test1)
+                                     }) %>% do.call(rbind, .) %>%
+  summarise(mean = mean(sd))
+
+set.seed(2017-07-11)
+fixed_old <- 
+  lapply(1:20, function(x) {
+         test1 <- mymcmc(old = TRUE)
+         test1 <- data_frame("sample" = x, "i" = 1:length(test1), "sd" = test1)
+                                     }) %>% do.call(rbind, .) %>%
+  summarise(mean = mean(sd))
+
+
 
 
 
