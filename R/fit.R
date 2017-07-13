@@ -5,7 +5,7 @@
 
 #' fit_pulse
 #' 
-#' Primary function for fitting deconvulation model for time series of pulsatile
+#' Primary function for fitting deconvolution model for time series of pulsatile
 #' hormone data
 #' 
 #' @useDynLib pulsatile decon_r_interface

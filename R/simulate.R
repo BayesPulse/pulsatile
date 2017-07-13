@@ -102,12 +102,12 @@ simulate_pulse <- function(num_obs           = 144,
   beta      <- gammamean / ipi_var
 
   tau <- rep(0, 25)
-  tau[1] <- interval * (stats::rgamma(1, alpha, beta) - 10)
+  tau[1] <- interval * (stats::rgamma(1, shape = alpha, rate = beta) - 10)
 
   i <- 1
   while (tau[i] < (num_obs * interval)){
     i      <- i + 1
-    tmp    <- ipi_min + stats::rgamma(1, alpha, beta)
+    tmp    <- ipi_min + stats::rgamma(1, shape = alpha, rate = beta)
     tau[i] <- tau[i-1] + (interval * tmp)
   }
 
@@ -118,10 +118,12 @@ simulate_pulse <- function(num_obs           = 144,
 
   #---------------------------------------
   # Generate pulse-specific parameters 
-  A     <- rep(0, np)             # pulse mass
-  s2p   <- rep(0, np)             # pulse width
-  taxis <- seq(10, (num_obs * interval), interval)
-  ytmp  <- rep(0, length(taxis))  # hormone concentration
+  A           <- rep(0, np)             # pulse mass
+  s2p         <- rep(0, np)             # pulse width
+  mass_kappa  <- rep(0, np)
+  width_kappa <- rep(0, np)
+  taxis       <- seq(10, (num_obs * interval), interval)
+  ytmp        <- rep(0, length(taxis))  # hormone concentration
 
   for (i in 1:np) {
     # Log-normal 
@@ -129,8 +131,10 @@ simulate_pulse <- function(num_obs           = 144,
     #s2p[i] <- exp(stats::rnorm(1, width_mean, width_sd))
 
     # Truncated T (via gamma normal mixture)
-    tvar  <- mass_sd^2  / stats::rgamma(1, 2, 2)        
-    t2var <- width_sd^2 / stats::rgamma(1, 2, 2)
+    mass_kappa[i]  <- stats::rgamma(1, shape = 2, rate = 2)
+    width_kappa[i] <- stats::rgamma(1, shape = 2, rate = 2)
+    tvar  <- mass_sd^2  / mass_kappa[i]
+    t2var <- width_sd^2 / width_kappa[i]
     while (A[i] < 0.25)   A[i]   <- stats::rnorm(1, mass_mean, sqrt(tvar))
     while (s2p[i] < 0.5)  s2p[i] <- stats::rnorm(1, width_mean, sqrt(t2var))
   }
@@ -151,7 +155,9 @@ simulate_pulse <- function(num_obs           = 144,
   allpulseparms <- cbind("pulse_no" = seq(1, np),
                          "mass"     = A,
                          "width"    = s2p,
-                         "location" = tau)
+                         "location" = tau,
+                         "mass_kappa"  = mass_kappa,
+                         "width_kappa" = width_kappa)
   allpulseparms <- tibble::as_data_frame(allpulseparms)
 
   ysim_df   <- cbind("observation"   = 1:length(taxis),
@@ -163,7 +169,7 @@ simulate_pulse <- function(num_obs           = 144,
   # Create return object
   rtn <- structure(list("call"  = this_call,
                         "data"  = ysim_df, 
-                        "parmeters"  = allpulseparms),
+                        "parameters"  = allpulseparms),
                    class = "pulse_sim")
 
 

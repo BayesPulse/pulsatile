@@ -1002,7 +1002,7 @@ void draw_fixed_effects(Node_type *list,
   long *accept_counter;
   double normalizing_ratio, acceptance_ratio, theta[2], old_prior, new_prior,
          prior_ratio, alpha, psum_old,
-         psum_new, pcomp, prop_ratio, stdxold, stdxnew, test;
+         psum_new, prop_ratio, stdxold, stdxnew;
   Node_type *node;
 
   accept_counter = (long *)calloc(2, sizeof(long));
@@ -1250,11 +1250,10 @@ void draw_re_sd(Node_type *list,
                        double v1, 
                        double v2,
                        long *arevm, long *nrevm, long *arevw, long *nrevw) {
-  int j;
+  int j, num_pulses;
   long *accept_counter;   
-  double *new_sd, prop_new, prop_old, psum, pcomp, prior_old,
-         prior_new, prior_ratio, prop_ratio, acceptance_ratio, alpha,
-         stdxold, stdxnew, newint, oldint;
+  double *new_sd, stdx_old, stdx_new, new_int, old_int, first_part,
+         second_part, third_part, log_rho;
   Node_type *node;
 
   // Allocate Memory
@@ -1274,61 +1273,50 @@ void draw_re_sd(Node_type *list,
   new_sd[1] = Rf_rnorm(parms->re_sd[1], v2);
 
   // Accept or Reject sigma_a, then accept or reject for sigma_w
-  for (j = 0; j < 2; j++){
-
-    // Initialize integora
-    newint = 0;
-    oldint = 0;
-
-    // Compute the sum included in the "likelihood"
-    // Also compute the old value divided by the new value raised to num_node
-    // This sum is the same assuming the current value of sigma_j in both
-    // the numerator and denominator of rho
-    psum = 0;
-    prior_ratio = 1; 
-    node = list->succ;
-
-    while (node != NULL) {
-
-      prior_ratio *= parms->re_sd[j] / new_sd[j]; 
-      pcomp        = node->theta[j] - parms->theta[j]; 
-      pcomp       *= pcomp; 
-      psum        += pcomp;
-      psum        += pcomp * node->eta[j]; 
-
-      // Normalizing constants
-      stdxold   = parms->theta[j] * sqrt(node->eta[j]) / parms->re_sd[j];
-      stdxnew   = parms->theta[j] * sqrt(node->eta[j]) / new_sd[j];
-      newint   += Rf_pnorm5(stdxnew, 0, 1, 1.0, 1.0);  // second 1.0 does the log xform for us 
-      oldint   += Rf_pnorm5(stdxold, 0, 1, 1.0, 1.0);  // first 1.0 says to use lower tail
-
-      node = node->succ;
-
-    }
-
-    // Complete the "likelihood" portion of rho
-    prop_old   = 1.0 / (parms->re_sd[j] * parms->re_sd[j]); //
-    prop_new   = 1.0 / (new_sd[j]      * new_sd[j]); //
-    prop_ratio = psum * 0.5 * (prop_old - prop_new); //
+  for (j = 0; j < 2; j++) {
 
     // We only can accept the proposed value if it is positive
     if (new_sd[j] > 0 && new_sd[j] < priors->re_sdmax[j]) {
 
-      // Compute log rho, and set alpha equal to min(log rho,0)
-      acceptance_ratio = log(prior_ratio) + prop_ratio - newint + oldint;
+      node = list->succ;
+      num_pulses = 0;
+      third_part = 0;
+      old_int = new_int = 0;
+      while (node != NULL) {
 
-      alpha = (0 < acceptance_ratio) ? 0 : acceptance_ratio;
+        // Normalizing constants
+        stdx_old   = parms->theta[j] * sqrt(node->eta[j]) / parms->re_sd[j];
+        stdx_new   = parms->theta[j] * sqrt(node->eta[j]) / new_sd[j];
+        new_int   += Rf_pnorm5(stdx_new, 0, 1, 1.0, 1.0);
+        old_int   += Rf_pnorm5(stdx_old, 0, 1, 1.0, 1.0);
+
+        // Count pulses
+        num_pulses++;
+        // 3rd 'part' of acceptance ratio
+        third_part += (node->eta[j] * pow(node->theta[j] - parms->theta[j], 2));
+
+        // Next pulse
+        node = node->succ;
+      }
+
+      // 1st and 2nd 'parts' of acceptance ratio
+      first_part  = (num_pulses) * (log(parms->re_sd[j]) - log(new_sd[j]));
+      second_part = 0.5 * ((1 / pow(parms->re_sd[j], 2)) - (1 / pow(new_sd[j], 2)));
+
+      // Compute log rho, and set alpha equal to min(log rho,0)
+      log_rho = old_int - new_int + first_part + second_part * third_part;
+      log_rho = fmin(0, log_rho);
+      //alpha = (0 < acceptance_ratio) ? 0 : acceptance_ratio;
 
       // If log(U) < log rho, accept the proposed value
-      // Increase acceptance count by 1
-      if (log(Rf_runif(0, 1)) < alpha) {
+      if (log(Rf_runif(0, 1)) < log_rho) {
         accept_counter[j]++;
         parms->re_sd[j] = new_sd[j];
       }
 
     }
 
-  } // end of loop through s_a and s_w 
+  } 
 
   // Set acceptance count equal to temp vector components
   *arevm = accept_counter[0];
@@ -1661,9 +1649,9 @@ void draw_eta(Node_type *list,
               Common_parms *parms, 
               double sdm, double sdw,
               long *aetam, long *aetaw, long *netam, long *netaw) {
-  int i, j;
+  int j;
   long *accept_counter, num_node; 
-  double x, peta, prior_ratio, re_ratio, old_gamma, new_gamma, stdold, stdnew,
+  double prior_ratio, re_ratio, old_gamma, new_gamma, stdold, stdnew,
          re_old, re_new, alpha, temp;
   double *proposed_eta;
   Node_type *node;

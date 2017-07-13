@@ -2,7 +2,7 @@
 % Please edit documentation in R/pulsespec.R
 \name{pulse_spec}
 \alias{pulse_spec}
-\title{pulse_spec.R}
+\title{pulse_spec}
 \usage{
 pulse_spec(location_prior_type = c("order-statistic", "strauss"),
   prior_mass_mean = 3.5, prior_mass_var = 100, prior_width_mean = 35,
@@ -100,5 +100,4 @@ Generates a pulse_spec object -- the specification object required for
 fitting a fit_pulse model.
 }
 \keyword{pulse}
-\keyword{pulse_spec()}
 \keyword{simulation}
