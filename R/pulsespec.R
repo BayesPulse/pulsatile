@@ -3,7 +3,7 @@
 # Functions for creating a pulse model specification
 #-------------------------------------------------------------------------------
 
-#' pulse_spec.R
+#' pulse_spec
 #'
 #' Generates a pulse_spec object -- the specification object required for
 #' fitting a fit_pulse model.
@@ -51,7 +51,6 @@
 #' @param pv_pulse_location placeholder
 #' @export
 #' @keywords pulse simulation
-#' pulse_spec()
 pulse_spec <-
   function(location_prior_type = c("order-statistic", "strauss"),
            prior_mass_mean        = 3.5,
