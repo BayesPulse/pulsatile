@@ -20,8 +20,8 @@
 #' @param iters Number of iterations for MCMC
 #' @param thin Thinning to apply to MCMC chains (i.e. Keep every 'thin'th
 #'   sample).
-#' # param burnin Burn-in to apply to MCMC chains (i.e. remove first 'burnin'
-#' # samples). Applied prior to thinning.
+#' @param burnin Burn-in to apply to MCMC chains (i.e. remove first 'burnin'
+#'  samples). Applied prior to thinning.
 #' @param use_tibble Return chains as tbl_df class data frames, from the tibble
 #'   package.  Mostly used for the print.tbl_df method, which limits the rows and
 #'   columns printed to those which fit in the console.
@@ -32,8 +32,8 @@
 #' @examples
 #' this_pulse <- simulate_pulse()
 #' this_spec  <- pulse_spec()
-#' this_fit   <- fit_pulse(.data = this_pulse, iters = 1000, thin = 10,
-#'                         spec = this_spec)
+#' this_fit   <- fit_pulse(.data = this_pulse, iters = 1000, thin = 10, 
+#'                         burnin = 100, spec = this_spec)
 #' @export
 fit_pulse <- function(.data,
                       time = "time",
@@ -44,7 +44,7 @@ fit_pulse <- function(.data,
                       #               "single-series associational", 
                       #               "population associational"),
                       thin       = 50,
-                      #burnin     = 50000,
+                      burnin     = as.integer(0.1 * iters),
                       use_tibble = TRUE,
                       verbose    = FALSE
                       ) {
@@ -58,6 +58,9 @@ fit_pulse <- function(.data,
 
   stopifnot(is.numeric(indata[[time]]), is.numeric(indata[[conc]]),
             is.logical(use_tibble), is.logical(verbose))
+  if (burnin >= iters) stop("burnin >= iters")
+
+  
 
   #model_type <- match.arg(model_type)
   # ideas via survival::coxph 
@@ -79,7 +82,7 @@ fit_pulse <- function(.data,
                indata,
                "single-series",
                as.integer(thin),
-               #as.integer(burnin),
+               as.integer(burnin),
                as.integer(iters),
                as.integer(verbose),
                spec$strauss_location_prior,

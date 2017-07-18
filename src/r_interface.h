@@ -36,7 +36,7 @@ typedef struct {
 SEXP decon_r_interface(SEXP indata,
                        SEXP model,
                        SEXP thin,
-                       //SEXP burnin,
+                       SEXP burnin,
                        SEXP iterations,
                        SEXP inverbose,
                        SEXP strauss_location_prior,

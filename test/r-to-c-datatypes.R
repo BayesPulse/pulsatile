@@ -27,8 +27,8 @@ set.seed(9999)
 this_pulse <- simulate_pulse()
 model_spec <- pulse_spec(location_prior_type = "order-statistic",
                          prior_max_sd_width     = 150)
-fit_test   <- fit_pulse(.data = this_pulse, iters = 150000, thin = 1,
-                        spec = model_spec, verbose = TRUE)
+fit_test   <- fit_pulse(.data = this_pulse, iters = 250000, thin = 50,
+                        burnin = 50000, spec = model_spec, verbose = TRUE)
 str(fit_test)
 
 plot(this_pulse)

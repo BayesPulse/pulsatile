@@ -43,6 +43,8 @@ extern double fitend;   // Last time in 10min increments a pulse can occur
 //                           of times and a column of log(concentration) 
 //     long iter           - the number of iterations to run
 //     int N               - the number of observations in **ts
+//     int nthin           - Keep every nthin sample
+//     int burnin          - Number of iterations to remove for burnin
 //     int strauss         - indicator for whether to use the strauss (=1) or
 //                           order-stat (=0) pulse location prior 
 //     Priors *priors      - the parameters of the prior distributions
@@ -61,7 +63,8 @@ void mcmc(Node_type *list,
           double **ts, 
           long iter,
           int N,
-          int NN,
+          int nthin,
+          int burnin,
           int strauss,
           int verbose,
           Priors *priors,
@@ -79,7 +82,8 @@ void mcmc(Node_type *list,
   int l;               // Generic counter
   int num_node;        // Counter of num_node for loops
   int num_node2;       // Number of pulses
-  //int NN = 50;       // Output ever NNth iteration to files
+  int out_len = (iter-burnin) / nthin;
+  int out_i;
   int NNN = 5000;      // Output ever NNth iteration to STDOUT
   double sdrem;        // Proposal SD for RE masses
   double sdrew;        // Proposal SD for RE widths
@@ -273,9 +277,12 @@ void mcmc(Node_type *list,
     // iters < thin, code fails on "attempt to set index 0/0 in SET_VECTOR_ELT"
     //------------------------------------------------------
     // Save to files common/parms
-    if (!(i % NN)) {
+    if (i > burnin & !(i % nthin)) {
       num_node = 0;
       new_node = list->succ;
+
+      // Define output index
+      out_i = (i-burnin) / nthin;
 
       // create matrix for pulse-specific parms in this iteration
       SEXP this_pulse_chain;
@@ -324,18 +331,18 @@ void mcmc(Node_type *list,
       Rf_setAttrib(this_pulse_chain, R_DimNamesSymbol, dimnames);
 
       // Insert 'this_pulse_chain' into list pulse_chain
-      SET_VECTOR_ELT(pulse_chains, i/NN, this_pulse_chain);
+      SET_VECTOR_ELT(pulse_chains, out_i, this_pulse_chain);
 
-      // Save common parms from iteration i/NN to SEXP matrix obj -------
-      REAL(common)[(i/NN) + (iter/NN)*0] = (i) + 1;
-      REAL(common)[(i/NN) + (iter/NN)*1] = num_node2;
-      REAL(common)[(i/NN) + (iter/NN)*2] = parms->md[0];
-      REAL(common)[(i/NN) + (iter/NN)*3] = parms->theta[0];
-      REAL(common)[(i/NN) + (iter/NN)*4] = parms->theta[1];
-      REAL(common)[(i/NN) + (iter/NN)*5] = parms->md[1];
-      REAL(common)[(i/NN) + (iter/NN)*6] = parms->sigma;
-      REAL(common)[(i/NN) + (iter/NN)*7] = parms->re_sd[0];
-      REAL(common)[(i/NN) + (iter/NN)*8] = parms->re_sd[1];
+      // Save common parms from iteration (i-burnin)/nthin to SEXP matrix obj -------
+      REAL(common)[(out_i) + (out_len)*0] = (i) + 1;
+      REAL(common)[(out_i) + (out_len)*1] = num_node2;
+      REAL(common)[(out_i) + (out_len)*2] = parms->md[0];
+      REAL(common)[(out_i) + (out_len)*3] = parms->theta[0];
+      REAL(common)[(out_i) + (out_len)*4] = parms->theta[1];
+      REAL(common)[(out_i) + (out_len)*5] = parms->md[1];
+      REAL(common)[(out_i) + (out_len)*6] = parms->sigma;
+      REAL(common)[(out_i) + (out_len)*7] = parms->re_sd[0];
+      REAL(common)[(out_i) + (out_len)*8] = parms->re_sd[1];
 
       Rf_unprotect(4);
 

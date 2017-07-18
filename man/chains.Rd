@@ -24,7 +24,7 @@ mcmc chains.
 pulse <- simulate_pulse()
 spec  <- pulse_spec()
 fit   <- fit_pulse(.data = pulse, iters = 1000, thin = 10,
-                        spec = spec)
+                   burnin = 100, spec = spec)
 chains(fit)
 pulse_chain(fit)
 common_chain(fit)
