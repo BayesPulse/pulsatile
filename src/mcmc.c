@@ -277,7 +277,7 @@ void mcmc(Node_type *list,
     // iters < thin, code fails on "attempt to set index 0/0 in SET_VECTOR_ELT"
     //------------------------------------------------------
     // Save to files common/parms
-    if (i > burnin & !(i % nthin)) {
+    if (i >= burnin & !(i % nthin)) {
       num_node = 0;
       new_node = list->succ;
 

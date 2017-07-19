@@ -214,7 +214,7 @@ SEXP decon_r_interface(SEXP indata,
   Rf_setAttrib(common1, R_DimNamesSymbol, dimnames);
 
 
-  // Combine chains for output -------------
+  // Combine chains into list for output -------------
   SEXP chains = Rf_protect(Rf_allocVector(VECSXP, 2));
   SET_VECTOR_ELT(chains, 0, common1);
   SET_VECTOR_ELT(chains, 1, pulse_chains);
