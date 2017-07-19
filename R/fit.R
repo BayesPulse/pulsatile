@@ -123,6 +123,13 @@ fit_pulse <- function(.data,
   common_chain <- as.data.frame(rtn[[1]])
   pulse_chain  <- as.data.frame(do.call(rbind, rtn[[2]]))
 
+  # 
+  pulse_chain$iteration <- as.integer(pulse_chain$iteration)
+  pulse_chain$total_num_pulses <- as.integer(pulse_chain$total_num_pulses)
+  pulse_chain$pulse_num <- as.integer(pulse_chain$pulse_num)
+  common_chain$iteration <- as.integer(common_chain$iteration)
+  common_chain$num_pulses <- as.integer(common_chain$num_pulses)
+
   if (use_tibble) {
     common_chain = tibble::as_data_frame(common_chain)
     pulse_chain = tibble::as_data_frame(pulse_chain)
