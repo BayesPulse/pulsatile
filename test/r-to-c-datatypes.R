@@ -5,7 +5,7 @@
 #options(scipen = 99)
 setwd("~/Projects/BayesPulse/pulsatile/")
 
-# library(dplyr)
+library(dplyr)
 library(tidyr)
 #library(pryr)
 library(devtools)
@@ -17,7 +17,7 @@ theme_set(theme_tufte())
 
 devtools::document()
 devtools::check()
-devtools::install("../pulsatile", build_vignettes = TRUE)
+devtools::install("../pulsatile", build_vignettes = FALSE)
 
 library(pulsatile)
 
@@ -27,7 +27,7 @@ set.seed(9999)
 this_pulse <- simulate_pulse()
 model_spec <- pulse_spec(location_prior_type = "order-statistic",
                          prior_max_sd_width     = 150)
-fit_test   <- fit_pulse(.data = this_pulse, iters = 150000, thin = 1,
+fit_test   <- fit_pulse(.data = this_pulse, iters = 250000, thin = 100,
                         spec = model_spec, verbose = TRUE)
 str(fit_test)
 plot(this_pulse)
@@ -39,8 +39,6 @@ this_pulse
 
 traceplots <- 
   fit_test$common_chain %>% 
-  filter(iteration %% 50 == 1) %>%
-   filter(iteration > 100000) %>%
   gather(key = parameter, value = value, -iteration) %>%
 #   mutate(value = ifelse(parameter %in% c("sd_mass", "sd_widths"), log(value), value)) %>%
   ggplot(aes(x = iteration, y = value)) +
@@ -49,8 +47,6 @@ traceplots <-
 
 posterior_dens <- 
   fit_test$common_chain %>% 
-  filter(iteration %% 50 == 1) %>%
-#   filter(iteration > 10000) %>%
   gather(key = parameter, value = value, -iteration) %>%
   ggplot(aes(x = value)) +
     geom_histogram() +
