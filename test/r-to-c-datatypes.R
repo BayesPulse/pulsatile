@@ -17,7 +17,7 @@ theme_set(theme_tufte())
 
 devtools::document()
 devtools::check()
-devtools::install("../pulsatile", build_vignettes = TRUE)
+devtools::install("../pulsatile", build_vignettes = FALSE)
 
 library(pulsatile)
 
@@ -46,8 +46,6 @@ this_pulse
 
 traceplots <- 
   fit_test$common_chain %>% 
-  filter(iteration %% 50 == 1) %>%
-   filter(iteration > 100000) %>%
   gather(key = parameter, value = value, -iteration) %>%
 #   mutate(value = ifelse(parameter %in% c("sd_mass", "sd_widths"), log(value), value)) %>%
   ggplot(aes(x = iteration, y = value)) +
@@ -56,8 +54,6 @@ traceplots <-
 
 posterior_dens <- 
   fit_test$common_chain %>% 
-  filter(iteration %% 50 == 1) %>%
-#   filter(iteration > 10000) %>%
   gather(key = parameter, value = value, -iteration) %>%
   ggplot(aes(x = value)) +
     geom_histogram() +
