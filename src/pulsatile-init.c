@@ -10,7 +10,7 @@
 // Define methods called with .Call
 static const
 R_CallMethodDef callMethods[] = {
-  {"decon_r_interface", (DL_FUNC) &decon_r_interface, 39},
+  {"decon_r_interface", (DL_FUNC) &decon_r_interface, 40},
   {NULL,                NULL,                         0}
 };
 

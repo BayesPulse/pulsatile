@@ -25,7 +25,7 @@ double fitend;   // Last time a pulse can occur (10 min. increments).
 SEXP decon_r_interface(SEXP indata,
                        SEXP model,
                        SEXP thin,
-                       //SEXP burnin,
+                       SEXP burnin,
                        SEXP iterations,
                        SEXP inverbose,
                        SEXP strauss_location_prior,
@@ -79,7 +79,8 @@ SEXP decon_r_interface(SEXP indata,
   int verbose = Rf_asInteger(inverbose); 
   int nthin   = Rf_asInteger(thin);
   int strauss = Rf_asInteger(strauss_location_prior);
-  //int nburnin  = Rf_asInteger(burnin);
+  int nburnin = Rf_asInteger(burnin);
+  int out_len = (iters - nburnin) / nthin;
   
 
   //Print to check values
@@ -124,7 +125,7 @@ SEXP decon_r_interface(SEXP indata,
   // Set up parms structure ------------------
   Common_parms *parms;            // Common parameters data structure
   parms           = (Common_parms *)calloc(1, sizeof(Common_parms));
-  parms->re_sd    = (double *)calloc(2, sizeof(double));
+  //parms->re_sd    = (double *)calloc(2, sizeof(double));
   parms->nprior   = Rf_asReal(prior_pulse_location_count); // priorr;
   parms->theta[0] = Rf_asReal(sv_pulse_mass_mean);   // svmu1;
   parms->theta[1] = Rf_asReal(sv_pulse_width_mean);  // svmu2;
@@ -176,14 +177,14 @@ SEXP decon_r_interface(SEXP indata,
 
   // R lists for chains ------------------
   // Common parameters -- 1 record per saved iteration
-  SEXP common1 = Rf_protect(Rf_allocMatrix(REALSXP, iters/nthin, 9));
+  SEXP common1 = Rf_protect(Rf_allocMatrix(REALSXP, out_len, 9));
   // Pulse-specific parameters -- 1 record per pulse per iteration
   //   list object defined here, each iteration will differ in length, so the
   //   entries are defined in linklistv3
-  SEXP pulse_chains = Rf_protect(Rf_allocVector(VECSXP, iters/nthin));
+  SEXP pulse_chains = Rf_protect(Rf_allocVector(VECSXP, out_len));
 
 
-  mcmc(list, parms, ts, iters, nobs, nthin, strauss, verbose, priors, common1,
+  mcmc(list, parms, ts, iters, nobs, nthin, nburnin, strauss, verbose, priors, common1,
        pulse_chains, propsd);
 
 
@@ -191,7 +192,7 @@ SEXP decon_r_interface(SEXP indata,
   SEXP dim, dimnames;
   // create 'dim' attribute (dimension of matrix)
   Rf_protect(dim = Rf_allocVector(INTSXP, 2));
-  INTEGER(dim)[0] = iters/nthin; 
+  INTEGER(dim)[0] = out_len; 
   INTEGER(dim)[1] = 9;
   Rf_setAttrib(common1, R_DimSymbol, dim);
   // create column names for common parms matrix
@@ -213,7 +214,7 @@ SEXP decon_r_interface(SEXP indata,
   Rf_setAttrib(common1, R_DimNamesSymbol, dimnames);
 
 
-  // Combine chains for output -------------
+  // Combine chains into list for output -------------
   SEXP chains = Rf_protect(Rf_allocVector(VECSXP, 2));
   SET_VECTOR_ELT(chains, 0, common1);
   SET_VECTOR_ELT(chains, 1, pulse_chains);
@@ -226,7 +227,7 @@ SEXP decon_r_interface(SEXP indata,
   free(priors->fe_variance);
   free(priors->re_sdmax);
   free(priors);
-  free(parms->re_sd);
+  //free(parms->re_sd);
   free(parms);
   Rf_unprotect(6);
 
