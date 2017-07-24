@@ -9,7 +9,7 @@ library(dplyr)
 library(tidyr)
 #library(pryr)
 library(devtools)
- library(roxygen2)
+library(roxygen2)
 library(ggplot2)
 library(magrittr)
 library(ggthemes)
@@ -20,6 +20,15 @@ devtools::check()
 devtools::install("../pulsatile", build_vignettes = FALSE)
 
 library(pulsatile)
+
+
+test_fits <- readRDS("../remote-storage/fourth_run_mdplyr_42fits_larger_small_mass_meansd.Rds")
+fit <- test_fits[7, "fits"] %>% .[[1]] %>% .[[1]]
+bp_trace(fit)
+bp_posteriors(fit, type = "histogram")
+
+
+
 
 # NOTE: eta is not working right -- often -nan or huuuuuge
 set.seed(9999)
