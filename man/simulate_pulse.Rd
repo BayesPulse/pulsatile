@@ -14,9 +14,9 @@ simulate_pulse(num_obs = 144, interval = 10, error_var = 0.005,
 \item{num_obs}{Number of observations to simulate.  Duration of observation
 window equals \code{num_obs} times \code{interval}.}
 
-\item{interval}{Time between observations, typically 6-10 minutes.}
+\item{interval}{Time in minutes between observations, typically 6-10.}
 
-\item{error_var}{Variance of the error added at each observation, ~ N(0, sqrt(error_var)).}
+\item{error_var}{Variance of the error added at each observation, error ~ N(0, sqrt(error_var)).}
 
 \item{ipi_mean}{Mean number of sampling units between pulses (mean inter-pulse interval).}
 
@@ -28,21 +28,21 @@ window equals \code{num_obs} times \code{interval}.}
 
 \item{mass_sd}{Standard deviation of pulse mass}
 
-\item{width_mean}{Mean pulse width}
+\item{width_mean}{Mean pulse width (in minutes)}
 
-\item{width_sd}{Standard deviation of pulse width}
+\item{width_sd}{Standard deviation of pulse width (in minutes)}
 
-\item{halflife_mean}{Mean of half-life}
+\item{halflife_mean}{Mean of half-life (in minutes)}
 
-\item{halflife_var}{Variance of half-life}
+\item{halflife_var}{Variance of half-life (in minutes)}
 
 \item{baseline_mean}{Mean of baseline}
 
 \item{baseline_var}{Variance of baseline}
 
 \item{constant_halflife}{To use a constant (specified) half-life, set this
-to a constant [0,inf). Mean and variance of half-life are not used if this
-is non-null.}
+to a constant value [0,inf) in minutes. Mean and variance of half-life are
+not used if this is non-null.}
 
 \item{constant_baseline}{To use a constant (specified) baseline, set this to
 a constant [0,inf). Mean and variance of baseline are not used if this is
