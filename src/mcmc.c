@@ -1156,7 +1156,7 @@ void draw_re_sd(Node_type *list,
   for (j = 0; j < 2; j++) {
 
     // We only can accept the proposed value if it is positive
-    if (new_sd[j] > 0 && new_sd[j] < priors->re_sdmax[j]) {
+    if (new_sd[j] > 0.1 && new_sd[j] < priors->re_sdmax[j]) {
 
       node = list->succ;
       num_pulses = 0;
@@ -1165,15 +1165,17 @@ void draw_re_sd(Node_type *list,
       while (node != NULL) {
 
         // Normalizing constants
-        stdx_old   = parms->theta[j] * sqrt(node->eta[j]) / parms->re_sd[j];
-        stdx_new   = parms->theta[j] * sqrt(node->eta[j]) / new_sd[j];
+        stdx_old   = parms->theta[j] / ( parms->re_sd[j] / sqrt(node->eta[j]) );
+        stdx_new   = parms->theta[j] / ( new_sd[j]       / sqrt(node->eta[j]) );
         new_int   += Rf_pnorm5(stdx_new, 0, 1, 1.0, 1.0);
         old_int   += Rf_pnorm5(stdx_old, 0, 1, 1.0, 1.0);
 
         // Count pulses
         num_pulses++;
         // 3rd 'part' of acceptance ratio
-        third_part += (node->eta[j] * pow(node->theta[j] - parms->theta[j], 2));
+        third_part += node->eta[j] * 
+                      (node->theta[j] - parms->theta[j]) *
+                      (node->theta[j] - parms->theta[j]);
 
         // Next pulse
         node = node->succ;
@@ -1181,7 +1183,8 @@ void draw_re_sd(Node_type *list,
 
       // 1st and 2nd 'parts' of acceptance ratio
       first_part  = (num_pulses) * (log(parms->re_sd[j]) - log(new_sd[j]));
-      second_part = 0.5 * ((1 / pow(parms->re_sd[j], 2)) - (1 / pow(new_sd[j], 2)));
+      second_part = 0.5 * 
+        ((1 / (parms->re_sd[j] * parms->re_sd[j])) - (1 / (new_sd[j] * new_sd[j])));
 
       // Compute log rho, and set alpha equal to min(log rho,0)
       log_rho = old_int - new_int + first_part + second_part * third_part;
