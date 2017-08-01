@@ -5,11 +5,11 @@
 #options(scipen = 99)
 setwd("~/Projects/BayesPulse/pulsatile/")
 
-# library(dplyr)
+library(dplyr)
 library(tidyr)
 #library(pryr)
 library(devtools)
-# library(roxygen2)
+library(roxygen2)
 library(ggplot2)
 library(magrittr)
 library(ggthemes)
@@ -21,16 +21,32 @@ devtools::install("../pulsatile", build_vignettes = FALSE)
 
 library(pulsatile)
 
+
+test_fits <- readRDS("../remote-storage/fourth_run_mdplyr_42fits_larger_small_mass_meansd.Rds")
+fit <- test_fits[7, "fits"] %>% .[[1]] %>% .[[1]]
+bp_trace(fit)
+bp_posteriors(fit, type = "histogram")
+
+
+
+
 # NOTE: eta is not working right -- often -nan or huuuuuge
 set.seed(9999)
 #set.seed(757373)
 this_pulse <- simulate_pulse()
 model_spec <- pulse_spec(location_prior_type = "order-statistic",
                          prior_max_sd_width     = 150)
-fit_test   <- fit_pulse(.data = this_pulse, iters = 150000, thin = 1,
-                        spec = model_spec, verbose = TRUE)
+fit_test   <- fit_pulse(.data = this_pulse, iters = 250000, thin = 50,
+                        burnin = 50000, spec = model_spec, verbose = TRUE)
 str(fit_test)
+
 plot(this_pulse)
+
+?chains
+chains(fit_test)
+pulse_chain(fit_test)
+common_chain(fit_test)
+
 fit_test$common_chain %>% 
   ggplot(aes(x = iteration, y = mean_pulse_width)) + geom_path()
 # will add summary and print s3 methods
@@ -39,8 +55,6 @@ this_pulse
 
 traceplots <- 
   fit_test$common_chain %>% 
-  filter(iteration %% 50 == 1) %>%
-   filter(iteration > 100000) %>%
   gather(key = parameter, value = value, -iteration) %>%
 #   mutate(value = ifelse(parameter %in% c("sd_mass", "sd_widths"), log(value), value)) %>%
   ggplot(aes(x = iteration, y = value)) +
@@ -49,8 +63,6 @@ traceplots <-
 
 posterior_dens <- 
   fit_test$common_chain %>% 
-  filter(iteration %% 50 == 1) %>%
-#   filter(iteration > 10000) %>%
   gather(key = parameter, value = value, -iteration) %>%
   ggplot(aes(x = value)) +
     geom_histogram() +

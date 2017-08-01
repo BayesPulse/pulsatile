@@ -17,7 +17,9 @@ Depends:
 Imports:
     stats,
     tibble (>= 1.2),
-    ggplot2
+    ggplot2,
+    tidyr,
+    dplyr (>= 0.7)
 Suggests:
     testthat (>= 1.0.2), 
     knitr, 
