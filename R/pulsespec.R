@@ -56,7 +56,7 @@ pulse_spec <-
            prior_mass_mean        = 4,
            prior_mass_var         = 100,
            prior_width_mean       = 5,
-           prior_width_var        = 1000,
+           prior_width_var        = 100,
            prior_baseline_mean    = 2.6,
            prior_baseline_var     = 100,
            prior_halflife_mean    = 45,
