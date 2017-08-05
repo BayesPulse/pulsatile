@@ -1,5 +1,5 @@
 //
-// Test function for getting dataframes from R to C
+// Primary interface between R and C code
 //
 
 
