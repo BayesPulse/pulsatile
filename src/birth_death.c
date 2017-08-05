@@ -343,8 +343,8 @@ void mean_contribution(Node_type *node,
   double w; // vars used in arithmetic
 
   // Calculate mean contribution -----------------
-  z  = node->theta[1] * 0.6931472 / parms->md[1];
-  y  = 0.6931472 * (0.5 * z / parms->md[1] + node->time / parms->md[1]);
+  z  = node->theta[1] * parms->decay;
+  y  = parms->decay * (0.5 * z  + node->time);
   z += node->time;
   w  = sqrt(2. * node->theta[1]);
 
@@ -356,7 +356,7 @@ void mean_contribution(Node_type *node,
       node->mean_contrib[i] = 0; 
     } else {
       node->mean_contrib[i] = node->theta[0] * x * 
-                              exp(y - ts[i][0] * 0.6931472 / parms->md[1]);
+                              exp(y - ts[i][0] * parms->decay);
     }
   }
 

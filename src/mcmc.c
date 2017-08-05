@@ -867,6 +867,8 @@ void mh_mu_delta(Node_type *list,
       // Set b and hl back equal to current values
       parms->md[0] = currentmd[0];
       parms->md[1] = currentmd[1];
+      // Set decay rate back equal to current value
+      parms->decay = current_decay;
 
       // Set mean_contrib back equal to current values for each pulse
       i = 0;
@@ -879,8 +881,6 @@ void mh_mu_delta(Node_type *list,
         node = node->succ;
       }
 
-      // Set decay rate back equal to current value
-      parms->decay = current_decay;
     } 
     // End of if else statement
 
@@ -1291,9 +1291,9 @@ void draw_random_effects(double **ts,
 
         // Compute the log of the ratio of the priors
         prior_old = node->theta[j] - parms->theta[j];
-        prior_old *= 0.5*prior_old;
+        prior_old *= 0.5 * prior_old;
         prior_new = pRE[j] - parms->theta[j];
-        prior_new *= 0.5*prior_new;
+        prior_new *= 0.5 * prior_new;
         prior_ratio = prior_old - prior_new;
         prior_ratio /= parms->re_sd[j];
         prior_ratio /= parms->re_sd[j];
