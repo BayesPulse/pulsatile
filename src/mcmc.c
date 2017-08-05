@@ -1282,10 +1282,12 @@ void draw_random_effects(double **ts,
     pRE[0] = Rf_rnorm(node->theta[0], v1);
     pRE[1] = Rf_rnorm(node->theta[1], v2);
 
-    if (pRE[0] > 0.0 && pRE[1] > 0.01 && pRE[1] < 100){
-      // Determine if we accept or reject proposed pulse mass then determine
-      // if we accept or reject proposed pulse width
-      for (j = 0; j < 2; j++){
+    // Determine if we accept or reject proposed pulse mass then determine
+    // if we accept or reject proposed pulse width
+    for (j = 0; j < 2; j++) {
+      //if ((j == 0 && pRE[0] > 0) | (j == 1 && pRE[1] > 5)) {
+      
+      if (pRE[j] > 0) {
 
         // Compute the log of the ratio of the priors
         prior_old = node->theta[j] - parms->theta[j];
