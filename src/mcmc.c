@@ -1156,7 +1156,7 @@ void draw_re_sd(Node_type *list,
   for (j = 0; j < 2; j++) {
 
     // We only can accept the proposed value if it is positive
-    if (new_sd[j] > 0 && new_sd[j] < priors->re_sdmax[j]) {
+    if (new_sd[j] > 0.1 && new_sd[j] < priors->re_sdmax[j]) {
 
       node = list->succ;
       num_pulses = 0;
