@@ -350,7 +350,7 @@ void mean_contribution(Node_type *node,
 
   for (i = 0; i < N; i++) {
     x = (ts[i][0] - z) / w;
-    x = 0.5 * (1. + erf(x));
+    x = Rf_pnorm5(x * sqrt(2), 0.0, 1.0, 1, 0);
 
     if (x == 0) {
       node->mean_contrib[i] = 0; 
