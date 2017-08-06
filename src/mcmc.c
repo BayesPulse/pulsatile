@@ -1056,8 +1056,8 @@ void draw_fixed_effects(Node_type *list,
         // Normalizing constants
         stdxnew   = theta[j]        * sqrt(node->eta[j]) / parms->re_sd[j];
         stdxold   = parms->theta[j] * sqrt(node->eta[j]) / parms->re_sd[j];
-        oldint += Rf_pnorm5(stdxold, 0, 1, 1.0, 1.0); // second 1.0 does the log xform for us 
-        newint += Rf_pnorm5(stdxnew, 0, 1, 1.0, 1.0); // first 1.0 says to use lower tail
+        oldint += Rf_pnorm5(stdxold, 0.0, 1.0, 1, 1); // second 1 does the log xform for us 
+        newint += Rf_pnorm5(stdxnew, 0.0, 1.0, 1, 1); // first 1 says to use lower tail
 
         node = node->succ;
         numnode++;
@@ -1167,8 +1167,8 @@ void draw_re_sd(Node_type *list,
         // Normalizing constants
         stdx_old   = parms->theta[j] / ( parms->re_sd[j] / sqrt(node->eta[j]) );
         stdx_new   = parms->theta[j] / ( new_sd[j]       / sqrt(node->eta[j]) );
-        new_int   += Rf_pnorm5(stdx_new, 0, 1, 1.0, 1.0);
-        old_int   += Rf_pnorm5(stdx_old, 0, 1, 1.0, 1.0);
+        new_int   += Rf_pnorm5(stdx_new, 0.0, 1.0, 1, 1);
+        old_int   += Rf_pnorm5(stdx_old, 0.0, 1.0, 1, 1);
 
         // Count pulses
         num_pulses++;
@@ -1411,8 +1411,8 @@ void draw_eta(Node_type *list,
         re_ratio     = re_old - re_new;
         re_ratio    /= parms->re_sd[j];
         re_ratio    /= parms->re_sd[j];
-        re_ratio    += Rf_pnorm5(stdold, 0, 1, 1.0, 1.0) -  // second 1.0 does the log xform for us 
-                       Rf_pnorm5(stdnew, 0, 1, 1.0, 1.0) -  // first 1.0 says to use lower tail      
+        re_ratio    += Rf_pnorm5(stdold, 0.0, 1.0, 1, 1) -  // second 1 does the log xform for us 
+                       Rf_pnorm5(stdnew, 0.0, 1.0, 1, 1) -  // first 1 says to use lower tail      
                        0.5 * log(node->eta[j]) + 0.5 * log(proposed_eta[j]); // the 1/2pi term in
                                                                              // normal distirbution
         alpha = (0 < (temp = (prior_ratio + re_ratio))) ? 0 : temp;

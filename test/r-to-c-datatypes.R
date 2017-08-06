@@ -32,7 +32,7 @@ bp_posteriors(fit, type = "histogram")
 
 # NOTE: eta is not working right -- often -nan or huuuuuge
 # set.seed(9999)
-set.seed(999)
+set.seed(9999)
 this_pulse <- simulate_pulse()
 model_spec <- pulse_spec(location_prior_type = "order-statistic",
                          prior_max_sd_width     = 150)
@@ -51,24 +51,10 @@ fit_test$common_chain %>%
   ggplot(aes(x = iteration, y = mean_pulse_width)) + geom_path()
 bp_trace(fit_test)
 bp_posteriors(fit_test)
+
 # will add summary and print s3 methods
 #summary(this_pulse)
 this_pulse
-
-traceplots <- 
-  fit_test$common_chain %>% 
-  gather(key = parameter, value = value, -iteration) %>%
-#   mutate(value = ifelse(parameter %in% c("sd_mass", "sd_widths"), log(value), value)) %>%
-  ggplot(aes(x = iteration, y = value)) +
-    geom_path() + #alpha = 0.5) +
-    facet_wrap(~ parameter, ncol = 3, scales = "free")
-
-posterior_dens <- 
-  fit_test$common_chain %>% 
-  gather(key = parameter, value = value, -iteration) %>%
-  ggplot(aes(x = value)) +
-    geom_histogram() +
-    facet_wrap(~ parameter, ncol = 3, scales = "free")
 
 
 ##############################
