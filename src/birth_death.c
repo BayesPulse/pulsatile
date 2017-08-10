@@ -106,6 +106,9 @@ void birth_death(Node_type *list,
   double b_ratio;             // Ratio of papas_cif/birth_rate for accept/rej
   double pulse_intensity;     // Prior intensity on pulse count poisson
   double new_theta;           // New theta draw for looping till > 0
+  double new_eta;             // New eta draw for looping till > 0
+  double new_tsd;             // New standard devation scaled by new_eta for
+                              // drawing the new theta from a trunc t-distr.
 
 
   //-----------------------------------------
@@ -212,7 +215,7 @@ void birth_death(Node_type *list,
     // Set Pr(Birth), force death/birth if too many/few
     if (num_node <= 1) { 
       max = 1.1;
-    } else if (num_node >= max_num_node) { //TODO: may want to remove this upper limit for production..
+    } else if (num_node >= max_num_node) { 
       max = -0.1;
     } else { 
       max = Birth_rate / (Birth_rate + Death_rate); 
@@ -264,10 +267,10 @@ void birth_death(Node_type *list,
 
         for (j = 0; j < 2; j++) {
           new_theta = -1;
-          //new_eta = -1;
-          while (new_theta < 0) { // | new_eta < 0) {
-            //new_eta = Rf_rnorm(1, );
-            new_theta = Rf_rnorm(parms->theta[j], parms->re_sd[j]);
+          new_eta = Rf_rgamma(2, 2);
+          new_tsd = sqrt((parms->re_sd[j] * parms->re_sd[j]) / new_eta);
+          while (new_theta < 0) {
+            new_theta = Rf_rnorm(parms->theta[j], new_tsd);
           }
           new_node->theta[j] = new_theta;
         }
