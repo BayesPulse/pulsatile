@@ -56,7 +56,7 @@ fit_pulse <- function(.data,
     indata <- data.frame("time" = .data[[time]], "concentration" = .data[[conc]])
   }
 
-  stopifnot(is.numeric(indata[[time]]), is.numeric(indata[[conc]]),
+  stopifnot(is.numeric(indata[["time"]]), is.numeric(indata[["concentration"]]),
             is.logical(use_tibble), is.logical(verbose))
   if (burnin >= iters) stop("burnin >= iters")
 
