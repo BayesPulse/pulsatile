@@ -10,11 +10,10 @@ Run the following code to install the development version:
 
 ``` r
 # Need devtools package to install from GitHub
-install.packages("devtools")
-library(devtools)
+if (!require(devtools)) install.packages("devtools")
 
 # install from github
-install_github("mmulvahill/pulsatile", auth_token)
+install_github("bayespulse/pulsatile")
 ```
 
 Programming resources
