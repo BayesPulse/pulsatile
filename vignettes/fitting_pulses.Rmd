@@ -52,7 +52,7 @@ The development version is available on
 
 ```{r install-pulsatile}
 # Install/load pulsatile with devtools
-if (!require(devtools))  { install.packages("devtools")           }
+# if (!require(devtools))  { install.packages("devtools")           }
 if (!require(pulsatile)) { install_github("BayesPulse/pulsatile") }
 ```
 

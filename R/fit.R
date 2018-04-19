@@ -60,7 +60,8 @@ fit_pulse <- function(.data,
             is.logical(use_tibble), is.logical(verbose))
   if (burnin >= iters) stop("burnin >= iters")
 
-  
+  indata[["time"]] <- as.numeric(indata[["time"]])
+  indata[["concentration"]] <- as.numeric(indata[["concentration"]])
 
   #model_type <- match.arg(model_type)
   # ideas via survival::coxph 
