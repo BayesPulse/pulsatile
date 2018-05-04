@@ -94,8 +94,8 @@ SEXP decon_r_interface(SEXP indata,
   //  Rprintf("time = %lf, conc = %lf\n", ts[i][0], ts[i][1]);
   //}
 
-  fitend   = ts[nobs - 1][0] + ts[0][0] * 2; // search 2 units farther in time
-  fitstart = -ts[0][0] * 4;                // search 4 units in the past
+  fitend   = ts[nobs - 1][0] + 20; // search 2 units farther in time
+  fitstart = -40;                // search 4 units in the past
 
   // Set up priors structure ------------------
   Priors *priors;                 // Prior parameters data structure
