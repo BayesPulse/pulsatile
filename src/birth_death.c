@@ -273,6 +273,7 @@ void birth_death(Node_type *list,
             new_theta = Rf_rnorm(parms->theta[j], new_tsd);
           }
           new_node->theta[j] = new_theta;
+          new_node->eta[j] = new_eta;
         }
 
         new_node->mean_contrib = (double *)calloc(N, sizeof(double));
@@ -364,7 +365,7 @@ void mean_contribution(Node_type *node,
   }
 
   // Exit, returning nothing ---------------------
- 
+
 }
 
 
