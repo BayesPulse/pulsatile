@@ -3,7 +3,7 @@
 #
 #-------------------------------------------------------------------------------
 #options(scipen = 99)
-setwd("~/Projects/BayesPulse/bp-strauss-study/lib/pulsatile/")
+setwd("~/Projects/BayesPulse/Software/pulsatile/")
 
 library(dplyr)
 library(tidyr)

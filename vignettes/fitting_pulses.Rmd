@@ -20,37 +20,112 @@ vignette: >
 
 ```{r options, echo=FALSE}
 library(knitr)
-opts_chunk$set(echo       = TRUE,
-               message    = TRUE,
-               warning    = TRUE,
-               eval       = TRUE)
+knitr::opts_chunk$set(collapse = TRUE,
+                      echo     = TRUE,
+                      message  = TRUE,
+                      warning  = TRUE,
+                      eval     = TRUE)
 ```
 
-```{r load-package}
-# install.packages("devtools")
-# library(devtools)
-# install_github("mmulvahill/pulsatile")
-library(pulsatile)
-library(ggplot2)
+
+
+`pulsatile` is an R package for Bayesian modeling of pulsatile hormone time
+series data via birth-death MCMC. BDMCMC is an unsupervised statistical learning
+algorithm for estimating mixture models with unknown numbers of components. 
+
+The data consists of hormone concentration measurements from blood samples
+typically taken every 6-10 minutes for 6-24 hours.  With this specific analysis
+we are attempting to estimate the number and location of hormone pulses in the
+sample, as well as individual and sample-mean pulse features like quantity of
+hormone released (mass), duration of release (width), elimination rate
+(half-life), and baseline hormone levels.
+
+This package currently models one subjects time-series.  We are currently
+refactoring and developing the population models and two-hormone (driver and
+response hormones) models.
+
+The development version is available on
+[GitHub](https://github.com/BayesPulse/pulsatile.git).  
+
+
+#### Example analysis
+
+```{r install-pulsatile}
+# Install/load pulsatile with devtools
+# if (!require(devtools))  { install.packages("devtools")           }
+if (!require(pulsatile)) { install_github("BayesPulse/pulsatile") }
 ```
 
-```{r simulate-pulse}
-set.seed(9999)
+```{r load-otherpkgs}
+# Install/load other packages
+if (!require(tidyr))    { install.packages("tidyr")    }
+if (!require(dplyr))    { install.packages("dplyr")    }
+if (!require(ggplot2))  { install.packages("ggplot2")  }
+if (!require(ggthemes)) { install.packages("ggthemes") }
+if (!require(coda))     { install.packages("coda") }
+
+# Set options
+theme_set(theme_fivethirtyeight())
+options(scipen = 999)
+```
+
+
+
+```{r generate-sim}
+# Generate (reproducible) simulated pulsatile hormone time-series
+set.seed(2018-01-23)
 this_pulse <- simulate_pulse()
+
+# View/inspect simulated data
 str(this_pulse)
-
 plot(this_pulse)
-
 ```
 
-```{r fit-pulse}
-# These args are not yet implemented
+```{r fit}
+# Create model specification object (for priors, starting values, and proposal
+# variances)
 model_spec <- pulse_spec(location_prior_type = "order-statistic")
-fit_test   <- fit_pulse(.data = this_pulse, iters = 5000, thin = 10,
-                        burnin = 1000, spec = model_spec)
 
+# Fit model (takes roughly 3-10 minutes) 
+#   Note: fit_pulse accepts a plain dataset with the time and concentration
+#         variable names specified, or an object created by simulate_pulse()
+fit_test   <- fit_pulse(.data = this_pulse, 
+                        iters = 100000, 
+                        thin = 50,
+                        spec = model_spec, 
+                        verbose = FALSE)
 ```
 
+```{r inspect}
+# Inspect posterior chains
+str(fit_test, max.level = 1)
+common_chain(fit_test) # TODO: add ... to arg, so can use n=100, n=-100
+pulse_chain(fit_test)
+```
+
+```{r diagnostics}
+# Review traceplot and posterior distributions
+bp_trace(fit_test)
+bp_posteriors(fit_test)
+bp_location_posterior(fit_test)
+```
+
+```{r summarystats}
+# Calculate mean and 80% HPD credible interval
+rbind(
+      common_chain(fit_test) %>% 
+        summarise_at(vars(num_pulses:sd_widths), mean),
+      common_chain(fit_test) %>% 
+        select(-iteration) %>% 
+        as.mcmc %>% 
+        HPDinterval(., prob = 0.8) %>% t
+      ) %>%
+mutate(stat = c("mean", "lower", "upper")) %>%
+gather(key = parameter, value = value, -stat) %>%
+spread(key = stat, value = value)
+
+
+```
 
 
 # Session Info
@@ -59,7 +134,3 @@ fit_test   <- fit_pulse(.data = this_pulse, iters = 5000, thin = 10,
 sessionInfo()
 warnings()
 ```
-
-
-
-
