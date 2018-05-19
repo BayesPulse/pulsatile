@@ -244,13 +244,13 @@ void mcmc(Node_type *list,
 
     // 4) Draw the pulse locations 
     //    (Metropolis Hastings)
-  //  if (strauss == 1) {
-  //    mh_time_strauss(list, parms, ts, likeli, N, sdt, priors, atime_ptr,
-  //                    ntime_ptr);
-  //  } else {
-  //    mh_time_os(list, parms, ts, likeli, N, sdt, atime_ptr, ntime_ptr,
-  //               priors->orderstat);
-  //  }
+    if (strauss == 1) {
+      mh_time_strauss(list, parms, ts, likeli, N, sdt, priors, atime_ptr,
+                      ntime_ptr);
+    } else {
+      mh_time_os(list, parms, ts, likeli, N, sdt, atime_ptr, ntime_ptr,
+                 priors->orderstat);
+    }
 
     // 5) Draw baseline and halflife
     //    (Metropolis-Hastings)
@@ -262,9 +262,9 @@ void mcmc(Node_type *list,
     //    Modeling variance NOT precision; precision would be a gamma
     //    distribution via Ken's derivation.  Looked at Week7 of Ed's notes, but
     //    didn't find a clear answer.
-  //  ssq           = error_squared(ts, list, parms, N);
-  //  parms->sigma  = 1 / Rf_rgamma(priors->err_alpha + N / 2, priors->err_beta + 0.5 * ssq);
-  //  parms->lsigma = log(parms->sigma);
+   ssq           = error_squared(ts, list, parms, N);
+    parms->sigma  = 1 / Rf_rgamma(priors->err_alpha + N / 2, priors->err_beta + 0.5 * ssq);
+    parms->lsigma = log(parms->sigma);
 
     //------------------------------------------------------
     // End MCMC steps
