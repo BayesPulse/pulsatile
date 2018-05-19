@@ -222,25 +222,25 @@ void mcmc(Node_type *list,
 
     // 1) Draw the fixed effects   
     //    (Gibbs sampler)
- //   draw_fixed_effects(list, priors, parms, sdfem, sdfew, afem_ptr, nfem_ptr,
-  //                     afew_ptr, nfew_ptr);
+    draw_fixed_effects(list, priors, parms, sdfem, sdfew, afem_ptr, nfem_ptr,
+                       afew_ptr, nfew_ptr);
 
 
     // 2) Draw standard deviation of random effects 
     //    (Metropolis Hastings)
     //    Note: log(sd) with uniform prior was suggested by Gelman, 2006
- //   draw_re_sd(list, priors, parms, sdmv, sdwv, arevm_ptr, nrevm_ptr,
-  //             arevw_ptr, nrevw_ptr);
+    draw_re_sd(list, priors, parms, sdmv, sdwv, arevm_ptr, nrevm_ptr,
+               arevw_ptr, nrevw_ptr);
 
     // 3) Draw (kappa from) gamma for the t-distribution var-covar
     //draw_eta(list, parms);
-  //  draw_eta(list, parms, sdetam, sdetaw, aetam_ptr, aetaw_ptr, netam_ptr,
-   //          netaw_ptr);
+    draw_eta(list, parms, sdetam, sdetaw, aetam_ptr, aetaw_ptr, netam_ptr,
+             netaw_ptr);
 
     // 3) Draw the random effects 
     //    (Metropolis Hastings)
-  //  draw_random_effects(ts, list, parms, N, likeli, sdrem, sdrew, arem_ptr,
-    //                    nrem_ptr, arew_ptr, nrew_ptr);
+    draw_random_effects(ts, list, parms, N, likeli, sdrem, sdrew, arem_ptr,
+                        nrem_ptr, arew_ptr, nrew_ptr);
 
     // 4) Draw the pulse locations 
     //    (Metropolis Hastings)
@@ -254,16 +254,16 @@ void mcmc(Node_type *list,
 
     // 5) Draw baseline and halflife
     //    (Metropolis-Hastings)
-  //  mh_mu_delta(list, parms, priors, ts, likeli, N, num_node2, pmd_vch,
-    //            adelta_ptr, ndelta_ptr);
+    mh_mu_delta(list, parms, priors, ts, likeli, N, num_node2, pmd_vch,
+                adelta_ptr, ndelta_ptr);
 
     // 6) Draw the model error variance from the inverse Gamma distribution 
     //    (Gibbs) 
     //    Modeling variance NOT precision; precision would be a gamma
     //    distribution via Ken's derivation.  Looked at Week7 of Ed's notes, but
     //    didn't find a clear answer.
-   ssq           = error_squared(ts, list, parms, N);
-    parms->sigma  = 1 / Rf_rgamma(priors->err_alpha + N / 2, priors->err_beta + 0.5 * ssq);
+    ssq           = error_squared(ts, list, parms, N);
+    parms->sigma  = 1 / Rf_rgamma(priors->err_alpha + N / 2, 1 / (priors->err_beta + 0.5 * ssq));
     parms->lsigma = log(parms->sigma);
 
     //------------------------------------------------------
