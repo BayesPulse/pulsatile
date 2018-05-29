@@ -263,7 +263,8 @@ void mcmc(Node_type *list,
     //    distribution via Ken's derivation.  Looked at Week7 of Ed's notes, but
     //    didn't find a clear answer.
     ssq           = error_squared(ts, list, parms, N);
-    parms->sigma  = 1 / Rf_rgamma(priors->err_alpha + N / 2, 1 / (priors->err_beta + 0.5 * ssq));
+    // Rf_gamma is the shape (alpha is shape), scale (beta here is scale) parameterization
+    parms->sigma  = 1 / Rf_rgamma(priors->err_alpha + N / 2, 1 / (1 / priors->err_beta + 0.5 * ssq));
     parms->lsigma = log(parms->sigma);
 
     //------------------------------------------------------
