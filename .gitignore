@@ -6,3 +6,4 @@
 *.o
 *.so
 tags
+.DS_Store

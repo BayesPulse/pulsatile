@@ -223,14 +223,14 @@ void mcmc(Node_type *list,
     // 1) Draw the fixed effects   
     //    (Gibbs sampler)
     draw_fixed_effects(list, priors, parms, sdfem, sdfew, afem_ptr, nfem_ptr,
-                       afew_ptr, nfew_ptr); 
+                       afew_ptr, nfew_ptr);
 
 
     // 2) Draw standard deviation of random effects 
     //    (Metropolis Hastings)
     //    Note: log(sd) with uniform prior was suggested by Gelman, 2006
     draw_re_sd(list, priors, parms, sdmv, sdwv, arevm_ptr, nrevm_ptr,
-               arevw_ptr, nrevw_ptr); 
+               arevw_ptr, nrevw_ptr);
 
     // 3) Draw (kappa from) gamma for the t-distribution var-covar
     //draw_eta(list, parms);
@@ -240,7 +240,7 @@ void mcmc(Node_type *list,
     // 3) Draw the random effects 
     //    (Metropolis Hastings)
     draw_random_effects(ts, list, parms, N, likeli, sdrem, sdrew, arem_ptr,
-                        nrem_ptr, arew_ptr, nrew_ptr); 
+                        nrem_ptr, arew_ptr, nrew_ptr);
 
     // 4) Draw the pulse locations 
     //    (Metropolis Hastings)
@@ -249,7 +249,7 @@ void mcmc(Node_type *list,
                       ntime_ptr);
     } else {
       mh_time_os(list, parms, ts, likeli, N, sdt, atime_ptr, ntime_ptr,
-                 priors->orderstat); 
+                 priors->orderstat);
     }
 
     // 5) Draw baseline and halflife
@@ -263,7 +263,8 @@ void mcmc(Node_type *list,
     //    distribution via Ken's derivation.  Looked at Week7 of Ed's notes, but
     //    didn't find a clear answer.
     ssq           = error_squared(ts, list, parms, N);
-    parms->sigma  = 1 / Rf_rgamma(priors->err_alpha + N / 2, priors->err_beta + 0.5 * ssq);
+    // Rf_gamma is the shape (alpha is shape), scale (beta here is scale) parameterization
+    parms->sigma  = 1 / Rf_rgamma(priors->err_alpha + N / 2, 1 / (1 / priors->err_beta + 0.5 * ssq));
     parms->lsigma = log(parms->sigma);
 
     //------------------------------------------------------
