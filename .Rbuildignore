@@ -9,3 +9,5 @@ temp/
 test/
 README.Rmd
 tags
+.DS_Store
+nicholes_debugging.R

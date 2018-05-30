@@ -24,8 +24,8 @@
 #' @param prior_baseline_var variance of prior on baseline
 #' @param prior_halflife_mean mean of prior on half-life
 #' @param prior_halflife_var variance of prior on half-life
-#' @param prior_error_alpha placeholder
-#' @param prior_error_beta placeholder
+#' @param prior_error_alpha Gamma shape parameter
+#' @param prior_error_beta Gamma rate parameter
 #' @param prior_location_gamma placeholder
 #' @param prior_location_range placeholder
 #' @param prior_max_sd_mass placeholder
