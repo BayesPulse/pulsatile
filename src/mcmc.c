@@ -867,6 +867,8 @@ void mh_mu_delta(Node_type *list,
       // Set b and hl back equal to current values
       parms->md[0] = currentmd[0];
       parms->md[1] = currentmd[1];
+      // Set decay rate back equal to current value
+      parms->decay = current_decay;
 
       // Set mean_contrib back equal to current values for each pulse
       i = 0;
@@ -879,8 +881,6 @@ void mh_mu_delta(Node_type *list,
         node = node->succ;
       }
 
-      // Set decay rate back equal to current value
-      parms->decay = current_decay;
     } 
     // End of if else statement
 
@@ -1056,8 +1056,8 @@ void draw_fixed_effects(Node_type *list,
         // Normalizing constants
         stdxnew   = theta[j]        * sqrt(node->eta[j]) / parms->re_sd[j];
         stdxold   = parms->theta[j] * sqrt(node->eta[j]) / parms->re_sd[j];
-        oldint += Rf_pnorm5(stdxold, 0, 1, 1.0, 1.0); // second 1.0 does the log xform for us 
-        newint += Rf_pnorm5(stdxnew, 0, 1, 1.0, 1.0); // first 1.0 says to use lower tail
+        oldint += Rf_pnorm5(stdxold, 0.0, 1.0, 1, 1); // second 1 does the log xform for us 
+        newint += Rf_pnorm5(stdxnew, 0.0, 1.0, 1, 1); // first 1 says to use lower tail
 
         node = node->succ;
         numnode++;
@@ -1156,7 +1156,7 @@ void draw_re_sd(Node_type *list,
   for (j = 0; j < 2; j++) {
 
     // We only can accept the proposed value if it is positive
-    if (new_sd[j] > 0 && new_sd[j] < priors->re_sdmax[j]) {
+    if (new_sd[j] > 0.1 && new_sd[j] < priors->re_sdmax[j]) {
 
       node = list->succ;
       num_pulses = 0;
@@ -1167,8 +1167,8 @@ void draw_re_sd(Node_type *list,
         // Normalizing constants
         stdx_old   = parms->theta[j] / ( parms->re_sd[j] / sqrt(node->eta[j]) );
         stdx_new   = parms->theta[j] / ( new_sd[j]       / sqrt(node->eta[j]) );
-        new_int   += Rf_pnorm5(stdx_new, 0, 1, 1.0, 1.0);
-        old_int   += Rf_pnorm5(stdx_old, 0, 1, 1.0, 1.0);
+        new_int   += Rf_pnorm5(stdx_new, 0.0, 1.0, 1, 1);
+        old_int   += Rf_pnorm5(stdx_old, 0.0, 1.0, 1, 1);
 
         // Count pulses
         num_pulses++;
@@ -1282,16 +1282,18 @@ void draw_random_effects(double **ts,
     pRE[0] = Rf_rnorm(node->theta[0], v1);
     pRE[1] = Rf_rnorm(node->theta[1], v2);
 
-    if (pRE[0] > 0.0 && pRE[1] > 0.01 && pRE[1] < 100){
-      // Determine if we accept or reject proposed pulse mass then determine
-      // if we accept or reject proposed pulse width
-      for (j = 0; j < 2; j++){
+    // Determine if we accept or reject proposed pulse mass then determine
+    // if we accept or reject proposed pulse width
+    for (j = 0; j < 2; j++) {
+      //if ((j == 0 && pRE[0] > 0) | (j == 1 && pRE[1] > 5)) {
+      
+      if (pRE[j] > 0) {
 
         // Compute the log of the ratio of the priors
         prior_old = node->theta[j] - parms->theta[j];
-        prior_old *= 0.5*prior_old;
+        prior_old *= 0.5 * prior_old;
         prior_new = pRE[j] - parms->theta[j];
-        prior_new *= 0.5*prior_new;
+        prior_new *= 0.5 * prior_new;
         prior_ratio = prior_old - prior_new;
         prior_ratio /= parms->re_sd[j];
         prior_ratio /= parms->re_sd[j];
@@ -1409,8 +1411,8 @@ void draw_eta(Node_type *list,
         re_ratio     = re_old - re_new;
         re_ratio    /= parms->re_sd[j];
         re_ratio    /= parms->re_sd[j];
-        re_ratio    += Rf_pnorm5(stdold, 0, 1, 1.0, 1.0) -  // second 1.0 does the log xform for us 
-                       Rf_pnorm5(stdnew, 0, 1, 1.0, 1.0) -  // first 1.0 says to use lower tail      
+        re_ratio    += Rf_pnorm5(stdold, 0.0, 1.0, 1, 1) -  // second 1 does the log xform for us 
+                       Rf_pnorm5(stdnew, 0.0, 1.0, 1, 1) -  // first 1 says to use lower tail      
                        0.5 * log(node->eta[j]) + 0.5 * log(proposed_eta[j]); // the 1/2pi term in
                                                                              // normal distirbution
         alpha = (0 < (temp = (prior_ratio + re_ratio))) ? 0 : temp;

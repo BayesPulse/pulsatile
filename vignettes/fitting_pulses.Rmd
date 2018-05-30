@@ -52,7 +52,7 @@ The development version is available on
 
 ```{r install-pulsatile}
 # Install/load pulsatile with devtools
-if (!require(devtools))  { install.packages("devtools")           }
+# if (!require(devtools))  { install.packages("devtools")           }
 if (!require(pulsatile)) { install_github("BayesPulse/pulsatile") }
 ```
 
@@ -90,7 +90,7 @@ model_spec <- pulse_spec(location_prior_type = "order-statistic")
 #   Note: fit_pulse accepts a plain dataset with the time and concentration
 #         variable names specified, or an object created by simulate_pulse()
 fit_test   <- fit_pulse(.data = this_pulse, 
-                        iters = 25000, 
+                        iters = 100000, 
                         thin = 50,
                         spec = model_spec, 
                         verbose = FALSE)
@@ -99,7 +99,7 @@ fit_test   <- fit_pulse(.data = this_pulse,
 ```{r inspect}
 # Inspect posterior chains
 str(fit_test, max.level = 1)
-common_chain(fit_test)
+common_chain(fit_test) # TODO: add ... to arg, so can use n=100, n=-100
 pulse_chain(fit_test)
 ```
 

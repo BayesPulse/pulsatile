@@ -1,5 +1,5 @@
 //
-// Test function for getting dataframes from R to C
+// Primary interface between R and C code
 //
 
 
@@ -95,7 +95,7 @@ SEXP decon_r_interface(SEXP indata,
   //}
 
   fitend   = ts[nobs - 1][0] + ts[0][0] * 2; // search 2 units farther in time
-  fitstart = -ts[0][0] * 4;                // search 4 units in the past
+  fitstart = -(ts[1][0] - ts[0][0]) * 4;     // search 4 units in the past
 
   // Set up priors structure ------------------
   Priors *priors;                 // Prior parameters data structure
