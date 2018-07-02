@@ -198,7 +198,7 @@ myspec24 <- pulse_spec(location_prior_type = "order-statistic", # or "strauss"
 #---------------------------------------
 # Fit model
 #---------------------------------------
-datap24<-read.delim("/Users/nichole/Repositories/singlesubject_debug/data/P24.L.dat",sep=" ",header=T)
+datap24<-read.delim("/Users/nichole/Repositories/FSHAnalysis2018/Data/P24.L.dat",sep=" ",header=T)
 fit.24 <- fit_pulse(datap24, time = "Time", conc = "Conc",
                   spec = myspec24, iters = 50000, thin = 1, burnin = 0,
                   verbose = TRUE)
