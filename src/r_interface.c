@@ -114,7 +114,7 @@ SEXP decon_r_interface(SEXP indata,
   priors->re_sdmax[0]    = Rf_asReal(prior_max_sd_mass);      // priora1;
   priors->re_sdmax[1]    = Rf_asReal(prior_max_sd_width);     // priora2;
   priors->err_alpha      = Rf_asReal(prior_error_alpha);      // prioralpha;
-  priors->err_beta       = Rf_asReal(prior_error_beta);       // priorbeta;
+  priors->err_beta       = 1./Rf_asReal(prior_error_beta);    // priorbeta -- input as rate, convert to scale for Rf_rgamma();
   priors->orderstat      = 3;                                 // hard-coded;
   priors->gamma          = Rf_asReal(prior_pulse_location_gamma);   // priorgamma;
   priors->range          = Rf_asReal(prior_pulse_location_range);   // priorrange;
