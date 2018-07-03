@@ -93,6 +93,7 @@ bp_posteriors(fit)
 bp_location_posterior(fit)
 
 
+
 #---------------------------------------
 # Fit model
 #---------------------------------------
@@ -114,6 +115,18 @@ bp_posteriors(fit2)
 
 # pulse location posterior
 bp_location_posterior(fit2)
+
+mean.mass <-tapply(fit2$pulse_chain$mass,fit2$pulse_chain$iteration,mean)
+hist(mean.mass)
+mean(mean.mass)
+var.mass <-tapply(fit2$pulse_chain$mass,fit2$pulse_chain$iteration,var)
+sd.mass<-sqrt(var.mass)
+mean(sd.mass)
+mean.width <-tapply(fit2$pulse_chain$width,fit2$pulse_chain$iteration,mean)
+var.width <-tapply(fit2$pulse_chain$width,fit2$pulse_chain$iteration,var)
+mean(mean.width)
+sd.width<-sqrt(var.width)
+mean(sd.width)
 
 
 #---------------------------------------
@@ -166,6 +179,17 @@ bp_posteriors(fitn)
 # pulse location posterior
 bp_location_posterior(fitn)
 
+mean.mass <-tapply(fitn$pulse_chain$mass,fitn$pulse_chain$iteration,mean)
+hist(mean.mass)
+mean(mean.mass)
+var.mass <-tapply(fitn$pulse_chain$mass,fitn$pulse_chain$iteration,var)
+sd.mass<-sqrt(var.mass)
+mean(sd.mass)
+mean.width <-tapply(fitn$pulse_chain$width,fitn$pulse_chain$iteration,mean)
+var.width <-tapply(fitn$pulse_chain$width,fitn$pulse_chain$iteration,var)
+mean(mean.width)
+sd.width<-sqrt(var.width)
+mean(sd.width)
 
 #---------------------------------------
 # Create model specification for P24 real data
