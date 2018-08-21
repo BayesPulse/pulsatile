@@ -222,14 +222,14 @@ void mcmc(Node_type *list,
 
     // 1) Draw the fixed effects   
     //    (Gibbs sampler)
- //   draw_fixed_effects(list, priors, parms, sdfem, sdfew, afem_ptr, nfem_ptr,
- //                      afew_ptr, nfew_ptr);
+   draw_fixed_effects(list, priors, parms, sdfem, sdfew, afem_ptr, nfem_ptr,
+                       afew_ptr, nfew_ptr);
 
 
     // 2) Draw standard deviation of random effects 
     //    (Metropolis Hastings)
     //    Note: log(sd) with uniform prior was suggested by Gelman, 2006
- //   draw_re_sd(list, priors, parms, sdmv, sdwv, arevm_ptr, nrevm_ptr,
+//    draw_re_sd(list, priors, parms, sdmv, sdwv, arevm_ptr, nrevm_ptr,
  //              arevw_ptr, nrevw_ptr);
 
     // 3) Draw (kappa from) gamma for the t-distribution var-covar
