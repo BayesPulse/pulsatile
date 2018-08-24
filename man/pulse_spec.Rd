@@ -45,9 +45,9 @@ specification of "prior_mean_pulse_count", "prior_location_gamma", and
 
 \item{prior_halflife_var}{variance of prior on half-life}
 
-\item{prior_error_alpha}{placeholder}
+\item{prior_error_alpha}{Gamma shape parameter}
 
-\item{prior_error_beta}{placeholder}
+\item{prior_error_beta}{Gamma rate parameter}
 
 \item{prior_location_gamma}{placeholder}
 
