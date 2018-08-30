@@ -674,7 +674,7 @@ void mh_time_os(Node_type *list,
       } else {
         // Otherwise, use these as the second numerator/denominator 
         time_diff2_new = fitend - ptime;
-        time_diff2_new = fitend - node->time;
+        time_diff2 = fitend - node->time;
       }
 
       // Combine it all for the prior ratio 
