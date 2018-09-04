@@ -83,7 +83,7 @@ list_of_results <-
 
 # SAVED SIM DATA AND CHAINS IN ONE OF OUR SHARED DROPBOX FOLDERS
 save(list_of_sims, list_of_results, 
-     file = "~/Dropbox/Work/HormoneProjects/Hormone_Code_Versionn/simulated_data_for_nichole.RData")
+     file = "~/Dropbox/Work/HormoneProjects/Hormone_Code_Versionn/simulated_data_for_nichole_withfix.RData")
 
 
 

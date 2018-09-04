@@ -454,6 +454,11 @@ double likelihood(Node_type *list, double **ts, Common_parms *parms, int N,
 
   // Sum across mean_contribs --------------------
   mean = mean_concentration(list, parms, N, node_out, ts);
+  //Rprintf("\n\nNEW CALL\n");
+  //Rprintf("sigma:%f ; lsigma:%f:", parms->sigma, parms->lsigma);
+  //for (int j = 0; j < N; j++) {
+  //  Rprintf(", %f", mean[j]);
+  //}
 
   for (i = 0; i < N; i++) {
     x += (ts[i][1] - mean[i]) * (ts[i][1] - mean[i]);

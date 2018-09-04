@@ -6,6 +6,7 @@
 #define R_NO_REMAP 
 #include <R.h>
 #include <Rinternals.h>
+#include "pulse_node.h"
 
 #ifndef DECON_TEST_H
 #define DECON_TEST_H
@@ -78,6 +79,8 @@ double **convert_data(SEXP indata, int nrow);
 void deallocate_data(double **data, int nrow);
 SEXP getListElement(SEXP list, const char *str);
 //#endif // DECONVOLUTION_MAIN_H
+Node_type * test_pulses(Node_type * list, double **ts, Common_parms *parms, 
+                        int nobs);
 
 #endif
 

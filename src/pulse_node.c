@@ -214,10 +214,10 @@ void print_list(Node_type *list) {
   /* traverses the linked list and prints the contents of each node */
   i = 1;
   node = list->succ;
-  Rprintf("Pulse No. Time  Mass  Width\n");
+  Rprintf("Pulse No. Time  Mass  Width Eta_Mass Eta_Width\n");
   while (node != NULL) {
-    Rprintf("%2d %8.2lf %8.2lf %8.2lf \n", i, node->time, node->theta[0],
-           node->theta[1]);
+    Rprintf("%2d %8.2lf %8.2lf %8.2lf %8.2lf %8.2lf \n", i, node->time, node->theta[0],
+           node->theta[1], node->eta[0], node->eta[1]);
     node = node->succ;
     i++;
   }

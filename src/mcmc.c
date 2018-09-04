@@ -202,7 +202,7 @@ void mcmc(Node_type *list,
     //   priors->gamma < -0.001
     //------------------------------------------------------
     //if (i < 50) {
-    birth_death(list, ts, parms, N, likeli, i, strauss, priors);
+    //birth_death(list, ts, parms, N, likeli, i, strauss, priors);
     //}
 
     // Count number of pulses
@@ -222,18 +222,17 @@ void mcmc(Node_type *list,
 
     // 1) Draw the fixed effects   
     //    (Gibbs sampler)
-   draw_fixed_effects(list, priors, parms, sdfem, sdfew, afem_ptr, nfem_ptr,
-                       afew_ptr, nfew_ptr);
+    draw_fixed_effects(list, priors, parms, sdfem, sdfew, afem_ptr, nfem_ptr,
+                        afew_ptr, nfew_ptr);
 
 
     // 2) Draw standard deviation of random effects 
     //    (Metropolis Hastings)
     //    Note: log(sd) with uniform prior was suggested by Gelman, 2006
-//    draw_re_sd(list, priors, parms, sdmv, sdwv, arevm_ptr, nrevm_ptr,
- //              arevw_ptr, nrevw_ptr);
+     draw_re_sd(list, priors, parms, sdmv, sdwv, arevm_ptr, nrevm_ptr,
+                arevw_ptr, nrevw_ptr);
 
     // 3) Draw (kappa from) gamma for the t-distribution var-covar
-    //draw_eta(list, parms);
     draw_eta(list, parms, sdetam, sdetaw, aetam_ptr, aetaw_ptr, netam_ptr,
              netaw_ptr);
 
@@ -254,8 +253,8 @@ void mcmc(Node_type *list,
 
     // 5) Draw baseline and halflife
     //    (Metropolis-Hastings)
-//    mh_mu_delta(list, parms, priors, ts, likeli, N, num_node2, pmd_vch,
-//                adelta_ptr, ndelta_ptr);
+    mh_mu_delta(list, parms, priors, ts, likeli, N, num_node2, pmd_vch,
+                adelta_ptr, ndelta_ptr);
 
     // 6) Draw the model error variance from the inverse Gamma distribution 
     //    (Gibbs) 
