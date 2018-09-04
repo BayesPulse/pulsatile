@@ -92,6 +92,17 @@ bp_posteriors(fit)
 # pulse location posterior
 bp_location_posterior(fit)
 
+mean.mass <-tapply(fit$pulse_chain$mass,fit$pulse_chain$iteration,mean)
+hist(mean.mass)
+mean(mean.mass)
+var.mass <-tapply(fit$pulse_chain$mass,fit$pulse_chain$iteration,var)
+sd.mass<-sqrt(var.mass)
+mean(sd.mass)
+mean.width <-tapply(fit$pulse_chain$width,fit$pulse_chain$iteration,mean)
+var.width <-tapply(fit$pulse_chain$width,fit$pulse_chain$iteration,var)
+mean(mean.width)
+sd.width<-sqrt(var.width)
+mean(sd.width)
 
 
 #---------------------------------------

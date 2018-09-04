@@ -222,19 +222,19 @@ void mcmc(Node_type *list,
 
     // 1) Draw the fixed effects   
     //    (Gibbs sampler)
-   draw_fixed_effects(list, priors, parms, sdfem, sdfew, afem_ptr, nfem_ptr,
-                       afew_ptr, nfew_ptr);
+ //  draw_fixed_effects(list, priors, parms, sdfem, sdfew, afem_ptr, nfem_ptr,
+  //                    afew_ptr, nfew_ptr);
 
 
     // 2) Draw standard deviation of random effects 
     //    (Metropolis Hastings)
     //    Note: log(sd) with uniform prior was suggested by Gelman, 2006
-//    draw_re_sd(list, priors, parms, sdmv, sdwv, arevm_ptr, nrevm_ptr,
- //              arevw_ptr, nrevw_ptr);
+    draw_re_sd(list, priors, parms, sdmv, sdwv, arevm_ptr, nrevm_ptr,
+               arevw_ptr, nrevw_ptr);
 
     // 3) Draw (kappa from) gamma for the t-distribution var-covar
     //draw_eta(list, parms);
-    draw_eta(list, parms, sdetam, sdetaw, aetam_ptr, aetaw_ptr, netam_ptr,
+   draw_eta(list, parms, sdetam, sdetaw, aetam_ptr, aetaw_ptr, netam_ptr,
              netaw_ptr);
 
     // 3) Draw the random effects 
@@ -244,13 +244,13 @@ void mcmc(Node_type *list,
 
     // 4) Draw the pulse locations 
     //    (Metropolis Hastings)
-    if (strauss == 1) {
-      mh_time_strauss(list, parms, ts, likeli, N, sdt, priors, atime_ptr,
-                      ntime_ptr);
-    } else {
-      mh_time_os(list, parms, ts, likeli, N, sdt, atime_ptr, ntime_ptr,
-                 priors->orderstat);
-    }
+ //   if (strauss == 1) {
+ //     mh_time_strauss(list, parms, ts, likeli, N, sdt, priors, atime_ptr,
+ //                     ntime_ptr);
+ //   } else {
+ //     mh_time_os(list, parms, ts, likeli, N, sdt, atime_ptr, ntime_ptr,
+  //               priors->orderstat);
+  //  }
 
     // 5) Draw baseline and halflife
     //    (Metropolis-Hastings)
@@ -1028,7 +1028,7 @@ void draw_fixed_effects(Node_type *list,
 
   // Draw a new pair of pulse mass and width on the subject level
   for (j = 0; j < 2; j++) {
-
+//    for (j = 1; j < 2; j++) {
     if (theta[j]>0) {
 
       // Prior Ratio  -- DONE
@@ -1154,8 +1154,8 @@ void draw_re_sd(Node_type *list,
   new_sd[1] = Rf_rnorm(parms->re_sd[1], v2);
 
   // Accept or Reject sigma_a, then accept or reject for sigma_w
-  for (j = 0; j < 2; j++) {
-
+//  for (j = 0; j < 2; j++) {
+for (j = 1; j < 2; j++) {
     // We only can accept the proposed value if it is positive
     if (new_sd[j] > 0.1 && new_sd[j] < priors->re_sdmax[j]) {
 
