@@ -17,7 +17,9 @@ set.seed(999)
 # IPI of 5
 simulate_data <- function(sampling_interval) {
 
-  simulate_pulse(num_obs = 144,
+  num_obs = floor(1440/sampling_interval)
+
+  simulate_pulse(num_obs = num_obs,
                  interval = sampling_interval,
                  error_var = 0.005,
                  ipi_mean = 12,
@@ -40,6 +42,8 @@ sims_ipi10 <- map(1:20, function(x) { simulate_data(sampling_interval = 10) })
 sims_ipi5  <- map(1:20, function(x) { simulate_data(sampling_interval = 5) })
 sims_ipi1  <- map(1:20, function(x) { simulate_data(sampling_interval = 1) })
 
+save(list_of_sims, 
+     file = "~/Dropbox/Work/HormoneProjects/Hormone_Code_Versions/simulated_data_for_nichole.RData")
 
 #---------------------------------------
 # Create model specification used in all fits
@@ -79,11 +83,12 @@ list_of_results <-
   future_map(list_of_sims,
              ~ fit_pulse(.x, time = "time", conc = "concentration",
                          spec = myspec, iters = 250000, thin = 50, burnin = 100000,
-                         verbose = TRUE))
+                         verbose = TRUE),
+             .progress = TRUE)
 
 # SAVED SIM DATA AND CHAINS IN ONE OF OUR SHARED DROPBOX FOLDERS
 save(list_of_sims, list_of_results, 
-     file = "~/Dropbox/Work/HormoneProjects/Hormone_Code_Versionn/simulated_data_for_nichole.RData")
+     file = "~/Dropbox/Work/HormoneProjects/Hormone_Code_Versionn/fitted_simulated_data_for_nichole.RData")
 
 
 

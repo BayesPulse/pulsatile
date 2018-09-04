@@ -222,8 +222,8 @@ void mcmc(Node_type *list,
 
     // 1) Draw the fixed effects   
     //    (Gibbs sampler)
- //  draw_fixed_effects(list, priors, parms, sdfem, sdfew, afem_ptr, nfem_ptr,
-  //                    afew_ptr, nfew_ptr);
+    //draw_fixed_effects(list, priors, parms, sdfem, sdfew, afem_ptr, nfem_ptr,
+    //                   afew_ptr, nfew_ptr);
 
 
     // 2) Draw standard deviation of random effects 
@@ -234,7 +234,7 @@ void mcmc(Node_type *list,
 
     // 3) Draw (kappa from) gamma for the t-distribution var-covar
     //draw_eta(list, parms);
-   draw_eta(list, parms, sdetam, sdetaw, aetam_ptr, aetaw_ptr, netam_ptr,
+    draw_eta(list, parms, sdetam, sdetaw, aetam_ptr, aetaw_ptr, netam_ptr,
              netaw_ptr);
 
     // 3) Draw the random effects 
@@ -244,18 +244,18 @@ void mcmc(Node_type *list,
 
     // 4) Draw the pulse locations 
     //    (Metropolis Hastings)
- //   if (strauss == 1) {
- //     mh_time_strauss(list, parms, ts, likeli, N, sdt, priors, atime_ptr,
- //                     ntime_ptr);
- //   } else {
- //     mh_time_os(list, parms, ts, likeli, N, sdt, atime_ptr, ntime_ptr,
-  //               priors->orderstat);
-  //  }
+    if (strauss == 1) {
+      mh_time_strauss(list, parms, ts, likeli, N, sdt, priors, atime_ptr,
+                      ntime_ptr);
+    } else {
+      mh_time_os(list, parms, ts, likeli, N, sdt, atime_ptr, ntime_ptr,
+                 priors->orderstat);
+    }
 
     // 5) Draw baseline and halflife
     //    (Metropolis-Hastings)
-//    mh_mu_delta(list, parms, priors, ts, likeli, N, num_node2, pmd_vch,
-//                adelta_ptr, ndelta_ptr);
+    //mh_mu_delta(list, parms, priors, ts, likeli, N, num_node2, pmd_vch,
+    //            adelta_ptr, ndelta_ptr);
 
     // 6) Draw the model error variance from the inverse Gamma distribution 
     //    (Gibbs) 
