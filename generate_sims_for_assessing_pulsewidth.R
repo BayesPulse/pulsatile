@@ -22,9 +22,9 @@ simulate_data <- function(sampling_interval) {
   simulate_pulse(num_obs = num_obs,
                  interval = sampling_interval,
                  error_var = 0.005,
-                 ipi_mean = 12,
-                 ipi_var = 40,
-                 ipi_min = 4,
+                 ipi_mean = 120/sampling_interval,
+                 ipi_var = 400/sampling_interval,
+                 ipi_min = 40/sampling_interval,
                  mass_mean = 3.5,
                  mass_sd = 1.6,
                  width_mean = 5,
@@ -42,6 +42,7 @@ sims_ipi10 <- map(1:20, function(x) { simulate_data(sampling_interval = 10) })
 sims_ipi5  <- map(1:20, function(x) { simulate_data(sampling_interval = 5) })
 sims_ipi1  <- map(1:20, function(x) { simulate_data(sampling_interval = 1) })
 
+list_of_sims <- c(sims_ipi10, sims_ipi5, sims_ipi1)
 save(list_of_sims, 
      file = "~/Dropbox/Work/HormoneProjects/Hormone_Code_Versions/simulated_data_for_nichole.RData")
 
@@ -78,7 +79,6 @@ myspec <- pulse_spec(location_prior_type = "order-statistic", # or "strauss"
 #---------------------------------------
 plan(multiprocess)
 
-list_of_sims <- c(sims_ipi10, sims_ipi5, sims_ipi1)
 list_of_results <-
   future_map(list_of_sims,
              ~ fit_pulse(.x, time = "time", conc = "concentration",
