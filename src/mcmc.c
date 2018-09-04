@@ -190,7 +190,6 @@ void mcmc(Node_type *list,
     Rf_error("0");
   }
 
-
   //----------------------------------------------------------------
   // Run MCMC
   //----------------------------------------------------------------
@@ -201,9 +200,9 @@ void mcmc(Node_type *list,
     //   selection of prior occurs within function based on 
     //   priors->gamma < -0.001
     //------------------------------------------------------
-    //if (i < 50) {
+   if (i < 1000) {
     birth_death(list, ts, parms, N, likeli, i, strauss, priors);
-    //}
+   }
 
     // Count number of pulses
     // **NOTE**: could remove this traversing of the linked-list by having
@@ -229,18 +228,19 @@ void mcmc(Node_type *list,
     // 2) Draw standard deviation of random effects 
     //    (Metropolis Hastings)
     //    Note: log(sd) with uniform prior was suggested by Gelman, 2006
+      if (i > 1000) {
     draw_re_sd(list, priors, parms, sdmv, sdwv, arevm_ptr, nrevm_ptr,
                arevw_ptr, nrevw_ptr);
-
+      }
     // 3) Draw (kappa from) gamma for the t-distribution var-covar
     //draw_eta(list, parms);
-   draw_eta(list, parms, sdetam, sdetaw, aetam_ptr, aetaw_ptr, netam_ptr,
-             netaw_ptr);
+   //  draw_eta(list, parms, sdetam, sdetaw, aetam_ptr, aetaw_ptr, netam_ptr,
+    //        netaw_ptr);
 
     // 3) Draw the random effects 
     //    (Metropolis Hastings)
-    draw_random_effects(ts, list, parms, N, likeli, sdrem, sdrew, arem_ptr,
-                        nrem_ptr, arew_ptr, nrew_ptr);
+  // draw_random_effects(ts, list, parms, N, likeli, sdrem, sdrew, arem_ptr,
+    //                   nrem_ptr, arew_ptr, nrew_ptr);
 
     // 4) Draw the pulse locations 
     //    (Metropolis Hastings)
@@ -391,8 +391,13 @@ void mcmc(Node_type *list,
       adjust_acceptance( (double) *atime_ptr  / (double) *ntime_ptr,  &sdt);
       adjust_acceptance( (double) *arem_ptr   / (double) *nrem_ptr,   &sdrem);
       adjust_acceptance( (double) *arew_ptr   / (double) *nrew_ptr,   &sdrew);
+        
+        //remove the i conditioning since this is part of debugging
+        if (i > 1050) {
       adjust_acceptance( (double) *arevm_ptr  / (double) *nrevm_ptr,  &sdmv);
-      adjust_acceptance( (double) *arevw_ptr  / (double) *nrevw_ptr,  &sdwv);
+            adjust_acceptance( (double) *arevw_ptr  / (double) *nrevw_ptr,  &sdwv);
+            
+        }
       adjust_acceptance( (double) *afem_ptr   / (double) *nfem_ptr,   &sdfem);
       adjust_acceptance( (double) *afew_ptr   / (double) *nfew_ptr,   &sdfew);
 			adjust_acceptance( (double) *aetam_ptr  / (double) *netam_ptr,  &sdetam);
@@ -1152,10 +1157,12 @@ void draw_re_sd(Node_type *list,
   // Draw proposed values for sigma_a and sigma_w
   new_sd[0] = Rf_rnorm(parms->re_sd[0], v1);
   new_sd[1] = Rf_rnorm(parms->re_sd[1], v2);
+    
+  //  Rprintf("new_sd[1] %lf\n",new_sd[1]);
 
   // Accept or Reject sigma_a, then accept or reject for sigma_w
-//  for (j = 0; j < 2; j++) {
-for (j = 1; j < 2; j++) {
+  for (j = 0; j < 2; j++) {
+//for (j = 0; j < 1; j++) {
     // We only can accept the proposed value if it is positive
     if (new_sd[j] > 0.1 && new_sd[j] < priors->re_sdmax[j]) {
 

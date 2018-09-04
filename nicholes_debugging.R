@@ -59,7 +59,7 @@ myspec <- pulse_spec(location_prior_type = "order-statistic", # or "strauss"
                      prior_location_gamma = NULL,
                      prior_location_range = NULL,
                      prior_max_sd_mass = 100,
-                     prior_max_sd_width = 150,
+                     prior_max_sd_width = 100,
                      prior_mean_pulse_count = 12,
                      sv_mass_mean = 3.5,
                      sv_width_mean = 5,
@@ -105,6 +105,45 @@ sd.width<-sqrt(var.width)
 mean(sd.width)
 
 
+hist(fit$common_chain$mean_pulse_mass)
+mean(fit$common_chain$mean_pulse_mass)
+
+hist(fit$common_chain$mean_pulse_width)
+mean(fit$common_chain$mean_pulse_width)
+
+
+hist(fit$common_chain$sd_mass)
+mean(fit$common_chain$sd_mass)
+
+hist(fit$common_chain$sd_widths)
+mean(fit$common_chain$sd_widths)
+
+#-------------------------------------------
+#Generated data in generate_sims_for_assessing_pulsewidth.R
+#set seed to (999)
+#ran the 5 min sampling interval.
+#--------------------------------------------
+fit.5min <- fit_pulse(sims_ipi5[[1]]$data, time = "time", conc = "concentration",
+                 spec = myspec, iters = 50000, thin = 1, burnin = 0,
+                 verbose = TRUE)
+
+truth.5min <- sims_ipi5[[1]]$parameters
+
+bp_trace(fit.5min)
+
+mean.mass <-tapply(fit.5min$pulse_chain$mass,fit.5min$pulse_chain$iteration,mean)
+hist(mean.mass)
+mean(mean.mass)
+var.mass <-tapply(fit.5min$pulse_chain$mass,fit.5min$pulse_chain$iteration,var)
+sd.mass<-sqrt(var.mass)
+mean(sd.mass)
+mean.width <-tapply(fit.5min$pulse_chain$width,fit.5min$pulse_chain$iteration,mean)
+var.width <-tapply(fit.5min$pulse_chain$width,fit.5min$pulse_chain$iteration,var)
+mean(mean.width)
+sd.width<-sqrt(var.width)
+mean(sd.width)
+
+#--------------OLD CODE#-------------------
 #---------------------------------------
 # Fit model
 #---------------------------------------
