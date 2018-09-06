@@ -267,7 +267,7 @@ void birth_death(Node_type *list,
 
         for (j = 0; j < 2; j++) {
           new_theta = -1;
-          new_eta = Rf_rgamma(2, 2);
+          new_eta = Rf_rgamma(2, 0.5);
           new_tsd = sqrt((parms->re_sd[j] * parms->re_sd[j]) / new_eta);
           while (new_theta < 0) {
             new_theta = Rf_rnorm(parms->theta[j], new_tsd);

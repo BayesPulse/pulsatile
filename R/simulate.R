@@ -18,7 +18,8 @@
 #' @param mass_sd Standard deviation of pulse mass
 #' @param width_mean Mean pulse width (in minutes, estimation occurs in
 #'   minutes^2 (variance))
-#' @param width_sd Standard deviation of pulse width (in minutes)
+#' @param width_sd Standard deviation of pulse width (width is on the variance
+#' terms - minutes^2)
 #' @param halflife_mean Mean of half-life (in minutes)
 #' @param halflife_var Variance of half-life (in minutes)
 #' @param baseline_mean Mean of baseline
@@ -46,8 +47,8 @@ simulate_pulse <- function(num_obs           = 144,
                            ipi_min           = 4,
                            mass_mean         = 3.5,
                            mass_sd           = 1.6,
-                           width_mean        = 5,
-                           width_sd          = 1,
+                           width_mean        = 40,
+                           width_sd          = 20,
                            halflife_mean     = NULL,
                            halflife_var      = NULL,
                            baseline_mean     = NULL,
