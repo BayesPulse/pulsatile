@@ -2,7 +2,7 @@ Package: pulsatile
 Title: 
     Bayesian Deconvolution for the Analysis of Pulsatile Hormone Time-series
     Data
-Version: 0.0.0.9001
+Version: 0.0.9.9001
 Authors@R: 
     person("Matt", "Mulvahill", email = "matthew.mulvahill@ucdenver.edu", role = c("aut", "cre"))
 Description: 
