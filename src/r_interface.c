@@ -8,6 +8,7 @@
 //#include <Rinternals.h>
 // For boolean variables, consider: #include <stdbool.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <math.h>
 #include <time.h>
 #include "r_interface.h"
@@ -172,7 +173,18 @@ SEXP decon_r_interface(SEXP indata,
 
   // Set up pulse linklist ------------------
   Node_type *list;      
-  list = initialize_node();
+
+
+  //////////////////// NOTE: SET TO TRUE FOR TESTING ONLY ////////////////////
+  bool TEST = false;
+  //////////////////// ////////////////////////////////// ////////////////////
+
+  // If testing, use hard-coded pulse data
+  if (TEST) {
+    list = test_pulses(list, ts, parms, nobs);
+  } else {
+    list = initialize_node();
+  }
 
 
   // R lists for chains ------------------
@@ -183,9 +195,12 @@ SEXP decon_r_interface(SEXP indata,
   //   entries are defined in linklistv3
   SEXP pulse_chains = Rf_protect(Rf_allocVector(VECSXP, out_len));
 
+  //double tmp = likelihood(list, ts, parms, nobs, list);
+  //Rprintf("Initial likelihood is: %f\n", tmp);
 
-  mcmc(list, parms, ts, iters, nobs, nthin, nburnin, strauss, verbose, priors, common1,
-       pulse_chains, propsd);
+
+  mcmc(list, parms, ts, iters, nobs, nthin, nburnin, strauss, verbose, priors,
+       common1, pulse_chains, propsd);
 
 
   // Column names for common1 chain --------
@@ -299,6 +314,147 @@ SEXP getListElement(SEXP list, const char *str) {
 
 }
 
+//Node_type * test_data(Node_type * list, int nobs) {
+//
+//  Rcpp::NumericVector thistime(144);
+//  for (int i = 0; i < thistime.size(); i++)  thistime(i) = (i + 1) * 10;
+//      Rcpp::NumericVector conc =
+//      { 2.681436, 3.619304, 4.583596, 5.391640, 4.602580, 5.837577, 5.093759,
+//        4.460362, 4.228568, 3.749578, 3.756091, 3.794117, 3.458053, 3.614573,
+//        2.979374, 3.235577, 3.379498, 3.083957, 3.299427, 3.467285, 2.969050,
+//        3.401228, 3.146146, 2.934315, 3.041346, 3.161088, 2.740992, 2.869972,
+//        3.236580, 5.192121, 5.752548, 5.496779, 5.526355, 4.945300, 4.936505,
+//        7.312601, 7.128395, 6.801745, 7.635689, 6.246128, 6.032690, 4.702559,
+//        5.039149, 4.219767, 4.527492, 4.090115, 3.455401, 3.187411, 4.271770,
+//        6.863361, 5.953694, 6.456755, 6.778942, 4.981977, 4.830248, 4.336557,
+//        4.296211, 4.237477, 3.427465, 3.665419, 2.978837, 3.409569, 2.641762,
+//        3.689739, 3.180302, 3.497940, 3.097911, 3.205925, 4.962560, 5.559928,
+//        6.377035, 4.974151, 5.094906, 4.864500, 4.852309, 5.315221, 5.491787,
+//        5.379786, 4.845070, 4.835242, 4.523089, 4.211985, 4.741966, 6.410714,
+//        7.966407, 7.233676, 6.293541, 5.807553, 5.626408, 4.685379, 4.976104,
+//        4.923761, 5.616314, 4.954546, 4.316296, 4.449381, 4.035612, 5.933037,
+//        5.464214, 5.145751, 5.200191, 4.553076, 4.429967, 3.915830, 3.962575,
+//        3.418965, 3.334863, 3.174500, 3.409328, 2.822615, 3.298277, 2.421233,
+//        3.413683, 2.850547, 3.115562, 2.713616, 2.941980, 2.887866, 2.980766,
+//        3.627824, 4.625605, 4.468451, 4.815758, 3.985436, 3.463471, 3.682286,
+//        3.536958, 3.563942, 3.552810, 3.751709, 2.933170, 4.234158, 4.716445,
+//        4.043727, 4.320064, 3.972299, 3.851225, 4.050221, 3.195143, 3.168399,
+//        3.011654, 2.721384, 3.279211, 3.079000 };
+//
+//  // Declare variables
+//  int i = 0;
+//  double **data; // Nx2 matrix of time and log-concentration
+//
+//  // Allocate memory for matrix of data
+//  data = (double **)calloc(nrow, sizeof(double *));
+//  for (i = 0; i < nrow; i++) {
+//    data[i] = (double *)calloc(2, sizeof(double));
+//  }
+//
+//  // Read the time series into memory                          
+//  for (i = 0; i < nrow; i++) {
+//    data[i][0] = REAL(getListElement(indata, "time"))[i];
+//    data[i][1] = REAL(getListElement(indata, "concentration"))[i];
+//    data[i][1] = log(data[i][1]);
+//  }
+//
+//	return data;
+//}
+
+
+Node_type * test_pulses(Node_type * list, double **ts, Common_parms *parms, 
+                        int nobs) {
+
+  list = initialize_node();
+
+  // Initialize pulse values -------------------
+  double time[12];      // Starting values for pulse locations
+  double mass[12];      // Starting values for pulse masses
+  double width[12];     // Starting values for pulse widths
+  double eta_mass[12];  // Starting values for eta masses
+  double eta_width[12]; // Starting values for eta widths
+  mass[0]       = 4.2407384;
+  mass[1]       = 0.7655571;
+  mass[2]       = 4.0825812;
+  mass[3]       = 4.7655685;
+  mass[4]       = 4.7903024;
+  mass[5]       = 4.0835315;
+  mass[6]       = 2.3587096;
+  mass[7]       = 5.3756180;
+  mass[8]       = 1.2616455;
+  mass[9]       = 2.7332376;
+  mass[10]      = 2.4361395;
+  mass[11]      = 2.1984437;
+  width[0]      = 88.111121;
+  width[1]      = 110.366726;
+  width[2]      = 36.036933;
+  width[3]      = 49.107879;
+  width[4]      = 20.283757;
+  width[5]      = 36.461844;
+  width[6]      = 57.384845;
+  width[7]      = 57.401967;
+  width[8]      = 1.929962;
+  width[9]      = 15.429365;
+  width[10]     = 139.865751;
+  width[11]     = 43.961197;
+  time[0]       = 26.54152;
+  time[1]       = 174.63993;
+  time[2]       = 298.62117;
+  time[3]       = 360.55329;
+  time[4]       = 494.61155;
+  time[5]       = 689.09242;
+  time[6]       = 763.89017;
+  time[7]       = 839.80027;
+  time[8]       = 925.80251;
+  time[9]       = 975.47320;
+  time[10]      = 1199.00866;
+  time[11]      = 1322.82471;
+  eta_mass[0]   = 0.8486756;
+  eta_mass[1]   = .7108269;
+  eta_mass[2]   = .9045537;
+  eta_mass[3]   = .4203106;
+  eta_mass[4]   = .8413771;
+  eta_mass[5]   = .4562658;
+  eta_mass[6]   = .2856221;
+  eta_mass[7]   = .2336739;
+  eta_mass[8]   = .6728940;
+  eta_mass[9]   = .9409146;
+  eta_mass[10]  = .6038081;
+  eta_mass[11]  = .6312320;
+  eta_width[0]  = 0.6803521;
+  eta_width[1]  = 0.6169701;
+  eta_width[2]  = 0.7486873;
+  eta_width[3]  = 0.4655990;
+  eta_width[4]  = 1.3311321;
+  eta_width[5]  = 0.5488085;
+  eta_width[6]  = 0.6290294;
+  eta_width[7]  = 1.4267846;
+  eta_width[8]  = 0.6693473;
+  eta_width[9]  = 0.5769079;
+  eta_width[10] = 0.5871716;
+  eta_width[11] = 0.8507986;
+
+
+
+  // Initialize nodes and insert into linkedlist
+  for (int i = 0; i < 12; i++) {
+
+    Node_type *new_node;
+    new_node               = initialize_node();
+    new_node->time         = time[i];
+    new_node->theta[0]     = mass[i];
+    new_node->theta[1]     = width[i];
+    new_node->eta[0]       = eta_mass[i];
+    new_node->eta[1]       = eta_width[i];
+    new_node->mean_contrib = (double *)calloc(nobs, sizeof(double));
+    mean_contribution(new_node, ts, parms, nobs);
+    insert_node(new_node, list);
+
+  }
+
+  return list;
+
+}
 
 
 //------------------------------------------------------------------------------

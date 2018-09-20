@@ -233,7 +233,6 @@ void mcmc(Node_type *list,
                arevw_ptr, nrevw_ptr);
 
     // 3) Draw (kappa from) gamma for the t-distribution var-covar
-    //draw_eta(list, parms);
     draw_eta(list, parms, sdetam, sdetaw, aetam_ptr, aetaw_ptr, netam_ptr,
              netaw_ptr);
 
@@ -245,9 +244,11 @@ void mcmc(Node_type *list,
     // 4) Draw the pulse locations 
     //    (Metropolis Hastings)
     if (strauss == 1) {
+      //Rprintf("USING STRAUSS");
       mh_time_strauss(list, parms, ts, likeli, N, sdt, priors, atime_ptr,
                       ntime_ptr);
     } else {
+      //Rprintf("USING OS");
       mh_time_os(list, parms, ts, likeli, N, sdt, atime_ptr, ntime_ptr,
                  priors->orderstat);
     }
@@ -263,9 +264,12 @@ void mcmc(Node_type *list,
     //    distribution via Ken's derivation.  Looked at Week7 of Ed's notes, but
     //    didn't find a clear answer.
     ssq           = error_squared(ts, list, parms, N);
+    //Rprintf("SSQ:%f\n", ssq);
     // Rf_gamma is the shape (alpha is shape), scale (beta here is scale) parameterization
     parms->sigma  = 1 / Rf_rgamma(priors->err_alpha + N / 2, 1 / (1 / priors->err_beta + 0.5 * ssq));
     parms->lsigma = log(parms->sigma);
+
+    //*likeli = likelihood(list, ts, parms, N, list);
 
     //------------------------------------------------------
     // End MCMC steps
@@ -1476,9 +1480,24 @@ double error_squared(double **ts,
   double ssq;   // sum of squared differences btwn log(conc) and expected values
 
   mean = mean_concentration(list, parms, N, list, ts);
+
+  // debug code
+  //double diff[N];
+  //for (i = 0; i < N; i++) {
+  //  diff[i] = (ts[i][1] - mean[i]);
+  //  //Rprintf("diff[%d] = %f\n", i, diff[i]);
+  //}
+  //double diffsquared[N];
+  //for (i = 0; i < N; i++) {
+  //  diffsquared[i] = diff[i] * diff[i];
+  //  //Rprintf("diffsquared[%d] = %f\n", i, diffsquared[i]);
+  //}
+
+
   ssq  = 0;
   for (i = 0; i < N; i++) {
     ssq += (ts[i][1] - mean[i]) * (ts[i][1] - mean[i]);
+    //ssq += diffsquared[i];
   }
 
   free(mean);

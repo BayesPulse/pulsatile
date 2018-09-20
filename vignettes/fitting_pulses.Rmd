@@ -90,8 +90,9 @@ model_spec <- pulse_spec(location_prior_type = "order-statistic")
 #   Note: fit_pulse accepts a plain dataset with the time and concentration
 #         variable names specified, or an object created by simulate_pulse()
 fit_test   <- fit_pulse(.data = this_pulse, 
-                        iters = 100000, 
-                        thin = 50,
+                        iters = 10000, 
+                        thin = 10,
+                        burnin = 1000,
                         spec = model_spec, 
                         verbose = FALSE)
 ```
